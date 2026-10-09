@@ -65,6 +65,24 @@ inwards to the fuse holder wall.
 | Barrier top | Slopes from 22.9 mm height at the inner end to about 18.7 mm at the outer end | CAD |
 | Base top (fuse area) | 26.21 mm height | CAD |
 
+## Panel ends and negative bus
+
+Measured on 2026-10-09 with the same read-only method, for the strip's body length
+(XDGFX/blade-reader#15).
+
+| Dimension | Value | Source |
+|---|---|---|
+| Negative bus screws | Three per side, along 113.54, 124.62, 135.69 mm (11.07 pitch), inset 8.45 mm, pad top 14.32 mm | CAD |
+| Negative bus pocket | One shared pocket, along 108.2–141.2 mm, no barriers between the three screws. Open to the long side like a way pocket | CAD |
+| Wall between way 1–2 and the negative bus | Along 100.2–108.2 mm, solid up to about 19.4–21 mm height | CAD |
+| + stud | On the centreline, along 11.45 mm, about Ø4.8, top at 26.2 mm height | CAD |
+| − stud | On the centreline, along 153.0 mm, about Ø4.8, top at 26.2 mm height | CAD |
+| Ends | Along 0–20.2 and 144.5–158 mm: a solid side up to about 12.7 mm, with a flat deck at that height, open above apart from the stud boss. The last 8 mm at each end is rounded over | CAD |
+| Long sides | Solid up to about 12.6–12.7 mm height along the whole length. They lean in slightly: inset 0.1 at 1 mm height and 0.8 at 12 mm. Nothing protrudes beyond the side edges anywhere | CAD |
+
+Every pocket, way or negative bus, has a 12.6 mm lip at the edge and a groove at about 3 mm
+inset down to 11.3 mm. The pad starts at about 3.2 mm inset.
+
 ## Cover
 
 | Dimension | Value | Source |
