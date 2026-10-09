@@ -2,9 +2,9 @@
 // Circuit and values from docs/research/way-monitor-power-supply.md, "Recommended circuit
 // and BOM", with its D1 replaced by the six way diodes and its F1 by the fuse (issue #6).
 //
-// PCB: the way 1 end extension, inboard of the ground nut and the support hole zone, laid out
-// in the order the current flows: fuse and TVS at the outboard edge, where VSUP arrives along
-// the body, then the buck, then the inductor and output caps above the zone.
+// PCB: the way 6 end extension, above the ground nut, laid out in the order the current
+// flows: fuse and TVS at the outboard edge, where VSUP arrives along the body, then the buck,
+// then the inductor and output caps nearest the nut.
 
 import { A_0466001_NRHF } from "../imports/A_0466001_NRHF"
 import { LMR51610XDBVR } from "../imports/LMR51610XDBVR"
@@ -18,9 +18,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
         2.3 ms soft-start keeps the output capacitors' charge current below 0.1 A. */}
     <A_0466001_NRHF
       name="F1"
-      pcbX={50.5}
-      pcbY={25.9}
-      pcbRotation={180}
+      pcbX={-36.0}
+      pcbY={22.9}
+      pcbRotation={0}
       schX={schX}
       schY={schY}
       schSectionName="Supply"
@@ -28,8 +28,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <SMBJ33A
       name="D1"
-      pcbX={44.3}
-      pcbY={25.6}
+      pcbX={-36.0}
+      pcbY={26.3}
       pcbRotation={0}
       schX={schX + 2.5}
       schY={schY - 2}
@@ -38,8 +38,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C1"
-      pcbX={42.6}
-      pcbY={22.2}
+      pcbX={-47.4}
+      pcbY={25.6}
       pcbRotation={0}
       capacitance="2.2uF"
       footprint="1206"
@@ -53,8 +53,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C2"
-      pcbX={46.6}
-      pcbY={22.2}
+      pcbX={-42.9}
+      pcbY={25.6}
       pcbRotation={0}
       capacitance="100nF"
       footprint="0805"
@@ -68,8 +68,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <LMR51610XDBVR
       name="U3"
-      pcbX={44.4}
-      pcbY={19.2}
+      pcbX={-47.3}
+      pcbY={22.4}
       pcbRotation={0}
       schX={schX + 9}
       schY={schY}
@@ -85,9 +85,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C3"
-      pcbX={44.4}
-      pcbY={16.9}
-      pcbRotation={180}
+      pcbX={-41.7}
+      pcbY={21.3}
+      pcbRotation={0}
       capacitance="100nF"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C307331"] }}
@@ -99,9 +99,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <SWPA6045S220MT
       name="L1"
-      pcbX={44.1}
-      pcbY={10.8}
-      pcbRotation={-90}
+      pcbX={-45.2}
+      pcbY={14.8}
+      pcbRotation={0}
       schX={schX + 14}
       schY={schY}
       schSectionName="Supply"
@@ -110,9 +110,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     {/* 0.8 V × (1 + 75k / 24k) = 3.30 V */}
     <resistor
       name="R1"
-      pcbX={47.4}
-      pcbY={19.2}
-      pcbRotation={270}
+      pcbX={-43.9}
+      pcbY={21.3}
+      pcbRotation={180}
       resistance="75k"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C25798"] }}
@@ -124,9 +124,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <resistor
       name="R2"
-      pcbX={48.6}
-      pcbY={19.2}
-      pcbRotation={270}
+      pcbX={-43.9}
+      pcbY={22.5}
+      pcbRotation={0}
       resistance="24k"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C25769"] }}
@@ -140,8 +140,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
       <capacitor
         key={i}
         name={`C${i}`}
-        pcbX={44.1}
-        pcbY={i === 4 ? 5.1 : 2.8}
+        pcbX={i === 4 ? -47.4 : -42.8}
+        pcbY={19.3}
         pcbRotation={0}
         capacitance="22uF"
         footprint="1206"

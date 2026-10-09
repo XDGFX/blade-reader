@@ -1,4 +1,4 @@
-// The comb: outline, divider slots, support holes and keepouts. Dimensions from
+// The comb: outline and divider slots. Dimensions from
 // docs/design.md (Mechanical, Fixing, Body) and issues #8, #9, #15 and #21.
 //
 // PCB coordinates, in mm: Y runs outboard from the panel edge (Y 0), so the fingers are at
@@ -10,10 +10,10 @@ import { Fragment } from "react"
 
 export const WAY_PITCH_PCB = 13.36
 export const LENGTH = 6 * WAY_PITCH_PCB // 80.16, the ways' span
-export const DEPTH = 27.5
+export const DEPTH = 29
 
-/** Body past each end way, along the panel's side: 21.15 mm of panel lies past the strip. */
-export const END = 20
+/** Body past each end way, along the panel's side. */
+export const END = 10
 
 const HALF = LENGTH / 2
 /** X of the board's way 1 end; the way 6 end is at −BOARD_HALF. */
@@ -32,14 +32,13 @@ export const CLAMP_Y = -8.52
 /** Output nut centres. */
 export const NUT_Y = 14
 
-// ESP32-C3-MINI-1 at the way 6 end, lying along the strip (rotated 90°), antenna past the end
-// of the board. Its 11.2 mm pad area is on the board, 0.7 mm in from the outboard edge so
-// RXD and TXD can leave along it. The footprint's origin is 5.6 mm from that area's ends.
-export const ESP = { x: -(BOARD_HALF - 5.6), y: DEPTH - 0.7 - 6.6 }
-
-/** Support hole zone: 12 × 12, in the panel-edge corner at each end. */
-const ZONE = 12
-export const M3_Y = ZONE / 2
+// ESP32-C3-MINI-1 at the way 1 end, lying along the strip (rotated −90°), antenna past the end
+// of the board. Its 11.2 mm pad area is on the board, reaching 1.2 mm over the end of way 1's
+// column above the nut. 3V3, EN, IO2 and IO3 face the outboard edge, with their small parts
+// in a row above the module. The footprint's origin is 5.6 mm from that area's ends.
+export const ESP = { x: BOARD_HALF - 5.6, y: DEPTH - 8.05 }
+/** Centre Y of the row of 0402s between the module and the outboard edge, 0.3 mm clear of it. */
+export const ESP_ROW_Y = DEPTH - 0.62
 
 type Pt = { x: number; y: number }
 
@@ -76,27 +75,16 @@ const COMB: Pt[] = [
 
 export const OUTLINE = COMB.map(({ x, y }) => ({ x, y: y + Y_SHIFT }))
 
-/** Divider slots: centre Y and length. Parts stay 1.5 mm clear of them. */
-export const SLOT = { y: 15.5, length: 11 }
+/** Divider slots: centre Y and length, y 10–20. Parts stay 1.5 mm clear of them. */
+export const SLOT = { y: 15, length: 10 }
 const SLOT_XS = [1, 2, 3, 4, 5].map((k) => HALF - k * WAY_PITCH_PCB)
-const M3_XS = [BOARD_HALF - ZONE / 2, -(BOARD_HALF - ZONE / 2)]
 
+/** Divider slots between the nuts, for an optional clip-on printed divider. */
 export const CombFeatures = () => (
   <>
-    {/* Divider slots between the nuts, for an optional clip-on printed divider. */}
     {SLOT_XS.map((x) => (
       <Fragment key={x}>
         <cutout shape="rect" width="1.7mm" height={`${SLOT.length}mm`} pcbX={x} pcbY={SLOT.y} />
-      </Fragment>
-    ))}
-
-    {/* M3 holes for the optional support block: no parts or copper in a 12 × 12 zone on the
-        parts face, no copper within Ø8 on the ring face. */}
-    {M3_XS.map((x) => (
-      <Fragment key={x}>
-        <hole diameter="3.2mm" pcbX={x} pcbY={M3_Y} />
-        <keepout shape="rect" width={`${ZONE}mm`} height={`${ZONE}mm`} pcbX={x} pcbY={M3_Y} layer="top" />
-        <keepout shape="circle" radius="4mm" pcbX={x} pcbY={M3_Y} layer="bottom" />
       </Fragment>
     ))}
   </>
