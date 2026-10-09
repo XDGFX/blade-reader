@@ -1,0 +1,233 @@
+<title>Blade Reader Silkscreen Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column, decision summary first, then each concept as a full-width board render with its notes beneath. */
+:root {
+  --bg: #f3f4f1; --fg: #1d211f; --muted: #5d655f; --line: #d3d7d1; --panel: #ffffff; --accent: #2f6b4f;
+  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151816; --fg: #e4e7e3; --muted: #9aa39c; --line: #2d332f; --panel: #1d211f; --accent: #7cc3a0; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #151816; --fg: #e4e7e3; --muted: #9aa39c; --line: #2d332f; --panel: #1d211f; --accent: #7cc3a0; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 28px; }
+h1 { font: 700 clamp(26px, 4vw, 36px)/1.1 var(--f-display); font-stretch: 118%; letter-spacing: .01em; margin: 0; text-wrap: balance; }
+h2 { font: 650 20px/1.2 var(--f-display); font-stretch: 112%; margin: 0; text-wrap: balance; }
+h3 { font: 600 13px/1.3 var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0; }
+p, li { max-width: 72ch; }
+p { margin: 0; }
+.eyebrow { font: 500 12px var(--f-mono); color: var(--muted); letter-spacing: .04em; }
+.summary { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 20px; display: grid; gap: 14px; }
+.summary ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+tr.rec td:first-child { font-weight: 600; color: var(--accent); }
+.controls { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.seg { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); background: var(--panel); color: var(--fg); border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.ctl { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.concept { display: grid; gap: 12px; }
+.board { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px; overflow-x: auto; }
+.board svg { display: block; width: 100%; min-width: 640px; height: auto; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 28px; }
+.notes > div { min-width: 0; display: grid; gap: 4px; align-content: start; }
+.notes p { font-size: 14px; }
+.questions ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; }
+code { font: 13px var(--f-mono); }
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <span class="eyebrow">PROTOTYPE · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
+    <h1>Ring-face silkscreen concepts</h1>
+  </header>
+
+  <section class="summary">
+    <h2>Board colour: black or white only</h2>
+    <p>On Economic PCBA, JLC does ENIG on green only. Black mask is lead-free HASL only, and white mask is leaded HASL only. Gold on either colour means Standard PCBA. So the choice is really between three options:</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Option</th><th>Fixed fees / order</th><th>Accent and clamp finish</th><th>Trade-offs</th></tr></thead>
+      <tbody>
+        <tr class="rec"><td>Black, lead-free HASL, Economic</td><td>≈ $28.10 (−$0.50 vs green ENIG)</td><td>Silver solder art; tin under the clamp and nut</td><td>White silk. Revises ENIG in <em>JLC fab rules and options</em>. +2 days. HASL is less flat on the ESP32's pads (JLC assembles it routinely)</td></tr>
+        <tr><td>White, leaded HASL, Economic</td><td>≈ $28.10</td><td>Silver solder art; tin-lead under the clamp</td><td>Black silk. Leaded finish in a boat cabin. White mask shows grime and can yellow over the hot sensors</td></tr>
+        <tr><td>Black, ENIG, Standard</td><td>≈ $73–90 + panel (+$45–61)</td><td>Gold art; gold under the clamp</td><td>Board must be panelised to 70 × 70 mm (3 up) with tabs or V-cuts round the comb</td></tr>
+      </tbody>
+    </table></div>
+    <ul>
+      <li><strong>Recommendation: black, lead-free HASL, Economic.</strong> It is the cheapest option and keeps the current assembly tier. The accent turns silver instead of gold. The ring terminals going on the nuts are tin-plated themselves, so tin pads are an ordinary bolted joint. Gold would cost about $50 an order and a panel.</li>
+      <li>Under 30 % exposed finish only matters for ENIG. Every concept here exposes under 2 % of one face.</li>
+      <li>Use the toggles to see each concept in each colour and finish, with or without rings and cables fitted. Dashed outline: the ESP32 antenna on the parts face, past the board end.</li>
+    </ul>
+  </section>
+
+  <div class="controls" role="group" aria-label="Render options">
+    <div class="ctl">Mask <div class="seg" data-k="mask"><button id="m-black" data-v="black" aria-pressed="true">Black</button><button id="m-white" data-v="white" aria-pressed="false">White</button></div></div>
+    <div class="ctl">Finish <div class="seg" data-k="finish"><button id="f-hasl" data-v="hasl" aria-pressed="true">HASL · Economic</button><button id="f-enig" data-v="enig" aria-pressed="false">ENIG · Standard</button></div></div>
+    <div class="ctl">Rings <div class="seg" data-k="rings"><button id="r-off" data-v="off" aria-pressed="true">Bare</button><button id="r-on" data-v="on" aria-pressed="false">Fitted</button></div></div>
+  </div>
+
+  <section class="concept">
+    <h2>A · Ledger</h2>
+    <div class="board" id="A"></div>
+    <div class="notes">
+      <div><h3>Idea</h3><p>Silk only, with no mask-opening art. The wordmark runs up the way 1 ear. Install facts sit in a two-line ledger in the band behind the nuts, read while fitting and then hidden under the cables.</p></div>
+      <div><h3>Sensor 1</h3><p>A triangle on the bare finger, between the clamp pad and the panel edge, pointing at the sensor. It stays visible with the panel's screw fitted.</p></div>
+      <div><h3>Type</h3><p>Stroke font only: wordmark 2.4 mm, labels 1.0 mm on two baselines. Avoids <code>·°:%</code> by spelling “40 C” in full.</p></div>
+    </div>
+  </section>
+
+  <section class="concept">
+    <h2>B · Instrument scale</h2>
+    <div class="board" id="B"></div>
+    <div class="notes">
+      <div><h3>Idea</h3><p>A meter scale along the panel edge: a long tick at each way and a short one at each slot. The wordmark is a finish opening in the way 1 ear, the only accent. Text columns start on the slot lines, so the grid is the comb's own pitch.</p></div>
+      <div><h3>Sensor 1</h3><p>A filled dot above way 1's long tick, on the body. It reads as the scale's zero.</p></div>
+      <div><h3>Type</h3><p>SVG wordmark in a wide grotesque, 2.8 mm. Labels in the stroke font at 1.0 mm. ° and · are drawn as silk circles.</p></div>
+    </div>
+  </section>
+
+  <section class="concept">
+    <h2>C · Current path</h2>
+    <div class="board" id="C"></div>
+    <div class="notes">
+      <div><h3>Idea</h3><p>Chevrons in each column show current running from finger to nut. A finish hairline over the ground bus traces the panel edge. A large letterspaced wordmark fills the band behind the nuts. It shows during install and in photos, and is covered once the cables are on.</p></div>
+      <div><h3>Sensor 1</h3><p>Way 1's chevrons are solid and the rest are outlines, so the mark is the decoration itself.</p></div>
+      <div><h3>Type</h3><p>Wordmark as a finish opening, 2.6 mm, tracked wide. Install facts are set as a rotated block in the way 1 ear.</p></div>
+    </div>
+  </section>
+
+  <section class="summary questions">
+    <h2>For Cal to pick</h2>
+    <ol>
+      <li>Board colour and finish: black HASL (recommended), white HASL or black ENIG?</li>
+      <li>Concept: A, B, C, or a mix (say which parts)?</li>
+      <li>Sensor 1 mark: on the finger (A) or on the body (B, C)?</li>
+      <li>Torque: print “M4 NUT 1.0–1.2 Nm”? All three concepts include it. The way screw's torque is the panel's own figure, so it is left off.</li>
+      <li>J1 is drawn where it is now, under way 1's ring. It moves in <em>Move the ESP-PROG footprint out from under way 1's ring</em>, so PROG follows it.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+const G = {"outline":[[92.09,0],[0,0],[0,25.5],[12.86,25.5],[13.243,25.576],[13.567,25.793],[13.784,26.117],[13.86,26.5],[13.86,38],[13.898,38.191],[14.006,38.354],[14.169,38.462],[14.36,38.5],[22.86,38.5],[23.051,38.462],[23.214,38.354],[23.322,38.191],[23.36,38],[23.36,26.5],[23.436,26.117],[23.653,25.793],[23.977,25.576],[24.36,25.5],[26.22,25.5],[26.603,25.576],[26.927,25.793],[27.144,26.117],[27.22,26.5],[27.22,38],[27.258,38.191],[27.366,38.354],[27.529,38.462],[27.72,38.5],[36.22,38.5],[36.411,38.462],[36.574,38.354],[36.682,38.191],[36.72,38],[36.72,26.5],[36.796,26.117],[37.013,25.793],[37.337,25.576],[37.72,25.5],[39.58,25.5],[39.963,25.576],[40.287,25.793],[40.504,26.117],[40.58,26.5],[40.58,38],[40.618,38.191],[40.726,38.354],[40.889,38.462],[41.08,38.5],[49.58,38.5],[49.771,38.462],[49.934,38.354],[50.042,38.191],[50.08,38],[50.08,26.5],[50.156,26.117],[50.373,25.793],[50.697,25.576],[51.08,25.5],[52.94,25.5],[53.323,25.576],[53.647,25.793],[53.864,26.117],[53.94,26.5],[53.94,38],[53.978,38.191],[54.086,38.354],[54.249,38.462],[54.44,38.5],[62.94,38.5],[63.131,38.462],[63.294,38.354],[63.402,38.191],[63.44,38],[63.44,26.5],[63.516,26.117],[63.733,25.793],[64.057,25.576],[64.44,25.5],[66.3,25.5],[66.683,25.576],[67.007,25.793],[67.224,26.117],[67.3,26.5],[67.3,38],[67.338,38.191],[67.446,38.354],[67.609,38.462],[67.8,38.5],[76.3,38.5],[76.491,38.462],[76.654,38.354],[76.762,38.191],[76.8,38],[76.8,26.5],[76.876,26.117],[77.093,25.793],[77.417,25.576],[77.8,25.5],[79.66,25.5],[80.043,25.576],[80.367,25.793],[80.584,26.117],[80.66,26.5],[80.66,38],[80.698,38.191],[80.806,38.354],[80.969,38.462],[81.16,38.5],[89.66,38.5],[89.851,38.462],[90.014,38.354],[90.122,38.191],[90.16,38],[90.16,26.5],[90.236,26.117],[90.453,25.793],[90.777,25.576],[91.16,25.5],[104.02,25.5],[104.02,11.93]],"holes":[{"x":18.61,"y":34.02,"r":4.065,"h":2.7},{"x":18.61,"y":11.5,"r":4.65,"h":3.2},{"x":31.97,"y":34.02,"r":4.065,"h":2.7},{"x":31.97,"y":11.5,"r":4.65,"h":3.2},{"x":45.33,"y":34.02,"r":4.065,"h":2.7},{"x":45.33,"y":11.5,"r":4.65,"h":3.2},{"x":58.69,"y":34.02,"r":4.065,"h":2.7},{"x":58.69,"y":11.5,"r":4.65,"h":3.2},{"x":72.05,"y":34.02,"r":4.065,"h":2.7},{"x":72.05,"y":11.5,"r":4.65,"h":3.2},{"x":85.41,"y":34.02,"r":4.065,"h":2.7},{"x":85.41,"y":11.5,"r":4.65,"h":3.2},{"x":98.77,"y":20.25,"r":4.65,"h":3.2},{"x":21.277,"y":2.63,"r":0.94,"h":0.508},{"x":21.277,"y":5.17,"r":0.94,"h":0.508},{"x":18.483,"y":2.63,"r":0.94,"h":0.508},{"x":18.483,"y":5.17,"r":0.94,"h":0.508},{"x":16.197,"y":2.63,"r":0.94,"h":0.508},{"x":16.197,"y":5.17,"r":0.94,"h":0.508}],"slots":[{"x":25.29,"y":11.5,"w":1.7,"h":8},{"x":38.65,"y":11.5,"w":1.7,"h":8},{"x":52.01,"y":11.5,"w":1.7,"h":8},{"x":65.37,"y":11.5,"w":1.7,"h":8},{"x":78.73,"y":11.5,"w":1.7,"h":8}],"pours":[[[[14.469,38.2],[14.66,38.2],[22.751,38.2],[22.751,38.162],[22.914,38.162],[22.914,38.054],[23.022,38.054],[23.022,37.891],[23.06,37.891],[23.06,26.5],[23.066,26.441],[23.142,26.059],[23.159,26.003],[23.187,25.951],[23.287,25.8],[13.933,25.8],[14.033,25.951],[14.061,26.003],[14.078,26.059],[14.154,26.441],[14.16,26.5],[14.16,37.7],[14.16,37.891],[14.198,37.891],[14.198,38.054],[14.306,38.054],[14.306,38.162],[14.469,38.162]]],[[[12.41,22.9],[24.81,22.9],[24.81,15.8],[24.14,15.8],[24.14,8.76],[23.764,8.056],[22.993,7.117],[22.054,6.346],[21.874,6.25],[21.752,6.316],[21.519,6.386],[21.277,6.41],[21.035,6.386],[20.802,6.316],[20.588,6.201],[20.4,6.047],[20.246,5.859],[20.131,5.645],[20.088,5.502],[19.819,5.421],[19.699,5.409],[19.699,5.412],[19.629,5.645],[19.514,5.859],[19.36,6.047],[19.172,6.201],[18.958,6.316],[18.725,6.386],[18.483,6.41],[18.241,6.386],[18.008,6.316],[17.794,6.201],[17.606,6.047],[17.452,5.859],[17.34,5.649],[17.228,5.859],[17.074,6.047],[16.886,6.201],[16.672,6.316],[16.439,6.386],[16.197,6.41],[15.955,6.386],[15.722,6.316],[15.508,6.201],[15.48,6.178],[15.166,6.346],[14.227,7.117],[13.456,8.056],[12.883,9.128],[12.531,10.291],[12.41,11.515]]],[[[27.829,38.2],[28.02,38.2],[36.111,38.2],[36.111,38.162],[36.274,38.162],[36.274,38.054],[36.382,38.054],[36.382,37.891],[36.42,37.891],[36.42,26.5],[36.426,26.441],[36.502,26.059],[36.519,26.003],[36.547,25.951],[36.647,25.8],[27.293,25.8],[27.393,25.951],[27.421,26.003],[27.438,26.059],[27.514,26.441],[27.52,26.5],[27.52,37.7],[27.52,37.891],[27.558,37.891],[27.558,38.054],[27.666,38.054],[27.666,38.162],[27.829,38.162]]],[[[25.77,22.9],[38.17,22.9],[38.17,15.8],[37.5,15.8],[37.5,8.76],[37.124,8.056],[36.353,7.117],[35.414,6.346],[34.342,5.773],[33.179,5.421],[31.97,5.301],[30.761,5.421],[29.598,5.773],[28.526,6.346],[27.587,7.117],[26.816,8.056],[26.44,8.76],[26.44,15.8],[25.77,15.8]]],[[[41.189,38.2],[41.38,38.2],[49.471,38.2],[49.471,38.162],[49.634,38.162],[49.634,38.054],[49.742,38.054],[49.742,37.891],[49.78,37.891],[49.78,26.5],[49.786,26.441],[49.862,26.059],[49.879,26.003],[49.907,25.951],[50.007,25.8],[40.653,25.8],[40.753,25.951],[40.781,26.003],[40.798,26.059],[40.874,26.441],[40.88,26.5],[40.88,37.7],[40.88,37.891],[40.918,37.891],[40.918,38.054],[41.026,38.054],[41.026,38.162],[41.189,38.162]]],[[[39.13,22.9],[51.53,22.9],[51.53,15.8],[50.86,15.8],[50.86,8.76],[50.484,8.056],[49.713,7.117],[48.774,6.346],[47.702,5.773],[46.539,5.421],[45.33,5.301],[44.121,5.421],[42.958,5.773],[41.886,6.346],[40.947,7.117],[40.176,8.056],[39.8,8.76],[39.8,15.8],[39.13,15.8]]],[[[54.549,38.2],[54.74,38.2],[62.831,38.2],[62.831,38.162],[62.994,38.162],[62.994,38.054],[63.102,38.054],[63.102,37.891],[63.14,37.891],[63.14,26.5],[63.146,26.441],[63.222,26.059],[63.239,26.003],[63.267,25.951],[63.367,25.8],[54.013,25.8],[54.113,25.951],[54.141,26.003],[54.158,26.059],[54.234,26.441],[54.24,26.5],[54.24,37.7],[54.24,37.891],[54.278,37.891],[54.278,38.054],[54.386,38.054],[54.386,38.162],[54.549,38.162]]],[[[52.49,22.9],[64.89,22.9],[64.89,15.8],[64.22,15.8],[64.22,8.76],[63.844,8.056],[63.073,7.117],[62.134,6.346],[61.062,5.773],[59.899,5.421],[58.69,5.301],[57.481,5.421],[56.318,5.773],[55.246,6.346],[54.307,7.117],[53.536,8.056],[53.16,8.76],[53.16,15.8],[52.49,15.8]]],[[[67.909,38.2],[68.1,38.2],[76.191,38.2],[76.191,38.162],[76.354,38.162],[76.354,38.054],[76.462,38.054],[76.462,37.891],[76.5,37.891],[76.5,26.5],[76.506,26.441],[76.582,26.059],[76.599,26.003],[76.627,25.951],[76.727,25.8],[67.373,25.8],[67.473,25.951],[67.501,26.003],[67.518,26.059],[67.594,26.441],[67.6,26.5],[67.6,37.7],[67.6,37.891],[67.638,37.891],[67.638,38.054],[67.746,38.054],[67.746,38.162],[67.909,38.162]]],[[[65.85,22.9],[78.25,22.9],[78.25,15.8],[77.58,15.8],[77.58,8.76],[77.204,8.056],[76.433,7.117],[75.494,6.346],[74.422,5.773],[73.259,5.421],[72.05,5.301],[70.841,5.421],[69.678,5.773],[68.606,6.346],[67.667,7.117],[66.896,8.056],[66.52,8.76],[66.52,15.8],[65.85,15.8]]],[[[81.269,38.2],[81.46,38.2],[89.551,38.2],[89.551,38.162],[89.714,38.162],[89.714,38.054],[89.822,38.054],[89.822,37.891],[89.86,37.891],[89.86,26.5],[89.866,26.441],[89.942,26.059],[89.959,26.003],[89.987,25.951],[90.087,25.8],[80.733,25.8],[80.833,25.951],[80.861,26.003],[80.878,26.059],[80.954,26.441],[80.96,26.5],[80.96,37.7],[80.96,37.891],[80.998,37.891],[80.998,38.054],[81.106,38.054],[81.106,38.162],[81.269,38.162]]],[[[79.21,22.9],[91.61,22.9],[91.61,11.515],[91.489,10.291],[91.137,9.128],[90.564,8.056],[89.793,7.117],[88.854,6.346],[87.782,5.773],[86.619,5.421],[85.41,5.301],[84.201,5.421],[83.038,5.773],[81.966,6.346],[81.027,7.117],[80.256,8.056],[79.88,8.76],[79.88,15.8],[79.21,15.8]]],[[[0.3,25.2],[103.72,25.2],[103.72,12.054],[91.966,0.3],[52.31,0.3],[52.31,4.7],[92.31,4.7],[92.61,4.7],[92.61,5],[92.61,23.9],[92.61,24.5],[92.01,24.5],[12.01,24.5],[11.71,24.5],[11.71,24.2],[11.71,5.3],[11.71,4.7],[12.01,4.7],[12.31,4.7],[15.05,4.7],[15.051,4.695],[15.166,4.481],[15.32,4.293],[15.508,4.139],[15.722,4.024],[15.955,3.954],[16.197,3.93],[16.439,3.954],[16.672,4.024],[16.886,4.139],[17.074,4.293],[17.228,4.481],[17.343,4.695],[17.344,4.7],[20.13,4.7],[20.131,4.695],[20.246,4.481],[20.4,4.293],[20.588,4.139],[20.802,4.024],[21.035,3.954],[21.277,3.93],[21.519,3.954],[21.752,4.024],[21.966,4.139],[22.154,4.293],[22.308,4.481],[22.423,4.695],[22.424,4.7],[51.71,4.7],[51.71,0.3],[0.3,0.3]],[[21.277,3.87],[21.035,3.846],[20.802,3.776],[20.588,3.661],[20.4,3.507],[20.246,3.319],[20.131,3.105],[20.061,2.872],[20.037,2.63],[20.061,2.388],[20.131,2.155],[20.246,1.941],[20.4,1.753],[20.588,1.599],[20.802,1.484],[21.035,1.414],[21.277,1.39],[21.519,1.414],[21.752,1.484],[21.966,1.599],[22.154,1.753],[22.308,1.941],[22.423,2.155],[22.493,2.388],[22.517,2.63],[22.493,2.872],[22.423,3.105],[22.308,3.319],[22.154,3.507],[21.966,3.661],[21.752,3.776],[21.519,3.846]],[[16.197,3.87],[15.955,3.846],[15.722,3.776],[15.508,3.661],[15.32,3.507],[15.166,3.319],[15.051,3.105],[14.981,2.872],[14.957,2.63],[14.981,2.388],[15.051,2.155],[15.166,1.941],[15.32,1.753],[15.508,1.599],[15.722,1.484],[15.955,1.414],[16.197,1.39],[16.439,1.414],[16.672,1.484],[16.886,1.599],[17.074,1.753],[17.228,1.941],[17.34,2.151],[17.452,1.941],[17.606,1.753],[17.794,1.599],[18.008,1.484],[18.241,1.414],[18.483,1.39],[18.725,1.414],[18.958,1.484],[19.172,1.599],[19.36,1.753],[19.514,1.941],[19.629,2.155],[19.699,2.388],[19.723,2.63],[19.699,2.872],[19.629,3.105],[19.514,3.319],[19.36,3.507],[19.172,3.661],[18.958,3.776],[18.725,3.846],[18.483,3.87],[18.241,3.846],[18.008,3.776],[17.794,3.661],[17.606,3.507],[17.452,3.319],[17.34,3.109],[17.228,3.319],[17.074,3.507],[16.886,3.661],[16.672,3.776],[16.439,3.846]]]],"vias":[[22.21,26.5,0.3],[20.41,26.5,0.3],[18.61,26.5,0.3],[16.81,26.5,0.3],[15.01,26.5,0.3],[22.21,27.8,0.3],[20.41,27.8,0.3],[18.61,27.8,0.3],[16.81,27.8,0.3],[15.01,27.8,0.3],[20.51,18.6,0.3],[19.31,18.6,0.3],[18.11,18.6,0.3],[16.91,18.6,0.3],[20.51,17.6,0.3],[19.31,17.6,0.3],[18.11,17.6,0.3],[16.91,17.6,0.3],[22.216,15.106,0.3],[20.52,16.229,0.3],[18.61,16.6,0.3],[16.7,16.229,0.3],[15.004,15.106,0.3],[35.57,26.5,0.3],[33.77,26.5,0.3],[31.97,26.5,0.3],[30.17,26.5,0.3],[28.37,26.5,0.3],[35.57,27.8,0.3],[33.77,27.8,0.3],[31.97,27.8,0.3],[30.17,27.8,0.3],[28.37,27.8,0.3],[33.87,18.6,0.3],[32.67,18.6,0.3],[31.47,18.6,0.3],[30.27,18.6,0.3],[33.87,17.6,0.3],[32.67,17.6,0.3],[31.47,17.6,0.3],[30.27,17.6,0.3],[35.576,15.106,0.3],[33.88,16.229,0.3],[31.97,16.6,0.3],[30.06,16.229,0.3],[28.364,15.106,0.3],[48.93,26.5,0.3],[47.13,26.5,0.3],[45.33,26.5,0.3],[43.53,26.5,0.3],[41.73,26.5,0.3],[48.93,27.8,0.3],[47.13,27.8,0.3],[45.33,27.8,0.3],[43.53,27.8,0.3],[41.73,27.8,0.3],[47.23,18.6,0.3],[46.03,18.6,0.3],[44.83,18.6,0.3],[43.63,18.6,0.3],[47.23,17.6,0.3],[46.03,17.6,0.3],[44.83,17.6,0.3],[43.63,17.6,0.3],[48.936,15.106,0.3],[47.24,16.229,0.3],[45.33,16.6,0.3],[43.42,16.229,0.3],[41.724,15.106,0.3],[62.29,26.5,0.3],[60.49,26.5,0.3],[58.69,26.5,0.3],[56.89,26.5,0.3],[55.09,26.5,0.3],[62.29,27.8,0.3],[60.49,27.8,0.3],[58.69,27.8,0.3],[56.89,27.8,0.3],[55.09,27.8,0.3],[61.59,18.6,0.3],[60.39,18.6,0.3],[59.19,18.6,0.3],[57.99,18.6,0.3],[61.59,17.6,0.3],[60.39,17.6,0.3],[59.19,17.6,0.3],[57.99,17.6,0.3],[62.296,15.106,0.3],[60.6,16.229,0.3],[58.69,16.6,0.3],[56.78,16.229,0.3],[55.084,15.106,0.3],[75.65,26.5,0.3],[73.85,26.5,0.3],[72.05,26.5,0.3],[70.25,26.5,0.3],[68.45,26.5,0.3],[75.65,27.8,0.3],[73.85,27.8,0.3],[72.05,27.8,0.3],[70.25,27.8,0.3],[68.45,27.8,0.3],[74.95,18.6,0.3],[73.75,18.6,0.3],[72.55,18.6,0.3],[71.35,18.6,0.3],[74.95,17.6,0.3],[73.75,17.6,0.3],[72.55,17.6,0.3],[71.35,17.6,0.3],[75.656,15.106,0.3],[73.96,16.229,0.3],[72.05,16.6,0.3],[70.14,16.229,0.3],[68.444,15.106,0.3],[89.01,26.5,0.3],[87.21,26.5,0.3],[85.41,26.5,0.3],[83.61,26.5,0.3],[81.81,26.5,0.3],[89.01,27.8,0.3],[87.21,27.8,0.3],[85.41,27.8,0.3],[83.61,27.8,0.3],[81.81,27.8,0.3],[88.31,18.6,0.3],[87.11,18.6,0.3],[85.91,18.6,0.3],[84.71,18.6,0.3],[88.31,17.6,0.3],[87.11,17.6,0.3],[85.91,17.6,0.3],[84.71,17.6,0.3],[89.016,15.106,0.3],[87.32,16.229,0.3],[85.41,16.6,0.3],[83.5,16.229,0.3],[81.804,15.106,0.3],[53.41,24.85,0.3],[52.21,24.85,0.3]]};
+const S = { mask: "black", finish: "hasl", rings: "off" };
+const WAYS = [1,2,3,4,5,6].map(n => 18.61 + (n-1)*13.36);
+const SLOTS = [1,2,3,4,5].map(k => 25.29 + (k-1)*13.36);
+const GND = { x: 98.77, y: 20.25 };
+const NUT_Y = 11.5, EDGE = 25.5;
+
+function pal() {
+  const black = S.mask === "black";
+  return {
+    mask: black ? "#16181a" : "#f1f0ea",
+    cu: black ? "#24221f" : "#e2dccd",
+    via: black ? "#2c2925" : "#d6cfbe",
+    silk: black ? "#f4f4ee" : "#1b1c1d",
+    fin: S.finish === "enig" ? "url(#enig)" : "url(#hasl)",
+    hole: "var(--panel)",
+    ring: black ? "rgba(185,190,196,.82)" : "rgba(120,126,132,.8)",
+  };
+}
+const pts = a => a.map(p => p.join(",")).join(" ");
+const ring = a => "M" + a.map(p => p.join(",")).join("L") + "Z";
+const t = (x, y, s, txt, o = {}) =>
+  `<text x="${x}" y="${y}" font-size="${s}" fill="${o.fill || "var(--silk)"}" font-family="${o.font || "IBM Plex Mono, monospace"}" font-weight="${o.w || 500}" letter-spacing="${o.ls || 0}" text-anchor="${o.a || "start"}"${o.rot ? ` transform="rotate(${o.rot} ${x} ${y})"` : ""}${o.stretch ? ` style="font-stretch:${o.stretch}%"` : ""}>${txt}</text>`;
+
+function base(c) {
+  const holes = G.holes.map(h => `<circle cx="${h.x}" cy="${h.y}" r="${h.r}" fill="${c.fin}"/><circle cx="${h.x}" cy="${h.y}" r="${h.h}" fill="${c.hole}"/>`).join("");
+  return `
+  <defs>
+    <linearGradient id="enig" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9c46a"/><stop offset=".5" stop-color="#c9973a"/><stop offset="1" stop-color="#e3b85c"/></linearGradient>
+    <linearGradient id="hasl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9dde1"/><stop offset=".45" stop-color="#a9afb5"/><stop offset="1" stop-color="#cfd3d7"/></linearGradient>
+    <clipPath id="brd"><path d="${ring(G.outline)}"/></clipPath>
+  </defs>
+  <rect x="-8" y="-4" width="118" height="45" fill="var(--panel)"/>
+  <rect x="-8" y="${EDGE}" width="118" height="15.5" fill="var(--line)" opacity=".45"/>
+  <text x="107.5" y="39.5" font-size="1.3" fill="var(--muted)" text-anchor="end" font-family="IBM Plex Sans, sans-serif">fuse panel (fingers under the way screws)</text>
+  <path d="${ring(G.outline)}" fill="${c.mask}" stroke="var(--muted)" stroke-width=".12"/>
+  <g clip-path="url(#brd)">${G.pours.map(p => `<path d="${p.map(ring).join("")}" fill="${c.cu}" fill-rule="evenodd"/>`).join("")}
+  ${G.vias.map(v => `<circle cx="${v[0]}" cy="${v[1]}" r="${v[2]}" fill="${c.via}"/>`).join("")}</g>
+  ${G.slots.map(s => `<rect x="${s.x - s.w/2}" y="${s.y - s.h/2}" width="${s.w}" height="${s.h}" rx="${s.w/2}" fill="${c.hole}"/>`).join("")}
+  ${holes}
+  <rect x="-5.4" y="11.05" width="16.6" height="13.2" fill="none" stroke="var(--muted)" stroke-width=".15" stroke-dasharray=".6 .5"/>
+  <text x="-5" y="10.3" font-size="1.1" fill="var(--muted)" font-family="IBM Plex Sans, sans-serif">ESP32 (parts face)</text>`;
+}
+
+function rings(c) {
+  if (S.rings !== "on") return "";
+  const one = (x, y) => `<g fill="${c.ring}" stroke="rgba(0,0,0,.35)" stroke-width=".1">
+    <rect x="${x-3.3}" y="-4" width="6.6" height="${y+4}" rx="1"/><circle cx="${x}" cy="${y}" r="4.3"/><circle cx="${x}" cy="${y}" r="2.1" fill="${c.fin}"/></g>`;
+  return WAYS.map(x => one(x, NUT_Y)).join("") + one(GND.x, GND.y);
+}
+
+const CONCEPTS = {
+  A(c) {
+    return `
+    ${t(6.1, 23.6, 2.4, "BLADE READER", { rot: -90, ls: .32, w: 500 })}
+    ${t(10.4, 23.6, 1.0, "REV A  2026-10", { rot: -90, ls: .08 })}
+    ${t(23.4, 4.6, 1.0, "PROG")}
+    ${t(29.2, 2.6, 1.0, "DERATE TO 20 A PER WAY ABOVE 40 C")}
+    ${t(29.2, 4.6, 1.0, "M4 OUTPUT NUTS  1.0-1.2 Nm")}
+    ${t(80.4, 2.6, 1.0, "CERN-OHL-S-2.0")}
+    ${t(80.4, 4.6, 1.0, "BLADE-READER")}
+    ${t(GND.x, 14.4, 1.2, "GND", { a: "middle" })}
+    <path d="M${WAYS[0]},27.2 l-.75,1.3 h1.5 z" fill="${c.silk}"/>`;
+  },
+  B(c) {
+    const ticks = WAYS.map(x => `<line x1="${x}" y1="24.6" x2="${x}" y2="22.6" stroke="${c.silk}" stroke-width=".2"/>`).join("")
+      + SLOTS.map(x => `<line x1="${x}" y1="24.6" x2="${x}" y2="23.6" stroke="${c.silk}" stroke-width=".2"/>`).join("");
+    const deg = (x, y) => `<circle cx="${x}" cy="${y}" r=".2" fill="none" stroke="${c.silk}" stroke-width=".12"/>`;
+    return `
+    <line x1="1" y1="24.6" x2="103" y2="24.6" stroke="${c.silk}" stroke-width=".2"/>${ticks}
+    <circle cx="${WAYS[0]}" cy="21.6" r=".55" fill="${c.silk}"/>
+    ${t(6.6, 23.2, 2.8, "BLADE READER", { rot: -90, fill: c.fin, font: "Archivo, sans-serif", w: 800, stretch: 125, ls: .15 })}
+    ${t(10.3, 23.2, 1.0, "REV A", { rot: -90, ls: .1 })}
+    ${t(23.4, 4.6, 1.0, "PROG")}
+    ${t(SLOTS[0] + 1.2, 2.4, 1.0, "DERATE TO 20 A PER WAY ABOVE 40")}${deg(SLOTS[0] + 19.0, 1.75)}${t(SLOTS[0] + 19.4, 2.4, 1.0, "C")}
+    ${t(SLOTS[0] + 1.2, 4.6, 1.0, "M4 NUT 1.0-1.2 Nm")}
+    ${t(SLOTS[3] + 1.2, 2.4, 1.0, "2026-10")}
+    ${t(SLOTS[3] + 1.2, 4.6, 1.0, "CERN-OHL-S-2.0")}
+    ${t(GND.x, 14.4, 1.2, "GND", { a: "middle" })}`;
+  },
+  C(c) {
+    const chev = (x, y, solid) => solid
+      ? `<path d="M${x-1.4},${y+.9} L${x},${y-.5} L${x+1.4},${y+.9} L${x+1.4},${y+1.6} L${x},${y+.2} L${x-1.4},${y+1.6} Z" fill="${c.silk}"/>`
+      : `<path d="M${x-1.4},${y+.9} L${x},${y-.5} L${x+1.4},${y+.9} L${x+1.4},${y+1.6} L${x},${y+.2} L${x-1.4},${y+1.6} Z" fill="none" stroke="${c.silk}" stroke-width=".15"/>`;
+    const cols = WAYS.map((x, i) => [17.8, 19.8, 21.8].map(y => chev(x, y, i === 0)).join("")).join("");
+    return `
+    <rect x="1" y="24.35" width="102" height=".45" fill="${c.fin}"/>
+    ${cols}
+    ${t(57.5, 4.9, 2.6, "B L A D E   R E A D E R", { a: "middle", fill: c.fin, font: "Archivo, sans-serif", w: 700, stretch: 118, ls: .1 })}
+    ${t(23.4, 4.6, 1.0, "PROG")}
+    ${t(3.2, 23.6, 1.0, "REV A  2026-10", { rot: -90 })}
+    ${t(5.0, 23.6, 1.0, "CERN-OHL-S-2.0", { rot: -90 })}
+    ${t(6.8, 23.6, 1.0, "DERATE 20 A/WAY", { rot: -90 })}
+    ${t(8.6, 23.6, 1.0, "  ABOVE 40 C", { rot: -90 })}
+    ${t(10.4, 23.6, 1.0, "M4 NUT 1.0-1.2 Nm", { rot: -90 })}
+    ${t(GND.x, 14.4, 1.2, "GND", { a: "middle" })}`;
+  },
+};
+
+function render() {
+  const c = pal();
+  for (const k of Object.keys(CONCEPTS)) {
+    document.getElementById(k).innerHTML =
+      `<svg viewBox="-8 -4 118 45" style="--silk:${c.silk}" role="img" aria-label="Concept ${k}, ${S.mask} mask, ${S.finish}">${base(c)}${CONCEPTS[k](c)}${rings(c)}</svg>`;
+  }
+}
+document.querySelectorAll(".seg").forEach(seg => seg.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  S[seg.dataset.k] = b.dataset.v;
+  seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  render();
+}));
+render();
+</script>
