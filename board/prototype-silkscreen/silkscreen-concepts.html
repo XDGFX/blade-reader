@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Blade Reader Silkscreen Concepts</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -46,25 +47,16 @@ code { font: 13px var(--f-mono); }
 
 <div class="wrap">
   <header style="display:grid;gap:8px">
-    <span class="eyebrow">PROTOTYPE · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
+    <span class="eyebrow">PROTOTYPE · round 2 · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
     <h1>Ring-face silkscreen concepts</h1>
   </header>
 
   <section class="summary">
-    <h2>Board colour: black or white only</h2>
-    <p>On Economic PCBA, JLC does ENIG on green only. Black mask is lead-free HASL only, and white mask is leaded HASL only. Gold on either colour means Standard PCBA. So the choice is really between three options:</p>
-    <div class="tbl"><table>
-      <thead><tr><th>Option</th><th>Fixed fees / order</th><th>Accent and clamp finish</th><th>Trade-offs</th></tr></thead>
-      <tbody>
-        <tr class="rec"><td>Black, lead-free HASL, Economic</td><td>≈ $28.10 (−$0.50 vs green ENIG)</td><td>Silver solder art; tin under the clamp and nut</td><td>White silk. Revises ENIG in <em>JLC fab rules and options</em>. +2 days. HASL is less flat on the ESP32's pads (JLC assembles it routinely)</td></tr>
-        <tr><td>White, leaded HASL, Economic</td><td>≈ $28.10</td><td>Silver solder art; tin-lead under the clamp</td><td>Black silk. Leaded finish in a boat cabin. White mask shows grime and can yellow over the hot sensors</td></tr>
-        <tr><td>Black, ENIG, Standard</td><td>≈ $73–90 + panel (+$45–61)</td><td>Gold art; gold under the clamp</td><td>Board must be panelised to 70 × 70 mm (3 up) with tabs or V-cuts round the comb</td></tr>
-      </tbody>
-    </table></div>
+    <h2>Round 2: direction C, in silk, with the real logo</h2>
     <ul>
-      <li><strong>Recommendation: black, lead-free HASL, Economic.</strong> It is the cheapest option and keeps the current assembly tier. The accent turns silver instead of gold. The ring terminals going on the nuts are tin-plated themselves, so tin pads are an ordinary bolted joint. Gold would cost about $50 an order and a panel.</li>
-      <li>Under 30 % exposed finish only matters for ENIG. Every concept here exposes under 2 % of one face.</li>
-      <li>Use the toggles to see each concept in each colour and finish, with or without rings and cables fitted. Dashed outline: the ESP32 antenna on the parts face, past the board end.</li>
+      <li><strong>Settled by Cal:</strong> direction C (current path). The wordmark is the banner's own BLADE READER outline, printed in silk rather than as an opening in the mask. The finish is silver HASL, so the black, lead-free HASL, Economic recommendation stands (≈ $28.10 fixed per order).</li>
+      <li><strong>Still to settle:</strong> how much richer than C1 to go. Each variant below adds one layer to the one before. All artwork is white silk. The only exposed metal is the clamp, nut and J1 pads.</li>
+      <li>The two install facts that matter after fitting, derating and nut torque, now sit in the sensor band. That band stays visible with the rings and cables on. Try the Rings toggle.</li>
     </ul>
   </section>
 
@@ -75,43 +67,38 @@ code { font: 13px var(--f-mono); }
   </div>
 
   <section class="concept">
-    <h2>A · Ledger</h2>
-    <div class="board" id="A"></div>
+    <h2>C1 · Logo</h2>
+    <div class="board" id="C1"></div>
     <div class="notes">
-      <div><h3>Idea</h3><p>Silk only, with no mask-opening art. The wordmark runs up the way 1 ear. Install facts sit in a two-line ledger in the band behind the nuts, read while fitting and then hidden under the cables.</p></div>
-      <div><h3>Sensor 1</h3><p>A triangle on the bare finger, between the clamp pad and the panel edge, pointing at the sensor. It stays visible with the panel's screw fitted.</p></div>
-      <div><h3>Type</h3><p>Stroke font only: wordmark 2.4 mm, labels 1.0 mm on two baselines. Avoids <code>·°:%</code> by spelling “40 C” in full.</p></div>
+      <div><h3>What changed from C</h3><p>The banner's wordmark outline, 54 × 4.3 mm, centred on the strip behind the nuts. The edge hairline and chevrons are silk. The install facts move out of the way 1 ear into the sensor band, one fact between each pair of ways.</p></div>
+      <div><h3>Spec plate</h3><p>Each gap between chevron columns holds one fact: a 0.8 mm label over 1.0 mm values, centred on the slot line above. Revision, derating, nut torque, licence and the target panel.</p></div>
     </div>
   </section>
 
   <section class="concept">
-    <h2>B · Instrument scale</h2>
-    <div class="board" id="B"></div>
+    <h2>C2 · Neon sign</h2>
+    <div class="board" id="C2"></div>
     <div class="notes">
-      <div><h3>Idea</h3><p>A meter scale along the panel edge: a long tick at each way and a short one at each slot. The wordmark is a finish opening in the way 1 ear, the only accent. Text columns start on the slot lines, so the grid is the comb's own pitch.</p></div>
-      <div><h3>Sensor 1</h3><p>A filled dot above way 1's long tick, on the body. It reads as the scale's zero.</p></div>
-      <div><h3>Type</h3><p>SVG wordmark in a wide grotesque, 2.8 mm. Labels in the stroke font at 1.0 mm. ° and · are drawn as silk circles.</p></div>
+      <div><h3>Adds</h3><p>The banner's two signs. A double-line frame like a neon tube round the wordmark, and the vertical katakana sign ブレードリーダー (“blade reader”) down the way 1 ear, in its own frame. The ground nut gets an earth symbol.</p></div>
+      <div><h3>Silk limits</h3><p>The katakana is 2.3 mm Noto Sans JP ExtraBold, drawn as outlines. Its finest stroke is about 0.25 mm, above JLC's 0.15 mm minimum. The frames are 0.2 mm lines, 0.55 mm apart.</p></div>
     </div>
   </section>
 
   <section class="concept">
-    <h2>C · Current path</h2>
-    <div class="board" id="C"></div>
+    <h2>C3 · Rain</h2>
+    <div class="board" id="C3"></div>
     <div class="notes">
-      <div><h3>Idea</h3><p>Chevrons in each column show current running from finger to nut. A finish hairline over the ground bus traces the panel edge. A large letterspaced wordmark fills the band behind the nuts. It shows during install and in photos, and is covered once the cables are on.</p></div>
-      <div><h3>Sensor 1</h3><p>Way 1's chevrons are solid and the rest are outlines, so the mark is the decoration itself.</p></div>
-      <div><h3>Type</h3><p>Wordmark as a finish opening, 2.6 mm, tracked wide. Install facts are set as a rotated block in the way 1 ear.</p></div>
+      <div><h3>Adds</h3><p>The banner's rain: short 0.15 mm streaks at its angle over the empty mask, kept 0.5 mm off every pad, slot, label and frame. It fills the ears and the ends of the band, so the board reads as one scene instead of labels on black.</p></div>
+      <div><h3>Cost and risk</h3><p>Silk is free at any coverage. About 250 short lines; in <code>board/</code> they'd come from a seeded generator, not by hand. The risk is busy-ness: up close the facts need to stay readable.</p></div>
     </div>
   </section>
 
   <section class="summary questions">
     <h2>For Cal to pick</h2>
     <ol>
-      <li>Board colour and finish: black HASL (recommended), white HASL or black ENIG?</li>
-      <li>Concept: A, B, C, or a mix (say which parts)?</li>
-      <li>Sensor 1 mark: on the finger (A) or on the body (B, C)?</li>
-      <li>Torque: print “M4 NUT 1.0–1.2 Nm”? All three concepts include it. The way screw's torque is the panel's own figure, so it is left off.</li>
-      <li>J1 is drawn where it is now, under way 1's ring. It moves in <em>Move the ESP-PROG footprint out from under way 1's ring</em>, so PROG follows it.</li>
+      <li>C1, C2 or C3? Or which layers: neon frame, katakana sign, rain.</li>
+      <li>Spec plate contents. The fifth cell says “BLUE SEA ST BLADE”. Swap it for the repo URL, or leave it empty?</li>
+      <li>Is the sensor 1 mark, way 1's solid chevrons, clear enough on its own?</li>
     </ol>
   </section>
 </div>
@@ -168,52 +155,87 @@ function rings(c) {
   return WAYS.map(x => one(x, NUT_Y)).join("") + one(GND.x, GND.y);
 }
 
+const LOGO = {"d":"M136.01154068090017 136.84246970571263H82.15118291979226L92.9532602423543 124.01500288517022H126.33467974610502Q136.1615695326024 124.01500288517022 136.1615695326024 134.5920369301789Q136.1615695326024 135.64223889209464 136.01154068090017 136.84246970571263ZM135.56145412579343 141.7934218118869Q135.56145412579343 146.59434506635893 129.71032890940566 148.84477784189266Q131.8857472590883 152.5204847085978 132.03577611079055 152.7455279861512Q132.8609347951529 154.6208886324293 132.8609347951529 157.54645124062318Q132.8609347951529 157.8465089440277 132.8609347951529 159.0467397576457Q132.41084824004616 166.4731679169071 126.8597807270629 171.04904789382573Q122.58395845354876 174.72475476053089 117.55799192152338 176.0L76.600115406809 175.92498557414888L86.57703404500866 141.7934218118869ZM111.93190998268898 159.49682631275246Q111.93190998268898 157.2463935372187 110.35660703981534 156.9463358338142H98.65435660703982L97.22908251586844 162.19734564339296H108.85631852279285Q109.90652048470861 162.19734564339296 110.9192152336988 161.37218695903059Q111.93190998268898 160.5470282746682 111.93190998268898 159.49682631275246Z M212.1511829197923 136.7674552798615 209.52567801500288 124.39007501442585H190.5470282746682L179.44489324870167 136.7674552798615ZM196.39815349105598 155.59607616849394 201.42412002308137 176.15002885170225H220.2527409117138L212.97634160415464 141.64339296018466H176.44431621465668L165.56722446624352 155.4460473167917ZM163.1667628390075 136.61742642815926H144.7132140796307L148.31390652048472 124.39007501442585L166.69244085401039 124.31506058857472ZM178.9948066935949 162.94748990190422H155.9653779572995L162.11656087709176 141.4183496826313H143.73802654356606L134.58626658972878 176.0H168.71783035199076Z M276.3635314483555 136.84246970571263H224.3785343335257L232.4050778995961 124.24004616272359H262.6358915175996Q267.5868436237738 124.24004616272359 271.86266589728797 128.10328909405655Q276.13848817080213 131.96653202538948 276.3635314483555 136.84246970571263ZM277.263704558569 141.71840738603578Q277.263704558569 154.9209463358338 272.16272360069246 162.42238892094633Q268.0369301788806 168.49855741488747 264.66128101557996 171.04904789382573Q257.9099826889787 176.07501442585112 247.63300634737453 176.07501442585112H217.85227928447782L227.6791690709752 141.71840738603578H246.13271783035202L239.9065204847086 162.6474321984997Q241.70686670513564 163.39757645701096 243.732256203116 163.39757645701096Q247.48297749567226 163.39757645701096 251.53375649163303 161.07212925562607Q258.06001154068093 157.39642238892094 260.0854010386613 150.49509521061742Q261.1356030005771 146.96941719561454 261.2856318522793 141.71840738603578Z M333.07443739180616 124.24004616272359 329.77380265435664 136.84246970571263H280.864396999423L288.9659549913445 124.24004616272359ZM328.198499711483 141.71840738603578 324.597807270629 155.37103289094057H300.2181188690133L298.2677437968841 162.42238892094633H322.4223889209464L318.8216964800924 175.92498557414888H274.78822850548187L283.9399884593191 141.71840738603578Z  M444.6208886324294 136.69244085401039H386.48470859780736L394.43623773802665 124.24004616272359H437.1194460473169Q438.8447778418928 124.24004616272359 440.6076168493942 125.4402769763416Q442.37045585689566 126.6405077899596 443.27062896710913 128.29082515868436Q444.6208886324294 130.7663012117715 444.6208886324294 136.69244085401039ZM443.72071552221587 141.71840738603578Q443.1206001154069 146.2942873629544 438.46970571263716 150.34506635891518Q436.3693017888056 152.2204270051933 434.9440276976342 152.67051356030007Q436.6693594922101 155.37103289094057 436.6693594922101 158.37160992498556Q436.6693594922101 160.09694171956144 436.14425851125225 163.2475476053087Q435.84420080784776 165.19792267743796 432.24350836699375 175.92498557414888H415.4402769763417L421.44143104443174 155.29601846508945H403.73802654356615L397.3618003462205 175.92498557414888H379.8834391229083L389.9353721869591 141.71840738603578Z M499.3814195037508 124.24004616272359 496.0807847663013 136.84246970571263H447.1713791113676L455.27293710328917 124.24004616272359ZM494.50548182342766 141.71840738603578 490.90478938257365 155.37103289094057H466.525100980958L464.5747259088287 162.42238892094633H488.72937103289104L485.12867859203703 175.92498557414888H441.0952106174265L450.2469705712638 141.71840738603578Z M546.8655510675131 136.84246970571263H514.459319099827L525.261396422389 124.24004616272359H544.1650317368726ZM555.2671667628391 175.92498557414888H536.4385458742067L531.3375649163302 155.52106174264281H520.6855164454704L505.6076168493942 175.92498557414888H483.6283900750145L510.48355452971737 141.64339296018466H547.9157530294289Z M611.9030582804386 136.84246970571263H559.9180611656088L567.9446047316792 124.24004616272359H598.1754183496827Q603.126370455857 124.24004616272359 607.4021927293711 128.10328909405655Q611.6780150028852 131.96653202538948 611.9030582804386 136.84246970571263ZM612.8032313906522 141.71840738603578Q612.8032313906522 154.9209463358338 607.7022504327756 162.42238892094633Q603.5764570109637 168.49855741488747 600.2008078476631 171.04904789382573Q593.4495095210618 176.07501442585112 583.1725331794577 176.07501442585112H553.3918061165609L563.2186959030583 141.71840738603578H581.6722446624351L575.4460473167918 162.6474321984997Q577.2463935372188 163.39757645701096 579.2717830351992 163.39757645701096Q583.0225043277554 163.39757645701096 587.0732833237162 161.07212925562607Q593.5995383727641 157.39642238892094 595.6249278707445 150.49509521061742Q596.6751298326602 146.96941719561454 596.8251586843625 141.71840738603578Z M668.6139642238893 124.24004616272359 665.3133294864398 136.84246970571263H616.4039238315062L624.5054818234277 124.24004616272359ZM663.7380265435662 141.71840738603578 660.1373341027122 155.37103289094057H635.7576457010964L633.8072706289672 162.42238892094633H657.9619157530295L654.3612233121755 175.92498557414888H610.327755337565L619.4795152914023 141.71840738603578Z M729.3756491633007 136.69244085401039H671.2394691286787L679.1909982688979 124.24004616272359H721.8742065781883Q723.5995383727641 124.24004616272359 725.3623773802656 125.4402769763416Q727.125216387767 126.6405077899596 728.0253894979805 128.29082515868436Q729.3756491633007 130.7663012117715 729.3756491633007 136.69244085401039ZM728.4754760530873 141.71840738603578Q727.8753606462783 146.2942873629544 723.2244662435085 150.34506635891518Q721.124062319677 152.2204270051933 719.6987882285056 152.67051356030007Q721.4241200230815 155.37103289094057 721.4241200230815 158.37160992498556Q721.4241200230815 160.09694171956144 720.8990190421237 163.2475476053087Q720.598961338719 165.19792267743796 716.998268897865 175.92498557414888H700.1950375072131L706.196191575303 155.29601846508945H688.4927870744375L682.1165608770918 175.92498557414888H664.6381996537797L674.6901327178305 141.71840738603578Z","x0":76.6,"y0":124,"w":652.8,"h":52.2};
+const KANA = {"ブ":{"d":"M0.6700 0.0710L0.7600 0.0340Q0.7740 0.0540 0.7880 0.0780Q0.8020 0.1020 0.8150 0.1250Q0.8280 0.1480 0.8360 0.1660L0.8360 0.1660L0.7450 0.2040Q0.7350 0.1830 0.7225 0.1605Q0.7100 0.1380 0.6970 0.1150Q0.6840 0.0920 0.6700 0.0710L0.6700 0.0710ZM0.8120 0.0450L0.9030 0.0080Q0.9160 0.0270 0.9310 0.0515Q0.9460 0.0760 0.9595 0.1000Q0.9730 0.1240 0.9820 0.1410L0.9820 0.1410L0.8910 0.1800Q0.8750 0.1490 0.8540 0.1110Q0.8330 0.0730 0.8120 0.0450L0.8120 0.0450ZM0.7580 0.1550L0.8670 0.2250Q0.8600 0.2400 0.8540 0.2615Q0.8480 0.2830 0.8430 0.2990L0.8430 0.2990Q0.8340 0.3350 0.8215 0.3800Q0.8090 0.4250 0.7910 0.4740Q0.7730 0.5230 0.7485 0.5715Q0.7240 0.6200 0.6930 0.6630L0.6930 0.6630Q0.6470 0.7220 0.5865 0.7750Q0.5260 0.8280 0.4515 0.8700Q0.3770 0.9120 0.2880 0.9410L0.2880 0.9410L0.1680 0.8090Q0.2680 0.7860 0.3405 0.7505Q0.4130 0.7150 0.4665 0.6705Q0.5200 0.6260 0.5600 0.5760L0.5600 0.5760Q0.5930 0.5350 0.6155 0.4880Q0.6380 0.4410 0.6530 0.3940Q0.6680 0.3470 0.6740 0.3060L0.6740 0.3060Q0.6590 0.3060 0.6255 0.3060Q0.5920 0.3060 0.5475 0.3060Q0.5030 0.3060 0.4545 0.3060Q0.4060 0.3060 0.3605 0.3060Q0.3150 0.3060 0.2780 0.3060Q0.2410 0.3060 0.2210 0.3060L0.2210 0.3060Q0.1850 0.3060 0.1505 0.3075Q0.1160 0.3090 0.0960 0.3110L0.0960 0.3110L0.0960 0.1540Q0.1120 0.1560 0.1345 0.1580Q0.1570 0.1600 0.1810 0.1615Q0.2050 0.1630 0.2210 0.1630L0.2210 0.1630Q0.2380 0.1630 0.2675 0.1630Q0.2970 0.1630 0.3350 0.1630Q0.3730 0.1630 0.4140 0.1630Q0.4550 0.1630 0.4955 0.1630Q0.5360 0.1630 0.5715 0.1630Q0.6070 0.1630 0.6340 0.1630Q0.6610 0.1630 0.6730 0.1630L0.6730 0.1630Q0.6890 0.1630 0.7130 0.1615Q0.7370 0.1600 0.7580 0.1550L0.7580 0.1550Z","adv":1},"レ":{"d":"M0.2920 0.9290L0.1880 0.8380Q0.1980 0.8170 0.2000 0.8020Q0.2020 0.7870 0.2020 0.7690L0.2020 0.7690Q0.2020 0.7490 0.2020 0.7105Q0.2020 0.6720 0.2020 0.6215Q0.2020 0.5710 0.2020 0.5160Q0.2020 0.4610 0.2020 0.4070Q0.2020 0.3530 0.2020 0.3080Q0.2020 0.2630 0.2020 0.2340L0.2020 0.2340Q0.2020 0.2140 0.2000 0.1920Q0.1980 0.1700 0.1955 0.1500Q0.1930 0.1300 0.1890 0.1150L0.1890 0.1150L0.3630 0.1150Q0.3580 0.1460 0.3555 0.1745Q0.3530 0.2030 0.3530 0.2340L0.3530 0.2340Q0.3530 0.2590 0.3530 0.2945Q0.3530 0.3300 0.3530 0.3710Q0.3530 0.4120 0.3530 0.4560Q0.3530 0.5000 0.3530 0.5430Q0.3530 0.5860 0.3530 0.6245Q0.3530 0.6630 0.3530 0.6930Q0.3530 0.7230 0.3530 0.7410L0.3530 0.7410Q0.4110 0.7240 0.4785 0.6925Q0.5460 0.6610 0.6150 0.6180Q0.6840 0.5750 0.7465 0.5230Q0.8090 0.4710 0.8570 0.4130L0.8570 0.4130L0.9360 0.5390Q0.8310 0.6620 0.6805 0.7515Q0.5300 0.8410 0.3560 0.9000L0.3560 0.9000Q0.3460 0.9030 0.3290 0.9095Q0.3120 0.9160 0.2920 0.9290L0.2920 0.9290Z","adv":1},"ー":{"d":"M0.0890 0.5830L0.0890 0.4080Q0.1080 0.4090 0.1380 0.4110Q0.1680 0.4130 0.1995 0.4140Q0.2310 0.4150 0.2560 0.4150L0.2560 0.4150Q0.2840 0.4150 0.3215 0.4150Q0.3590 0.4150 0.4025 0.4150Q0.4460 0.4150 0.4915 0.4150Q0.5370 0.4150 0.5815 0.4150Q0.6260 0.4150 0.6660 0.4150Q0.7060 0.4150 0.7380 0.4150Q0.7700 0.4150 0.7900 0.4150L0.7900 0.4150Q0.8250 0.4150 0.8570 0.4120Q0.8890 0.4090 0.9100 0.4080L0.9100 0.4080L0.9100 0.5830Q0.8920 0.5820 0.8565 0.5795Q0.8210 0.5770 0.7900 0.5770L0.7900 0.5770Q0.7700 0.5770 0.7375 0.5770Q0.7050 0.5770 0.6650 0.5770Q0.6250 0.5770 0.5805 0.5770Q0.5360 0.5770 0.4905 0.5770Q0.4450 0.5770 0.4020 0.5770Q0.3590 0.5770 0.3210 0.5770Q0.2830 0.5770 0.2560 0.5770L0.2560 0.5770Q0.2130 0.5770 0.1660 0.5790Q0.1190 0.5810 0.0890 0.5830L0.0890 0.5830Z","adv":1},"ド":{"d":"M0.5970 0.1680L0.6890 0.1290Q0.7030 0.1500 0.7200 0.1770Q0.7370 0.2040 0.7530 0.2305Q0.7690 0.2570 0.7800 0.2810L0.7800 0.2810L0.6850 0.3220Q0.6700 0.2890 0.6570 0.2645Q0.6440 0.2400 0.6300 0.2170Q0.6160 0.1940 0.5970 0.1680L0.5970 0.1680ZM0.7320 0.1160L0.8230 0.0730Q0.8380 0.0930 0.8555 0.1190Q0.8730 0.1450 0.8895 0.1715Q0.9060 0.1980 0.9170 0.2200L0.9170 0.2200L0.8250 0.2660Q0.8090 0.2320 0.7945 0.2080Q0.7800 0.1840 0.7655 0.1625Q0.7510 0.1410 0.7320 0.1160L0.7320 0.1160ZM0.2770 0.7970L0.2770 0.7970Q0.2770 0.7760 0.2770 0.7320Q0.2770 0.6880 0.2770 0.6310Q0.2770 0.5740 0.2770 0.5115Q0.2770 0.4490 0.2770 0.3915Q0.2770 0.3340 0.2770 0.2895Q0.2770 0.2450 0.2770 0.2240L0.2770 0.2240Q0.2770 0.1950 0.2745 0.1605Q0.2720 0.1260 0.2660 0.0990L0.2660 0.0990L0.4390 0.0990Q0.4360 0.1260 0.4325 0.1580Q0.4290 0.1900 0.4290 0.2240L0.4290 0.2240Q0.4290 0.2480 0.4290 0.2940Q0.4290 0.3400 0.4290 0.3975Q0.4290 0.4550 0.4290 0.5160Q0.4290 0.5770 0.4290 0.6335Q0.4290 0.6900 0.4290 0.7335Q0.4290 0.7770 0.4290 0.7970L0.4290 0.7970Q0.4290 0.8100 0.4305 0.8365Q0.4320 0.8630 0.4345 0.8915Q0.4370 0.9200 0.4390 0.9420L0.4390 0.9420L0.2660 0.9420Q0.2710 0.9110 0.2740 0.8690Q0.2770 0.8270 0.2770 0.7970ZM0.3960 0.5160L0.3960 0.3560Q0.4460 0.3700 0.5085 0.3905Q0.5710 0.4110 0.6345 0.4340Q0.6980 0.4570 0.7535 0.4790Q0.8090 0.5010 0.8450 0.5190L0.8450 0.5190L0.7820 0.6730Q0.7400 0.6510 0.6895 0.6290Q0.6390 0.6070 0.5875 0.5860Q0.5360 0.5650 0.4865 0.5475Q0.4370 0.5300 0.3960 0.5160L0.3960 0.5160Z","adv":1},"リ":{"d":"M0.6430 0.0990L0.8100 0.0990Q0.8090 0.1200 0.8080 0.1460Q0.8070 0.1720 0.8070 0.2030L0.8070 0.2030Q0.8070 0.2300 0.8070 0.2690Q0.8070 0.3080 0.8070 0.3465Q0.8070 0.3850 0.8070 0.4110L0.8070 0.4110Q0.8070 0.4890 0.7985 0.5475Q0.7900 0.6060 0.7750 0.6510Q0.7600 0.6960 0.7375 0.7310Q0.7150 0.7660 0.6870 0.7960L0.6870 0.7960Q0.6540 0.8320 0.6110 0.8605Q0.5680 0.8890 0.5240 0.9090Q0.4800 0.9290 0.4430 0.9410L0.4430 0.9410L0.3270 0.8180Q0.4040 0.8010 0.4635 0.7715Q0.5230 0.7420 0.5690 0.6940L0.5690 0.6940Q0.5940 0.6670 0.6100 0.6385Q0.6260 0.6100 0.6345 0.5760Q0.6430 0.5420 0.6465 0.4995Q0.6500 0.4570 0.6500 0.4010L0.6500 0.4010Q0.6500 0.3740 0.6500 0.3365Q0.6500 0.2990 0.6500 0.2625Q0.6500 0.2260 0.6500 0.2030L0.6500 0.2030Q0.6500 0.1720 0.6480 0.1460Q0.6460 0.1200 0.6430 0.0990L0.6430 0.0990ZM0.1870 0.1080L0.3470 0.1080Q0.3460 0.1260 0.3445 0.1430Q0.3430 0.1600 0.3430 0.1850L0.3430 0.1850Q0.3430 0.1970 0.3430 0.2225Q0.3430 0.2480 0.3430 0.2810Q0.3430 0.3140 0.3430 0.3500Q0.3430 0.3860 0.3430 0.4205Q0.3430 0.4550 0.3430 0.4820Q0.3430 0.5090 0.3430 0.5240L0.3430 0.5240Q0.3430 0.5430 0.3445 0.5690Q0.3460 0.5950 0.3470 0.6140L0.3470 0.6140L0.1860 0.6140Q0.1880 0.6000 0.1895 0.5730Q0.1910 0.5460 0.1910 0.5230L0.1910 0.5230Q0.1910 0.5080 0.1910 0.4810Q0.1910 0.4540 0.1910 0.4195Q0.1910 0.3850 0.1910 0.3495Q0.1910 0.3140 0.1910 0.2810Q0.1910 0.2480 0.1910 0.2225Q0.1910 0.1970 0.1910 0.1850L0.1910 0.1850Q0.1910 0.1720 0.1900 0.1490Q0.1890 0.1260 0.1870 0.1080L0.1870 0.1080Z","adv":1},"ダ":{"d":"M0.6960 0.0900L0.7830 0.0540Q0.7960 0.0720 0.8105 0.0975Q0.8250 0.1230 0.8385 0.1480Q0.8520 0.1730 0.8620 0.1910L0.8620 0.1910L0.7740 0.2280Q0.7580 0.1980 0.7370 0.1580Q0.7160 0.1180 0.6960 0.0900L0.6960 0.0900ZM0.8170 0.0430L0.9040 0.0080Q0.9170 0.0270 0.9320 0.0520Q0.9470 0.0770 0.9610 0.1015Q0.9750 0.1260 0.9840 0.1440L0.9840 0.1440L0.8970 0.1810Q0.8820 0.1500 0.8595 0.1105Q0.8370 0.0710 0.8170 0.0430L0.8170 0.0430ZM0.3130 0.5340L0.4110 0.4330Q0.4570 0.4590 0.5120 0.4945Q0.5670 0.5300 0.6240 0.5690Q0.6810 0.6080 0.7310 0.6435Q0.7810 0.6790 0.8140 0.7070L0.8140 0.7070L0.7090 0.8320Q0.6760 0.8020 0.6270 0.7620Q0.5780 0.7220 0.5215 0.6800Q0.4650 0.6380 0.4100 0.5995Q0.3550 0.5610 0.3130 0.5340L0.3130 0.5340ZM0.7730 0.1970L0.8850 0.2660Q0.8760 0.2810 0.8660 0.3015Q0.8560 0.3220 0.8490 0.3430L0.8490 0.3430Q0.8340 0.3870 0.8085 0.4425Q0.7830 0.4980 0.7480 0.5565Q0.7130 0.6150 0.6680 0.6710L0.6680 0.6710Q0.5970 0.7600 0.4975 0.8400Q0.3980 0.9200 0.2540 0.9760L0.2540 0.9760L0.1250 0.8650Q0.2330 0.8310 0.3100 0.7865Q0.3870 0.7420 0.4425 0.6930Q0.4980 0.6440 0.5400 0.5950L0.5400 0.5950Q0.5720 0.5570 0.6020 0.5100Q0.6320 0.4630 0.6540 0.4165Q0.6760 0.3700 0.6840 0.3340L0.6840 0.3340L0.3550 0.3340L0.4050 0.2090L0.6800 0.2090Q0.7040 0.2090 0.7300 0.2055Q0.7560 0.2020 0.7730 0.1970L0.7730 0.1970ZM0.3970 0.0600L0.5560 0.1100Q0.5370 0.1380 0.5185 0.1700Q0.5000 0.2020 0.4900 0.2180L0.4900 0.2180Q0.4550 0.2800 0.4015 0.3485Q0.3480 0.4170 0.2830 0.4800Q0.2180 0.5430 0.1490 0.5920L0.1490 0.5920L0.0300 0.5000Q0.1180 0.4450 0.1790 0.3855Q0.2400 0.3260 0.2810 0.2705Q0.3220 0.2150 0.3470 0.1720L0.3470 0.1720Q0.3600 0.1530 0.3745 0.1205Q0.3890 0.0880 0.3970 0.0600L0.3970 0.0600Z","adv":1}};
+
+// Banner wordmark, scaled to width w, top-left at (x, y).
+function logo(x, y, w) {
+  const k = w / LOGO.w;
+  return `<path d="${LOGO.d}" fill="var(--silk)" transform="translate(${x} ${y}) scale(${k}) translate(${-LOGO.x0} ${-LOGO.y0})"/>`;
+}
+// Vertical katakana: em size s, column centre cx, first glyph top y, pitch p.
+function kana(cx, y, s, p) {
+  return [..."ブレードリーダー"].map((ch, i) => {
+    const rot = ch === "ー" ? " rotate(90 .5 .5)" : "";
+    return `<path d="${KANA[ch].d}" fill="var(--silk)" transform="translate(${cx - s / 2} ${y + i * p}) scale(${s})${rot}"/>`;
+  }).join("");
+}
+const frame = (x, y, w, h, r) => [0, .55].map(i =>
+  `<rect x="${x + i}" y="${y + i}" width="${w - 2 * i}" height="${h - 2 * i}" rx="${Math.max(r - i, .2)}" fill="none" stroke="var(--silk)" stroke-width=".2"/>`).join("");
+const deg = (x, y) => `<circle cx="${x}" cy="${y}" r=".2" fill="none" stroke="var(--silk)" stroke-width=".12"/>`;
+
+const chevron = (x, y, solid) => {
+  const d = `M${x-1.4},${y+.9} L${x},${y-.5} L${x+1.4},${y+.9} L${x+1.4},${y+1.6} L${x},${y+.2} L${x-1.4},${y+1.6} Z`;
+  return solid ? `<path d="${d}" fill="var(--silk)"/>` : `<path d="${d}" fill="none" stroke="var(--silk)" stroke-width=".15"/>`;
+};
+const CELLS = [
+  ["REVISION", "A", "2026-10"],
+  ["DERATE", "20 A PER WAY", "ABOVE 40  C"],
+  ["OUTPUT NUT", "M4", "1.0-1.2 Nm"],
+  ["LICENCE", "CERN-OHL-S-2.0", ""],
+  ["FOR PANEL", "BLUE SEA", "ST BLADE"],
+];
+function plate() {
+  return CELLS.map(([l, a, b], i) => {
+    const x = SLOTS[i];
+    return t(x, 18.4, .8, l, { a: "middle", ls: .12 }) +
+      `<line x1="${x - 3}" y1="18.95" x2="${x + 3}" y2="18.95" stroke="var(--silk)" stroke-width=".15"/>` +
+      t(x, 20.6, 1, a, { a: "middle" }) + t(x, 22.3, 1, b, { a: "middle" });
+  }).join("") + deg(SLOTS[1] + 2.4, 21.75);
+}
+const common = () => `
+  <line x1="1" y1="24.6" x2="103" y2="24.6" stroke="var(--silk)" stroke-width=".2"/>
+  ${WAYS.map((x, i) => [17.3, 19.4, 21.5].map(y => chevron(x, y, i === 0)).join("")).join("")}
+  ${plate()}
+  ${t(23.2, 4.6, 1.0, "PROG")}`;
+
+const earth = (x, y) => `<g stroke="var(--silk)" stroke-width=".2" stroke-linecap="round">
+  <line x1="${x}" y1="${y}" x2="${x}" y2="${y + 1}"/><line x1="${x - 1}" y1="${y + 1}" x2="${x + 1}" y2="${y + 1}"/>
+  <line x1="${x - .65}" y1="${y + 1.45}" x2="${x + .65}" y2="${y + 1.45}"/><line x1="${x - .3}" y1="${y + 1.9}" x2="${x + .3}" y2="${y + 1.9}"/></g>`;
+
+// Areas the rain must stay out of, as [x0, y0, x1, y1] boxes and [cx, cy, r] circles.
+function keepouts() {
+  const boxes = [
+    [27.9, 0, 87.1, 7], [2.9, .8, 9.7, 24.0], [14.5, 1.2, 26.5, 6.6], [92, 11, 104, 16],
+    [0, 23.8, 104, 26], ...WAYS.map(x => [x - 2.2, 15.5, x + 2.2, 24]), ...SLOTS.map(x => [x - 4.4, 17.2, x + 4.4, 23]),
+    ...G.slots.map(s => [s.x - 1.4, s.y - 4.5, s.x + 1.4, s.y + 4.5]),
+  ];
+  const circles = G.holes.map(h => [h.x, h.y, h.r + .6]);
+  return { boxes, circles };
+}
+function rain() {
+  let s = 7;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const { boxes, circles } = keepouts();
+  const hit = (x, y) => boxes.some(([a, b, c, d]) => x > a && x < c && y > b && y < d) ||
+    circles.some(([cx, cy, r]) => (x - cx) ** 2 + (y - cy) ** 2 < r * r);
+  const out = [];
+  for (let i = 0; i < 1400 && out.length < 260; i++) {
+    const x = .8 + rnd() * 102.4, y = .8 + rnd() * 22.6, len = .8 + rnd() * 1.6;
+    const x2 = x - .28 * len, y2 = y + len;
+    if (hit(x, y) || hit(x2, y2) || hit((x + x2) / 2, (y + y2) / 2)) continue;
+    out.push(`<line x1="${x.toFixed(2)}" y1="${y.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}"/>`);
+  }
+  return `<g clip-path="url(#brd)" stroke="var(--silk)" stroke-width=".15" stroke-linecap="round" opacity=".9">${out.join("")}</g>`;
+}
+
 const CONCEPTS = {
-  A(c) {
-    return `
-    ${t(6.1, 23.6, 2.4, "BLADE READER", { rot: -90, ls: .32, w: 500 })}
-    ${t(10.4, 23.6, 1.0, "REV A  2026-10", { rot: -90, ls: .08 })}
-    ${t(23.4, 4.6, 1.0, "PROG")}
-    ${t(29.2, 2.6, 1.0, "DERATE TO 20 A PER WAY ABOVE 40 C")}
-    ${t(29.2, 4.6, 1.0, "M4 OUTPUT NUTS  1.0-1.2 Nm")}
-    ${t(80.4, 2.6, 1.0, "CERN-OHL-S-2.0")}
-    ${t(80.4, 4.6, 1.0, "BLADE-READER")}
-    ${t(GND.x, 14.4, 1.2, "GND", { a: "middle" })}
-    <path d="M${WAYS[0]},27.2 l-.75,1.3 h1.5 z" fill="${c.silk}"/>`;
-  },
-  B(c) {
-    const ticks = WAYS.map(x => `<line x1="${x}" y1="24.6" x2="${x}" y2="22.6" stroke="${c.silk}" stroke-width=".2"/>`).join("")
-      + SLOTS.map(x => `<line x1="${x}" y1="24.6" x2="${x}" y2="23.6" stroke="${c.silk}" stroke-width=".2"/>`).join("");
-    const deg = (x, y) => `<circle cx="${x}" cy="${y}" r=".2" fill="none" stroke="${c.silk}" stroke-width=".12"/>`;
-    return `
-    <line x1="1" y1="24.6" x2="103" y2="24.6" stroke="${c.silk}" stroke-width=".2"/>${ticks}
-    <circle cx="${WAYS[0]}" cy="21.6" r=".55" fill="${c.silk}"/>
-    ${t(6.6, 23.2, 2.8, "BLADE READER", { rot: -90, fill: c.fin, font: "Archivo, sans-serif", w: 800, stretch: 125, ls: .15 })}
-    ${t(10.3, 23.2, 1.0, "REV A", { rot: -90, ls: .1 })}
-    ${t(23.4, 4.6, 1.0, "PROG")}
-    ${t(SLOTS[0] + 1.2, 2.4, 1.0, "DERATE TO 20 A PER WAY ABOVE 40")}${deg(SLOTS[0] + 19.0, 1.75)}${t(SLOTS[0] + 19.4, 2.4, 1.0, "C")}
-    ${t(SLOTS[0] + 1.2, 4.6, 1.0, "M4 NUT 1.0-1.2 Nm")}
-    ${t(SLOTS[3] + 1.2, 2.4, 1.0, "2026-10")}
-    ${t(SLOTS[3] + 1.2, 4.6, 1.0, "CERN-OHL-S-2.0")}
-    ${t(GND.x, 14.4, 1.2, "GND", { a: "middle" })}`;
-  },
-  C(c) {
-    const chev = (x, y, solid) => solid
-      ? `<path d="M${x-1.4},${y+.9} L${x},${y-.5} L${x+1.4},${y+.9} L${x+1.4},${y+1.6} L${x},${y+.2} L${x-1.4},${y+1.6} Z" fill="${c.silk}"/>`
-      : `<path d="M${x-1.4},${y+.9} L${x},${y-.5} L${x+1.4},${y+.9} L${x+1.4},${y+1.6} L${x},${y+.2} L${x-1.4},${y+1.6} Z" fill="none" stroke="${c.silk}" stroke-width=".15"/>`;
-    const cols = WAYS.map((x, i) => [17.8, 19.8, 21.8].map(y => chev(x, y, i === 0)).join("")).join("");
-    return `
-    <rect x="1" y="24.35" width="102" height=".45" fill="${c.fin}"/>
-    ${cols}
-    ${t(57.5, 4.9, 2.6, "B L A D E   R E A D E R", { a: "middle", fill: c.fin, font: "Archivo, sans-serif", w: 700, stretch: 118, ls: .1 })}
-    ${t(23.4, 4.6, 1.0, "PROG")}
-    ${t(3.2, 23.6, 1.0, "REV A  2026-10", { rot: -90 })}
-    ${t(5.0, 23.6, 1.0, "CERN-OHL-S-2.0", { rot: -90 })}
-    ${t(6.8, 23.6, 1.0, "DERATE 20 A/WAY", { rot: -90 })}
-    ${t(8.6, 23.6, 1.0, "  ABOVE 40 C", { rot: -90 })}
-    ${t(10.4, 23.6, 1.0, "M4 NUT 1.0-1.2 Nm", { rot: -90 })}
-    ${t(GND.x, 14.4, 1.2, "GND", { a: "middle" })}`;
-  },
+  C1: () => `${common()}${logo(30.5, 1.35, 54)}
+    ${t(GND.x, 14.4, 1.2, "GND", { a: "middle" })}`,
+  C2: () => `${common()}${logo(31.5, 1.42, 52)}${frame(28.5, .4, 58, 6.2, 1.2)}
+    ${frame(3.4, 1.2, 5.8, 22.4, 1)}${kana(6.3, 2.5, 2.3, 2.55)}
+    ${earth(96.6, 12.2)}${t(98.2, 14.2, 1.2, "GND")}`,
+  C3: () => CONCEPTS.C2() + rain(),
 };
 
 function render() {
