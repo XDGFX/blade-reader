@@ -26,14 +26,14 @@ const CELLS = [
   ["DERATE", "20 A PER WAY", "ABOVE 40  C"],
   ["OUTPUT NUT", "M4", "1.0-1.2 Nm"],
   ["LICENCE", "CERN-OHL-S-2.0", ""],
-  ["FOR PANEL", "BLUE SEA", "ST BLADE"],
+  ["SOURCE", "github.com/xdgfx", "/blade-reader", .9],
 ];
 function plate() {
-  return CELLS.map(([l, a, b], i) => {
+  return CELLS.map(([l, a, b, s = 1], i) => {
     const x = SLOTS[i];
     return t(x, 18.4, .8, l, { a: "middle", ls: .12 }) +
       `<line x1="${x - 3}" y1="18.95" x2="${x + 3}" y2="18.95" stroke="var(--silk)" stroke-width=".15"/>` +
-      t(x, 20.6, 1, a, { a: "middle" }) + t(x, 22.3, 1, b, { a: "middle" });
+      t(x, 20.6, s, a, { a: "middle" }) + t(x, 22.3, s, b, { a: "middle" });
   }).join("") + deg(SLOTS[1] + 2.4, 21.75);
 }
 const common = () => `
@@ -46,38 +46,51 @@ const earth = (x, y) => `<g stroke="var(--silk)" stroke-width=".2" stroke-lineca
   <line x1="${x}" y1="${y}" x2="${x}" y2="${y + 1}"/><line x1="${x - 1}" y1="${y + 1}" x2="${x + 1}" y2="${y + 1}"/>
   <line x1="${x - .65}" y1="${y + 1.45}" x2="${x + .65}" y2="${y + 1.45}"/><line x1="${x - .3}" y1="${y + 1.9}" x2="${x + .3}" y2="${y + 1.9}"/></g>`;
 
-// Areas the rain must stay out of, as [x0, y0, x1, y1] boxes and [cx, cy, r] circles.
-function keepouts() {
+// Logo, 58 wide: x 28.5–86.5, y 1.1–5.74.
+const LOGO_BOX = [28.5, 1.1, 86.5, 5.74];
+const grow = ([a, b, c, d], m) => [a - m, b - m, c + m, d + m];
+
+// Rain stays out of these boxes [x0, y0, x1, y1] and circles [cx, cy, r], and 0.6 inside the
+// board edge. `ears` keeps it to the two ears and the band's ends; otherwise it fills every
+// open field of mask.
+function keepouts(ears) {
   const boxes = [
-    [27.9, 0, 87.1, 7], [2.9, .8, 9.7, 24.0], [14.5, 1.2, 26.5, 6.6], [92, 11, 104, 16],
-    [0, 23.8, 104, 26], ...WAYS.map(x => [x - 2.2, 15.5, x + 2.2, 24]), ...SLOTS.map(x => [x - 4.4, 17.2, x + 4.4, 23]),
-    ...G.slots.map(s => [s.x - 1.4, s.y - 4.5, s.x + 1.4, s.y + 4.5]),
+    grow(LOGO_BOX, .5), [2.9, .7, 9.7, 24.1], [14.6, 1.0, 26.3, 6.7], [94.8, 11.0, 102.6, 15.0], [0, 23.9, 104, 26],
+    ...(ears
+      ? [[13.4, 0, 91, 26]]
+      : [...WAYS.map(x => [x - 2.1, 15.6, x + 2.1, 24]), ...SLOTS.map(x => [x - 4.3, 17.4, x + 4.3, 23]),
+         ...G.slots.map(s => [s.x - 1.35, s.y - 4.5, s.x + 1.35, s.y + 4.5])]),
   ];
   const circles = G.holes.map(h => [h.x, h.y, h.r + .6]);
   return { boxes, circles };
 }
-function rain() {
-  let s = 7;
+// Even rain: one streak per cell of a staggered grid, jittered a little, all at the banner's angle.
+function rain(ears) {
+  let s = 11;
   const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
-  const { boxes, circles } = keepouts();
-  const hit = (x, y) => boxes.some(([a, b, c, d]) => x > a && x < c && y > b && y < d) ||
+  const { boxes, circles } = keepouts(ears);
+  const inside = (x, y) => x > .6 && x < 103.4 && y > .6 && y > x - 92.08 + .85;
+  const hit = (x, y) => !inside(x, y) || boxes.some(([a, b, c, d]) => x > a && x < c && y > b && y < d) ||
     circles.some(([cx, cy, r]) => (x - cx) ** 2 + (y - cy) ** 2 < r * r);
   const out = [];
-  for (let i = 0; i < 1400 && out.length < 260; i++) {
-    const x = .8 + rnd() * 102.4, y = .8 + rnd() * 22.6, len = .8 + rnd() * 1.6;
-    const x2 = x - .28 * len, y2 = y + len;
-    if (hit(x, y) || hit(x2, y2) || hit((x + x2) / 2, (y + y2) / 2)) continue;
-    out.push(`<line x1="${x.toFixed(2)}" y1="${y.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}"/>`);
+  const DX = 1.15, DY = 2.3;
+  for (let row = 0; row * DY < 24; row++) {
+    for (let col = 0; col * DX < 104; col++) {
+      const x = col * DX + (row % 2) * DX / 2 + (rnd() - .5) * .5, y = row * DY + (rnd() - .5) * 1.2;
+      const len = 1.3 + rnd() * .5, x2 = x - .28 * len, y2 = y + len;
+      if ([0, .25, .5, .75, 1].some(f => hit(x + (x2 - x) * f, y + (y2 - y) * f))) continue;
+      out.push(`<line x1="${x.toFixed(2)}" y1="${y.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}"/>`);
+    }
   }
-  return `<g clip-path="url(#brd)" stroke="var(--silk)" stroke-width=".15" stroke-linecap="round" opacity=".9">${out.join("")}</g>`;
+  return `<g stroke="var(--silk)" stroke-width=".15" stroke-linecap="round">${out.join("")}</g>`;
 }
 
-const CONCEPTS = {
-  C1: () => `${common()}${logo(30.5, 1.35, 54)}
-    ${t(GND.x, 14.4, 1.2, "GND", { a: "middle" })}`,
-  C2: () => `${common()}${logo(31.5, 1.42, 52)}${frame(28.5, .4, 58, 6.2, 1.2)}
+const C2 = () => `${common()}${logo(LOGO_BOX[0], LOGO_BOX[1], LOGO_BOX[2] - LOGO_BOX[0])}
     ${frame(3.4, 1.2, 5.8, 22.4, 1)}${kana(6.3, 2.5, 2.3, 2.55)}
-    ${earth(96.6, 12.2)}${t(98.2, 14.2, 1.2, "GND")}`,
-  C3: () => CONCEPTS.C2() + rain(),
+    ${earth(96.6, 12.2)}${t(98.2, 14.2, 1.2, "GND")}`;
+const CONCEPTS = {
+  C2,
+  C3a: () => C2() + rain(true),
+  C3b: () => C2() + rain(false),
 };
 
