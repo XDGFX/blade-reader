@@ -11,6 +11,7 @@ import { CD4051BM96 } from "./imports/CD4051BM96"
 import { ESP32_C3_MINI_1_H4X } from "./imports/ESP32_C3_MINI_1_H4X"
 import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
 import { SS210 } from "./imports/SS210"
+import { GroundCopper, WayCopper } from "./lib/copper"
 import { ProgLock } from "./lib/parts"
 import { Supply } from "./lib/supply"
 import {
@@ -30,6 +31,8 @@ const ESP_GND_PINS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
 ].map((i) => `GND${i}`)
 
+const Q1 = { x: -0.6, y: 3.5 }
+
 const R_10K = { resistance: "10k", footprint: "0402", supplierPartNumbers: { jlcpcb: ["C25744"] } }
 
 export default () => (
@@ -39,6 +42,7 @@ export default () => (
     nominalTraceWidth="0.25mm"
     minViaHoleDiameter="0.3mm"
     minViaPadDiameter="0.6mm"
+    defaultViaTenting="top_and_bottom_tented"
   >
     <schematicsection name="Ways" displayName="Ways 1–6" />
     <schematicsection name="Supply" displayName="Supply" />
@@ -52,6 +56,10 @@ export default () => (
       {WAYS.map((n) => (
         <Way key={n} n={n} x={wayX(n)} schX={-30} schY={15 - (n - 1) * WAY_PITCH} />
       ))}
+      {WAYS.map((n) => (
+        <WayCopper key={n} n={n} cx={wayX(n)} />
+      ))}
+      <GroundCopper q1={Q1} />
 
       {/* Ground: a ring-terminated wire from this nut to the panel's negative bus. */}
       <SMTSO4040CTJ
@@ -145,8 +153,8 @@ export default () => (
       />
       <transistor
         name="Q1"
-        pcbX={-0.6}
-        pcbY={3.5}
+        pcbX={Q1.x}
+        pcbY={Q1.y}
         pcbRotation={90}
         type="npn"
         footprint="sot23"

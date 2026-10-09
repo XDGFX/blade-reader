@@ -51,7 +51,7 @@ export const ESP_ROW_Y = ESP.y + 7.42
 // back to the body's corner.
 const CHAMFER = END
 
-type Pt = { x: number; y: number }
+export type Pt = { x: number; y: number }
 
 // Quarter arc from angle a0 to a1 (degrees), centre (cx, cy).
 const arc = (cx: number, cy: number, r: number, a0: number, a1: number, steps = 4): Pt[] =>
@@ -60,7 +60,8 @@ const arc = (cx: number, cy: number, r: number, a0: number, a1: number, steps = 
     return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }
   })
 
-const finger = (cx: number): Pt[] => {
+/** Finger `cx`'s edge from the body edge at its +X root, round the tip, to its −X root. */
+export const finger = (cx: number): Pt[] => {
   const l = cx + FINGER_WIDTH / 2 // right side, walked first (outline runs towards −X)
   const r = cx - FINGER_WIDTH / 2
   const tip = -FINGER_LENGTH

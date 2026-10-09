@@ -29,7 +29,7 @@ const CAP_Y = 7.7
 // Ways 1–3 shift their sensor band towards the way 1 end and ways 4–6 towards the way 6
 // end, which opens room for the temperature transistor between ways 3 and 4.
 const BAND_SHIFT = 0.5
-const bandX = (n: number, x: number) => x + (n <= 3 ? BAND_SHIFT : -BAND_SHIFT)
+export const bandX = (n: number, x: number) => x + (n <= 3 ? BAND_SHIFT : -BAND_SHIFT)
 
 export const Way = ({ n, x, schX, schY }: { n: number; x: number; schX: number; schY: number }) => (
   <>
