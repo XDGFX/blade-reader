@@ -26,7 +26,7 @@ const CELLS = [
   ["DERATE", "20 A PER WAY", "ABOVE 40  C"],
   ["OUTPUT NUT", "M4", "1.0-1.2 Nm"],
   ["LICENCE", "CERN-OHL-S-2.0", ""],
-  ["SOURCE", "GITHUB.COM/XDGFX", "/BLADE-READER", .9],
+  ["SOURCE", "XDGFX", "/BLADE-READER"],
 ];
 function plate() {
   return CELLS.map(([l, a, b, s = 1], i) => {

@@ -57,7 +57,7 @@ code { font: 13px var(--f-mono); }
       <li><strong>Board:</strong> black mask, white silk, lead-free HASL, Economic PCBA, about $28.10 fixed per order. This replaces ENIG for the clamp and nut pads.</li>
       <li><strong>Wordmark:</strong> the banner's BLADE READER outline in silk, 58 × 4.6 mm, centred behind the nuts. No frame.</li>
       <li><strong>Way 1 ear:</strong> the vertical katakana sign ブレードリーダー, 2.3 mm Noto Sans JP ExtraBold outlines in a double-line frame. PROG beside J1.</li>
-      <li><strong>Sensor band:</strong> three chevrons per column pointing finger to nut. Way 1's are filled as the sensor 1 mark. A spec plate sits in the five gaps between the columns: REVISION A 2026-10 · DERATE 20 A PER WAY ABOVE 40 °C · OUTPUT NUT M4 1.0–1.2 Nm · LICENCE CERN-OHL-S-2.0 · SOURCE GITHUB.COM/XDGFX/BLADE-READER.</li>
+      <li><strong>Sensor band:</strong> three chevrons per column pointing finger to nut. Way 1's are filled as the sensor 1 mark. A spec plate sits in the five gaps between the columns: REVISION A 2026-10 · DERATE 20 A PER WAY ABOVE 40 °C · OUTPUT NUT M4 1.0–1.2 Nm · LICENCE CERN-OHL-S-2.0 · SOURCE XDGFX /BLADE-READER.</li>
       <li><strong>Fingers:</strong> the banner quote, two 1.0 mm lines per finger, between the panel edge and the clamp pad.</li>
       <li><strong>Way 6 ear:</strong> an earth symbol and GND above the ground nut. Along the chamfer at 45°, "DESIGNED IN / AUSTRALIA" right-aligned against the Southern Cross as dots, 2.0 mm tall.</li>
       <li><strong>Not used:</strong> the edge hairline, rain, a frame round the wordmark, and gold.</li>
@@ -160,7 +160,7 @@ const CELLS = [
   ["DERATE", "20 A PER WAY", "ABOVE 40  C"],
   ["OUTPUT NUT", "M4", "1.0-1.2 Nm"],
   ["LICENCE", "CERN-OHL-S-2.0", ""],
-  ["SOURCE", "GITHUB.COM/XDGFX", "/BLADE-READER", .9],
+  ["SOURCE", "XDGFX", "/BLADE-READER"],
 ];
 function plate() {
   return CELLS.map(([l, a, b, s = 1], i) => {
