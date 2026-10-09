@@ -36,9 +36,8 @@ function plate() {
       t(x, 20.6, s, a, { a: "middle" }) + t(x, 22.3, s, b, { a: "middle" });
   }).join("") + deg(SLOTS[1] + 2.4, 21.75);
 }
-const common = () => `
-  <line x1="1" y1="24.6" x2="103" y2="24.6" stroke="var(--silk)" stroke-width=".2"/>
-  ${WAYS.map((x, i) => [17.3, 19.4, 21.5].map(y => chevron(x, y, i === 0)).join("")).join("")}
+const common = (rows = [17.3, 19.4, 21.5]) => `
+  ${WAYS.map((x, i) => rows.map(y => chevron(x, y, i === 0)).join("")).join("")}
   ${plate()}
   ${t(23.2, 4.6, 1.0, "PROG")}`;
 
@@ -85,12 +84,17 @@ function rain(ears) {
   return `<g stroke="var(--silk)" stroke-width=".15" stroke-linecap="round">${out.join("")}</g>`;
 }
 
-const C2 = () => `${common()}${logo(LOGO_BOX[0], LOGO_BOX[1], LOGO_BOX[2] - LOGO_BOX[0])}
+// The edge line: one line of text centred on the ways' span, baseline 0.6 mm above the panel edge.
+const edge = (txt, s, ls) => t(52.01, 24.9, s, txt, { a: "middle", ls });
+const TAGLINE = "CURRENT ON EVERY WAY OF A BLADE FUSE PANEL";
+const QUOTE = "I'VE SEEN THINGS YOU PEOPLE WOULDN'T BELIEVE. FRIDGES DRAWING AMPS OFF THE SHOULDER OF ORION.";
+
+const C2 = (rows) => `${common(rows)}${logo(LOGO_BOX[0], LOGO_BOX[1], LOGO_BOX[2] - LOGO_BOX[0])}
     ${frame(3.4, 1.2, 5.8, 22.4, 1)}${kana(6.3, 2.5, 2.3, 2.55)}
     ${earth(96.6, 12.2)}${t(98.2, 14.2, 1.2, "GND")}`;
 const CONCEPTS = {
-  C2,
-  C3a: () => C2() + rain(true),
-  C3b: () => C2() + rain(false),
+  C2a: () => C2([17.3, 19.25, 21.2, 23.15]),
+  C2b: () => C2() + edge(TAGLINE, 1.3, .42),
+  C2c: () => C2() + edge(QUOTE, 1.0, .12),
 };
 
