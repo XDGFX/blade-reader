@@ -4,16 +4,20 @@
 // PCB coordinates, in mm: Y runs outboard from the panel edge (Y 0), so the fingers are at
 // negative Y. X runs along the strip, centred, as seen from the parts face (tscircuit's top),
 // so way 1 is at +X. The design docs give x from the way 1 end looking at the ring face:
-// X = 40.08 − x. The outline is symmetric in X, so only the parts' sides are affected.
+// X = 40.08 − x. The outline's bounding box is symmetric in X.
 
 import { Fragment } from "react"
 
 export const WAY_PITCH_PCB = 13.36
 export const LENGTH = 6 * WAY_PITCH_PCB // 80.16, the ways' span
-export const DEPTH = 29
+export const DEPTH = 25.5
 
-/** Body past each end way, along the panel's side. */
-export const END = 10
+/** Output nut centres. */
+export const NUT_Y = 14
+const NUT_PAD_RADIUS = 4.65
+
+/** Ear past each end way, along the panel's side: room for the ESP32's 11.2 mm on the board. */
+export const END = WAY_PITCH_PCB / 2 + NUT_PAD_RADIUS + 0.6
 
 const HALF = LENGTH / 2
 /** X of the board's way 1 end; the way 6 end is at −BOARD_HALF. */
@@ -29,16 +33,23 @@ export const wayX = (n: number) => HALF - WAY_PITCH_PCB / 2 - (n - 1) * WAY_PITC
 /** The way screw's hole centre, 8.52 mm into the panel. */
 export const CLAMP_Y = -8.52
 
-/** Output nut centres. */
-export const NUT_Y = 14
+/**
+ * The ground nut, low in the way 6 ear, a pitch along from way 6. Its centre is about 16 from
+ * way 6's nut, so the rings are further apart than two ways' rings.
+ */
+export const GROUND_NUT = { x: wayX(6) - WAY_PITCH_PCB, y: NUT_PAD_RADIUS + 0.6 }
 
-// ESP32-C3-MINI-1 at the way 1 end, lying along the strip (rotated −90°), antenna past the end
-// of the board. Its 11.2 mm pad area is on the board, reaching 1.2 mm over the end of way 1's
-// column above the nut. 3V3, EN, IO2 and IO3 face the outboard edge, with their small parts
-// in a row above the module. The footprint's origin is 5.6 mm from that area's ends.
-export const ESP = { x: BOARD_HALF - 5.6, y: DEPTH - 8.05 }
-/** Centre Y of the row of 0402s between the module and the outboard edge, 0.3 mm clear of it. */
-export const ESP_ROW_Y = DEPTH - 0.62
+// ESP32-C3-MINI-1 at the bottom of the way 1 ear, lying along the strip (rotated −90°), antenna
+// past the end of the board, its courtyard 1 mm clear of the panel edge. Its 11.2 mm pad area is
+// on the board. 3V3, EN, IO2 and IO3 face up, with their small parts in a row above the module.
+// The footprint's origin is 5.6 mm from that area's ends.
+export const ESP = { x: BOARD_HALF - 5.6, y: 1.0 + 6.85 }
+/** Centre Y of the row of 0402s just above the module. */
+export const ESP_ROW_Y = ESP.y + 7.42
+
+// The way 6 ear holds only the ground nut, low down, so its outboard corner is chamfered at 45°
+// back to the body's corner.
+const CHAMFER = END
 
 type Pt = { x: number; y: number }
 
@@ -66,20 +77,21 @@ const finger = (cx: number): Pt[] => {
 export const Y_SHIFT = -(DEPTH - FINGER_LENGTH) / 2
 
 const COMB: Pt[] = [
-  { x: -BOARD_HALF, y: DEPTH },
+  { x: -BOARD_HALF + CHAMFER, y: DEPTH },
   { x: BOARD_HALF, y: DEPTH },
   { x: BOARD_HALF, y: 0 },
   ...[1, 2, 3, 4, 5, 6].flatMap((n) => finger(wayX(n))),
   { x: -BOARD_HALF, y: 0 },
+  { x: -BOARD_HALF, y: DEPTH - CHAMFER },
 ]
 
 export const OUTLINE = COMB.map(({ x, y }) => ({ x, y: y + Y_SHIFT }))
 
-/** Divider slots: centre Y and length, y 10–20. Parts stay 1.5 mm clear of them. */
-export const SLOT = { y: 15, length: 10 }
+/** Divider slots: centre Y and length, y 10–18. Parts stay 1.5 mm clear of them. */
+export const SLOT = { y: 14, length: 8 }
 const SLOT_XS = [1, 2, 3, 4, 5].map((k) => HALF - k * WAY_PITCH_PCB)
 
-/** Divider slots between the nuts, for an optional clip-on printed divider. */
+/** Divider slots between the ways' nuts. */
 export const CombFeatures = () => (
   <>
     {SLOT_XS.map((x) => (
