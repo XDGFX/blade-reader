@@ -1,0 +1,124 @@
+// Supply: way diodes (in way.tsx) → VSUP → 1 A fuse → VIN → SMBJ33A → LMR51610X → 3V3.
+// Circuit and values from docs/research/way-monitor-power-supply.md, "Recommended circuit
+// and BOM", with its D1 replaced by the six way diodes and its F1 by the fuse (issue #6).
+
+import { A_0466001_NRHF } from "../imports/A_0466001_NRHF"
+import { LMR51610XDBVR } from "../imports/LMR51610XDBVR"
+import { SMBJ33A } from "../imports/SMBJ33A"
+import { SWPA6045S220MT } from "../imports/SWPA6045S220MT"
+
+export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
+  <>
+    {/* Inrush: about 2.3 µF of input capacitance charged from 29.2 V puts roughly
+        0.002 A²s through the fuse, 5 % of its 0.0423 A²s melting I²t. The buck's
+        2.3 ms soft-start keeps the output capacitors' charge current below 0.1 A. */}
+    <A_0466001_NRHF
+      name="F1"
+      schX={schX}
+      schY={schY}
+      schSectionName="Supply"
+      connections={{ pin1: "net.VSUP", pin2: "net.VIN" }}
+    />
+    <SMBJ33A
+      name="D1"
+      schX={schX + 2.5}
+      schY={schY - 2}
+      schSectionName="Supply"
+      connections={{ C: "net.VIN", A: "net.GND" }}
+    />
+    <capacitor
+      name="C1"
+      capacitance="2.2uF"
+      footprint="1206"
+      maxVoltageRating="50V"
+      supplierPartNumbers={{ jlcpcb: ["C50254"] }}
+      schX={schX + 4}
+      schY={schY - 2}
+      schRotation={-90}
+      schSectionName="Supply"
+      connections={{ pin1: "net.VIN", pin2: "net.GND" }}
+    />
+    <capacitor
+      name="C2"
+      capacitance="100nF"
+      footprint="0805"
+      maxVoltageRating="100V"
+      supplierPartNumbers={{ jlcpcb: ["C28233"] }}
+      schX={schX + 5.5}
+      schY={schY - 2}
+      schRotation={-90}
+      schSectionName="Supply"
+      connections={{ pin1: "net.VIN", pin2: "net.GND" }}
+    />
+    <LMR51610XDBVR
+      name="U3"
+      schX={schX + 9}
+      schY={schY}
+      schSectionName="Supply"
+      connections={{
+        VIN: "net.VIN",
+        // TI SLUSEY1B p. 3: EN can be tied to VIN.
+        EN: "net.VIN",
+        GND: "net.GND",
+        SW: "net.SW",
+        FB: "net.FB",
+      }}
+    />
+    <capacitor
+      name="C3"
+      capacitance="100nF"
+      footprint="0402"
+      supplierPartNumbers={{ jlcpcb: ["C307331"] }}
+      schX={schX + 12}
+      schY={schY + 2}
+      schRotation={180}
+      schSectionName="Supply"
+      connections={{ pin1: ".U3 > .CB", pin2: "net.SW" }}
+    />
+    <SWPA6045S220MT
+      name="L1"
+      schX={schX + 14}
+      schY={schY}
+      schSectionName="Supply"
+      connections={{ pin1: "net.SW", pin2: "net.V3V3" }}
+    />
+    {/* 0.8 V × (1 + 75k / 24k) = 3.30 V */}
+    <resistor
+      name="R1"
+      resistance="75k"
+      footprint="0402"
+      supplierPartNumbers={{ jlcpcb: ["C25798"] }}
+      schX={schX + 16}
+      schY={schY - 2}
+      schRotation={90}
+      schSectionName="Supply"
+      connections={{ pin2: "net.V3V3", pin1: "net.FB" }}
+    />
+    <resistor
+      name="R2"
+      resistance="24k"
+      footprint="0402"
+      supplierPartNumbers={{ jlcpcb: ["C25769"] }}
+      schX={schX + 16}
+      schY={schY - 4.5}
+      schRotation={90}
+      schSectionName="Supply"
+      connections={{ pin2: "net.FB", pin1: "net.GND" }}
+    />
+    {[4, 5].map((i) => (
+      <capacitor
+        key={i}
+        name={`C${i}`}
+        capacitance="22uF"
+        footprint="1206"
+        maxVoltageRating="25V"
+        supplierPartNumbers={{ jlcpcb: ["C12891"] }}
+        schX={schX + 14 + i * 1.5}
+        schY={schY - 2}
+        schRotation={-90}
+        schSectionName="Supply"
+        connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
+      />
+    ))}
+  </>
+)
