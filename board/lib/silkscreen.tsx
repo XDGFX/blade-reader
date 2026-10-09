@@ -312,7 +312,8 @@ const ringFace = (): Art =>
 
 const PARTS_WAYS = RING_WAYS.map((x) => 2 * BOARD_HALF - x)
 
-// Gaff's origami unicorn, standing in the way 6 ear clear of the chamfer.
+// Gaff's origami unicorn, about 4 mm tall, in the triangle between the chamfer, U4 and C4/C5.
+// Turned 12° so its horn runs along the chamfer.
 const UNICORN: [number, number][][] = [
   [[1.6, 6], [7.2, 4.8], [7.8, 7.3], [2.2, 7.6], [1.6, 6]], // body
   [[1.6, 6], [7.8, 7.3]], // fold
@@ -343,6 +344,7 @@ const PIN1_DOTS: [number, number][] = [
   [49.66, 24.301], // Q1
   [102.42, 12.65], // U1
   [82.743, 1.08], // J1, outboard of pin 1
+  [12.755, 7.11], // U4, outboard of pin 1
 ]
 /** Cathode bars, 0.25 wide, beside the cathode pad on the side away from the anode. */
 const CATHODE_BARS: [number, number, number, number][] = [
@@ -354,7 +356,7 @@ const CATHODE_BARS: [number, number, number, number][] = [
 ]
 /** Designators, 0.8 mm, only where polarity or pin 1 matters: start of the baseline. */
 const DESIGNATORS: [string, number, number][] = [
-  ["U1", 91.325, 17.922],
+  ["U1", 91.325, 16.3],
   ["U2", 97.53, 1.36],
   ["U3", 25.2, 4.373],
   ["D1", 38.53, 6.494],
@@ -366,7 +368,8 @@ const DESIGNATORS: [string, number, number][] = [
   ["D15", 26.4, 24.994],
   ["D16", 13.04, 24.994],
   ["LED1", 87.25, 1.472],
-  ["Q1", 50.93, 19.65],
+  ["Q1", 50.8, 19.65],
+  ["U4", 13.45, 8.1],
 ]
 
 const bar = (x0: number, y0: number, x1: number, y1: number) => {
@@ -384,7 +387,7 @@ const bar = (x0: number, y0: number, x1: number, y1: number) => {
 
 const partsFace = (): Art =>
   join(
-    unicorn(3.1, 7.7, 0.62),
+    mapArt(unicorn(0, 0, 0.36), turn(5.9, 2.8, 12)),
     logo(50.6, 0.9, 17),
     // JLC replaces this with the order number.
     roundRect(35.4, 0.45, 13.4, 1.3, 0.5, SW),
