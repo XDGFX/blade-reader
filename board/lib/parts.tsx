@@ -5,7 +5,7 @@ import { Fragment } from "react"
 
 const fingerPins = { pin1: ["LINE"] } as const
 
-// The finger's clamp point: a 5.4 mm round hole for the way's #8 screw, bare ENIG on both
+// The finger's clamp point: a 5.4 mm round hole for the way's #8 screw, bare HASL on both
 // faces. The ring is the #8 washer's Ø8.13 footprint, which leaves 0.4 mm to the finger tip
 // and 0.7 mm to its sides. The rest of the finger's copper belongs to the pours.
 export const Finger = (props: ChipProps<typeof fingerPins>) => (

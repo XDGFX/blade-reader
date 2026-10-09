@@ -13,6 +13,7 @@ import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
 import { SS210 } from "./imports/SS210"
 import { GroundCopper, WayCopper } from "./lib/copper"
 import { ProgLock } from "./lib/parts"
+import { Silkscreen } from "./lib/silkscreen"
 import { Supply } from "./lib/supply"
 import {
   CombFeatures,
@@ -39,6 +40,8 @@ export default () => (
   <board
     outline={OUTLINE}
     thickness="1.6mm"
+    solderMaskColor="black"
+    silkscreenColor="white"
     nominalTraceWidth="0.25mm"
     minViaHoleDiameter="0.3mm"
     minViaPadDiameter="0.6mm"
@@ -388,5 +391,7 @@ export default () => (
         />
       ))}
     </group>
+
+    <Silkscreen />
   </board>
 )

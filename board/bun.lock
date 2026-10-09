@@ -5,6 +5,7 @@
     "": {
       "name": "blade-reader-board",
       "devDependencies": {
+        "@tscircuit/alphabet": "0.0.25",
         "@types/earcut": "3.0.0",
         "@types/react": "^19.3.0",
         "earcut": "3.0.1",

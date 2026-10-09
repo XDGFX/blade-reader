@@ -24,7 +24,7 @@ export const WAY_PITCH = 6
 // IP+ → nut. The diode sits beside IP−, anode down on the line copper. Its cathode (VSUP)
 // leaves up the −X side of the nut and VOUT up the +X side, one trace each between the nut
 // pad and the slot. VCC, GND and the sensor's caps sit above its signal pins.
-const SENSOR = { dx: 1.0, y: 4.0 }
+export const SENSOR = { dx: 1.0, y: 4.0 }
 const DIODE = { dx: -4.35, y: 4.8 }
 const CAP_Y = 7.7
 // Ways 1–3 shift their sensor band towards the way 1 end and ways 4–6 towards the way 6
