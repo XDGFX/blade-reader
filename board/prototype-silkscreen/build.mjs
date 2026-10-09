@@ -2,7 +2,7 @@
 import fs from "fs"
 const r = f => fs.readFileSync(f, "utf8")
 const tpl = r("template.html")
-const head = tpl.slice(0, tpl.indexOf('<section class="summary">')).replace("PROTOTYPE · issue #24", "PROTOTYPE · round 8 · issue #24")
+const head = tpl.slice(0, tpl.indexOf('<section class="summary">')).replace("PROTOTYPE · issue #24", "PROTOTYPE · round 9 · issue #24")
 const scr = tpl.slice(tpl.indexOf("<script>"), tpl.indexOf("const CONCEPTS = {"))
 const tail = tpl.slice(tpl.indexOf("function render() {"))
 let out = '<meta charset="utf-8">\n' + head + r("v2-body.html") + scr + r("v2-concepts.js") + tail

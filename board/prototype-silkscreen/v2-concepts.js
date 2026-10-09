@@ -190,17 +190,29 @@ function flag(ox, oy, L) {
 }
 
 // The Southern Cross as seen in the sky: RA, Dec, silk radius.
-const CRUX = { gacrux: [187.79, -57.11, .36], acrux: [186.65, -63.10, .42], mimosa: [191.93, -59.69, .4],
-  imai: [183.79, -58.75, .28], ginan: [185.34, -60.40, .2] };
-const crux = (ox, oy, k) => Object.values(CRUX).map(([ra, dec, r]) =>
-  star(ox + (191.93 - ra) * k, oy + (-57.11 - dec) * k, r * 1.2, 7, .5)).join("");
+// Radii are relative; `crux` scales them. RA is foreshortened by cos(Dec) so the cross keeps its
+// real shape: tall, Gacrux at the top, Mimosa on the left as on the flag.
+const CRUX = { gacrux: [187.79, -57.11, .9], acrux: [186.65, -63.10, 1], mimosa: [191.93, -59.69, .95],
+  imai: [183.79, -58.75, .75], ginan: [185.34, -60.40, .5] };
+const COS_CRUX = Math.cos(60 * Math.PI / 180);
+const crux = (ox, oy, h, dots) => {
+  const k = h / 6.0;
+  return Object.values(CRUX).map(([ra, dec, r]) => {
+    const x = ox + (191.93 - ra) * COS_CRUX * k, y = oy + (-57.11 - dec) * k;
+    return dots ? `<circle cx="${x.toFixed(3)}" cy="${y.toFixed(3)}" r="${(r * .2).toFixed(3)}" fill="var(--silk)"/>`
+      : star(x, y, r * .3, r < .6 ? 5 : 7, .5);
+  }).join("");
+};
+// "DESIGNED IN / AUSTRALIA" right-aligned against the cross; the cross spans the text's cap height.
+const designedIn = dots => t(5.8, 1.3, .8, "DESIGNED IN", { ls: .05, a: "end" }) + t(5.8, 2.5, .8, "AUSTRALIA", { ls: .05, a: "end" }) +
+  crux(6.5, .6, 2.0, dots);
 
 // A block laid along the chamfer: local x runs down the chamfer, local y into the board. Its
 // origin is 0.9 mm in from the chamfer, where the chamfer is y = x − 92.08.
 const alongChamfer = (x0, body) => `<g transform="translate(${x0} ${(x0 - 92.08 + .9 * Math.SQRT2).toFixed(3)}) rotate(45)">${body}</g>`;
 
 const CONCEPTS = {
-  AF: () => C2() + fingers() + alongChamfer(91.6, t(0, 1.9, .8, "DESIGNED IN", { ls: .05 }) + flag(6.5, 0, 6.0)),
-  AC: () => C2() + fingers() + alongChamfer(91.6, t(0, 1.3, .8, "DESIGNED IN", { ls: .05 }) + t(0, 2.5, .8, "AUSTRALIA", { ls: .05 }) + crux(6.9, .45, .5)),
+  ACd: () => C2() + fingers() + alongChamfer(93.6, designedIn(true)),
+  ACs: () => C2() + fingers() + alongChamfer(93.6, designedIn(false)),
 };
 
