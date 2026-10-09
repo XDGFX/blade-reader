@@ -167,9 +167,40 @@ function readout(ox, oy) {
     ${t(ox + 6.9, oy + 2.7, 1.0, "A", { a: "end" })}`;
 }
 
+// An n-pointed star, outer radius r, inner radius r·q, one point straight up.
+const star = (cx, cy, r, n = 7, q = .45) => `<polygon points="${Array.from({ length: 2 * n }, (_, i) => {
+  const a = Math.PI * i / n - Math.PI / 2, rr = i % 2 ? r * q : r;
+  return `${(cx + rr * Math.cos(a)).toFixed(3)},${(cy + rr * Math.sin(a)).toFixed(3)}`; }).join(" ")}" fill="var(--silk)"/>`;
+
+// The Australian flag at length L (2:1), top-left at (ox, oy). The field is mask; the Union Jack's
+// crosses and the stars are silk. Star positions follow the Flags Act layout.
+function flag(ox, oy, L) {
+  const H = L / 2, cw = L / 2, ch = H / 2, s = v => v.toFixed(3);
+  const P = (fx, fy) => [ox + fx * L, oy + fy * H];
+  const sc = [[3 / 4, 5 / 6, 1 / 14], [3 / 4, 1 / 6, 1 / 14], [0.6153, 0.4167, 1 / 14], [0.8634, 0.3708, 1 / 14], [0.7998, 0.5521, 1 / 24]];
+  return `<rect x="${s(ox)}" y="${s(oy)}" width="${s(L)}" height="${s(H)}" fill="none" stroke="var(--silk)" stroke-width=".15"/>
+    <g stroke="var(--silk)" stroke-linecap="butt">
+      <line x1="${s(ox)}" y1="${s(oy)}" x2="${s(ox + cw)}" y2="${s(oy + ch)}" stroke-width="${s(ch * .2)}"/>
+      <line x1="${s(ox + cw)}" y1="${s(oy)}" x2="${s(ox)}" y2="${s(oy + ch)}" stroke-width="${s(ch * .2)}"/>
+      <line x1="${s(ox + cw / 2)}" y1="${s(oy)}" x2="${s(ox + cw / 2)}" y2="${s(oy + ch)}" stroke-width="${s(ch * .33)}"/>
+      <line x1="${s(ox)}" y1="${s(oy + ch / 2)}" x2="${s(ox + cw)}" y2="${s(oy + ch / 2)}" stroke-width="${s(ch * .33)}"/>
+    </g>
+    ${star(...P(.25, .75), H * .15)}
+    ${sc.map(([fx, fy, d], i) => star(...P(fx, fy), H * d * 1.4, i === 4 ? 5 : 7)).join("")}`;
+}
+
+// The Southern Cross as seen in the sky: RA, Dec, silk radius.
+const CRUX = { gacrux: [187.79, -57.11, .36], acrux: [186.65, -63.10, .42], mimosa: [191.93, -59.69, .4],
+  imai: [183.79, -58.75, .28], ginan: [185.34, -60.40, .2] };
+const crux = (ox, oy, k) => Object.values(CRUX).map(([ra, dec, r]) =>
+  star(ox + (191.93 - ra) * k, oy + (-57.11 - dec) * k, r * 1.2, 7, .5)).join("");
+
+// A block laid along the chamfer: local x runs down the chamfer, local y into the board. Its
+// origin is 0.9 mm in from the chamfer, where the chamfer is y = x − 92.08.
+const alongChamfer = (x0, body) => `<g transform="translate(${x0} ${(x0 - 92.08 + .9 * Math.SQRT2).toFixed(3)}) rotate(45)">${body}</g>`;
+
 const CONCEPTS = {
-  O: () => C2() + fingers() + orion(90.9, 1.8, .44),
-  F: () => C2() + fingers() + fridge(91.4, 5.9),
-  D: () => C2() + fingers() + readout(90.9, 7.4),
+  AF: () => C2() + fingers() + alongChamfer(91.6, t(0, 1.9, .8, "DESIGNED IN", { ls: .05 }) + flag(6.5, 0, 6.0)),
+  AC: () => C2() + fingers() + alongChamfer(91.6, t(0, 1.3, .8, "DESIGNED IN", { ls: .05 }) + t(0, 2.5, .8, "AUSTRALIA", { ls: .05 }) + crux(6.9, .45, .5)),
 };
 

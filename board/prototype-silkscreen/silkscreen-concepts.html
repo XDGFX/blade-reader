@@ -47,16 +47,15 @@ code { font: 13px var(--f-mono); }
 
 <div class="wrap">
   <header style="display:grid;gap:8px">
-    <span class="eyebrow">PROTOTYPE · round 7 · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
+    <span class="eyebrow">PROTOTYPE · round 8 · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
     <h1>Ring-face silkscreen concepts</h1>
   </header>
 
   <section class="summary">
-    <h2>Round 7: the chamfer corner, second try</h2>
+    <h2>Round 8: designed in Australia, along the chamfer</h2>
     <ul>
       <li><strong>Settled:</strong> C2 with the quote across the fingers, white silk on black, lead-free HASL, Economic.</li>
-      <li><strong>Not it:</strong> the unicorn, a rain patch and chamfer stripes.</li>
-      <li><strong>This round:</strong> three ideas drawn from the board's own story. One finishes the quote, one shows what the quote is about, and one shows what the board does.</li>
+      <li><strong>This round:</strong> a small maker's mark in the chamfer corner, set at 45° so it runs parallel to the cut edge, 0.9 mm in from it. The text is 0.8 mm, JLC's smallest recommended size.</li>
     </ul>
   </section>
 
@@ -67,33 +66,26 @@ code { font: 13px var(--f-mono); }
   </div>
 
   <section class="concept">
-    <h2>O · The shoulder of Orion</h2>
-    <div class="board" id="O"></div>
+    <h2>AF · Designed in, then the flag</h2>
+    <div class="board" id="AF"></div>
     <div class="notes">
-      <div><h3>Idea</h3><p>The constellation at the end of the quote, just above “OF ORION.” on finger 6. The eight main stars sit at their real positions, sized by brightness, joined by 0.15 mm lines. Betelgeuse, the shoulder, has a ring round it. About 4.5 × 8.6 mm, fitted under the chamfer.</p></div>
+      <div><h3>Idea</h3><p>“DESIGNED IN” followed by the Australian flag, 6 × 3 mm. The blue field is the black mask, inside a silk outline. The Union Jack's crosses and the seven stars are silk, in the Flags Act layout.</p></div>
+      <div><h3>Silk limits</h3><p>The smaller stars are about 0.3 mm across, so they'll print as dots. The Union Jack's diagonals are 0.15 mm, JLC's minimum line width. It reads as the flag, but not in fine detail.</p></div>
     </div>
   </section>
 
   <section class="concept">
-    <h2>F · A fridge drawing amps</h2>
-    <div class="board" id="F"></div>
+    <h2>AC · Designed in Australia, with the Southern Cross</h2>
+    <div class="board" id="AC"></div>
     <div class="notes">
-      <div><h3>Idea</h3><p>A small current-over-time trace of a fridge compressor cycling. Each cycle has an inrush spike, then a running plateau, then off. That's the kind of thing a strip actually records, and it's the punchline of the quote. Axes labelled A and t. About 6 × 5 mm.</p></div>
-    </div>
-  </section>
-
-  <section class="concept">
-    <h2>D · Unlit readout</h2>
-    <div class="board" id="D"></div>
-    <div class="notes">
-      <div><h3>Idea</h3><p>A three-digit seven-segment display with every segment drawn, reading 88.8 A, like the per-way displays in the banner. It shows what the board does at a glance. About 7.2 × 3.2 mm.</p></div>
+      <div><h3>Idea</h3><p>“DESIGNED IN / AUSTRALIA” on two lines, then the Southern Cross at its real star positions, sized by brightness. It's the flag's own stars, without the detail that silk can't print well.</p></div>
     </div>
   </section>
 
   <section class="summary questions">
     <h2>For Cal to pick</h2>
     <ol>
-      <li>Orion, the fridge trace, the readout, or still none of these?</li>
+      <li>The flag or the Southern Cross?</li>
     </ol>
   </section>
 </div>
@@ -319,10 +311,41 @@ function readout(ox, oy) {
     ${t(ox + 6.9, oy + 2.7, 1.0, "A", { a: "end" })}`;
 }
 
+// An n-pointed star, outer radius r, inner radius r·q, one point straight up.
+const star = (cx, cy, r, n = 7, q = .45) => `<polygon points="${Array.from({ length: 2 * n }, (_, i) => {
+  const a = Math.PI * i / n - Math.PI / 2, rr = i % 2 ? r * q : r;
+  return `${(cx + rr * Math.cos(a)).toFixed(3)},${(cy + rr * Math.sin(a)).toFixed(3)}`; }).join(" ")}" fill="var(--silk)"/>`;
+
+// The Australian flag at length L (2:1), top-left at (ox, oy). The field is mask; the Union Jack's
+// crosses and the stars are silk. Star positions follow the Flags Act layout.
+function flag(ox, oy, L) {
+  const H = L / 2, cw = L / 2, ch = H / 2, s = v => v.toFixed(3);
+  const P = (fx, fy) => [ox + fx * L, oy + fy * H];
+  const sc = [[3 / 4, 5 / 6, 1 / 14], [3 / 4, 1 / 6, 1 / 14], [0.6153, 0.4167, 1 / 14], [0.8634, 0.3708, 1 / 14], [0.7998, 0.5521, 1 / 24]];
+  return `<rect x="${s(ox)}" y="${s(oy)}" width="${s(L)}" height="${s(H)}" fill="none" stroke="var(--silk)" stroke-width=".15"/>
+    <g stroke="var(--silk)" stroke-linecap="butt">
+      <line x1="${s(ox)}" y1="${s(oy)}" x2="${s(ox + cw)}" y2="${s(oy + ch)}" stroke-width="${s(ch * .2)}"/>
+      <line x1="${s(ox + cw)}" y1="${s(oy)}" x2="${s(ox)}" y2="${s(oy + ch)}" stroke-width="${s(ch * .2)}"/>
+      <line x1="${s(ox + cw / 2)}" y1="${s(oy)}" x2="${s(ox + cw / 2)}" y2="${s(oy + ch)}" stroke-width="${s(ch * .33)}"/>
+      <line x1="${s(ox)}" y1="${s(oy + ch / 2)}" x2="${s(ox + cw)}" y2="${s(oy + ch / 2)}" stroke-width="${s(ch * .33)}"/>
+    </g>
+    ${star(...P(.25, .75), H * .15)}
+    ${sc.map(([fx, fy, d], i) => star(...P(fx, fy), H * d * 1.4, i === 4 ? 5 : 7)).join("")}`;
+}
+
+// The Southern Cross as seen in the sky: RA, Dec, silk radius.
+const CRUX = { gacrux: [187.79, -57.11, .36], acrux: [186.65, -63.10, .42], mimosa: [191.93, -59.69, .4],
+  imai: [183.79, -58.75, .28], ginan: [185.34, -60.40, .2] };
+const crux = (ox, oy, k) => Object.values(CRUX).map(([ra, dec, r]) =>
+  star(ox + (191.93 - ra) * k, oy + (-57.11 - dec) * k, r * 1.2, 7, .5)).join("");
+
+// A block laid along the chamfer: local x runs down the chamfer, local y into the board. Its
+// origin is 0.9 mm in from the chamfer, where the chamfer is y = x − 92.08.
+const alongChamfer = (x0, body) => `<g transform="translate(${x0} ${(x0 - 92.08 + .9 * Math.SQRT2).toFixed(3)}) rotate(45)">${body}</g>`;
+
 const CONCEPTS = {
-  O: () => C2() + fingers() + orion(90.9, 1.8, .44),
-  F: () => C2() + fingers() + fridge(91.4, 5.9),
-  D: () => C2() + fingers() + readout(90.9, 7.4),
+  AF: () => C2() + fingers() + alongChamfer(91.6, t(0, 1.9, .8, "DESIGNED IN", { ls: .05 }) + flag(6.5, 0, 6.0)),
+  AC: () => C2() + fingers() + alongChamfer(91.6, t(0, 1.3, .8, "DESIGNED IN", { ls: .05 }) + t(0, 2.5, .8, "AUSTRALIA", { ls: .05 }) + crux(6.9, .45, .5)),
 };
 
 function render() {
