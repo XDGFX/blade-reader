@@ -17,7 +17,12 @@ and none of the words it says to avoid.
 - Issues live in this repo's GitHub Issues, driven with `gh`.
 - No raster images except generated board renders under `docs/assets/`.
 - Prices are USD, with the LCSC part code and the date checked. JLC basic, preferred and
-  extended status matters: every extended part type costs about $3 per order.
+  extended status matters: every extended part type costs about $3 per order. That is under $1 a
+  board at 4 boards, so weigh it against what avoiding it costs (board area, routing, accuracy,
+  a harder install or first flash) and say both sides; don't let the fee decide on its own.
+- Soft targets give way: the moment one blocks placement or routing, drop it there and say so.
+  Don't treat a figure from an earlier iteration as a limit unless `docs/design.md` gives a
+  reason it still holds.
 - Choices for Cal open with an executive summary holding everything needed to decide: options,
   costs, trade-offs and a recommendation.
 
