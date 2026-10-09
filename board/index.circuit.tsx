@@ -86,12 +86,12 @@ export default () => (
         schY={0}
         schSectionName="Adc"
         connections={{
-          X0: "net.WAY1_SENSE",
-          X1: "net.WAY2_SENSE",
-          X2: "net.WAY3_SENSE",
-          X3: "net.WAY4_SENSE",
-          X4: "net.WAY5_SENSE",
-          X5: "net.WAY6_SENSE",
+          X0: "net.S1_SENSE",
+          X1: "net.S2_SENSE",
+          X2: "net.S3_SENSE",
+          X3: "net.S4_SENSE",
+          X4: "net.S5_SENSE",
+          X5: "net.S6_SENSE",
           X6: "net.TEMP",
           X7: "net.VSUP_SENSE",
           X: "net.ADC",

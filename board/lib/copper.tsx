@@ -76,8 +76,8 @@ export const WayCopper = ({ n, cx }: { n: number; cx: number }) => {
   // Pad edges from b, the column's shifted centre: diode x −5.35 to −3.35 (anode y 1.6–3.6,
   // cathode 6–8), IP pins −2.5 to −0.7, signal pins 2.7 to 4.5, caps 2.28 to 4.92 (y 6.92–8.48).
   const b = bandX(n, cx)
-  const line = `net.WAY${n}_LINE`
-  const load = `net.WAY${n}_LOAD`
+  const line = `net.S${n}_LINE`
+  const load = `net.S${n}_LOAD`
   const tip = finger(cx).filter((p) => p.y < BARE_FROM + 0.3)
   const nutVias = [-135, -112, -90, -68, -45].map((a) => ({
     x: cx + 5.1 * Math.cos((a * Math.PI) / 180),

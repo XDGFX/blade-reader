@@ -10,8 +10,9 @@ import { Finger } from "./parts"
 export const WAY_PITCH = 6
 
 /**
- * Way `n` (1–6). Net `WAYn_LINE` is the fuse panel's side (the finger), `WAYn_LOAD` the
- * load's side (the output nut) and `WAYn_SENSE` the sensor output to the multiplexer.
+ * The column for sensor `n` (S1–S6). Net `Sn_LINE` is the fuse panel's side (the finger),
+ * `Sn_LOAD` the load's side (the output nut) and `Sn_SENSE` the sensor output to the
+ * multiplexer.
  *
  * The sensor is fitted backwards: load current runs IP− → IP+, so VOUT falls from 1.65 V as
  * load rises. The ESP32-C3's ADC is accurate only up to about 2.5 V, which positive current
@@ -43,18 +44,18 @@ export const Way = ({ n, x, schX, schY }: { n: number; x: number; schX: number; 
       schY={schY}
       schSectionName="Ways"
       connections={{
-        IP_NEG1: `net.WAY${n}_LINE`,
-        IP_NEG2: `net.WAY${n}_LINE`,
-        IP_POS1: `net.WAY${n}_LOAD`,
-        IP_POS2: `net.WAY${n}_LOAD`,
+        IP_NEG1: `net.S${n}_LINE`,
+        IP_NEG2: `net.S${n}_LINE`,
+        IP_POS1: `net.S${n}_LOAD`,
+        IP_POS2: `net.S${n}_LOAD`,
         VCC: "net.V3V3",
         GND: "net.GND",
-        VOUT: `net.WAY${n}_SENSE`,
+        VOUT: `net.S${n}_SENSE`,
       }}
     />
     <SMTSO4040CTJ name={`N${n}`} pcbX={x} pcbY={NUT_Y} schX={schX + 12} schY={schY} schSectionName="Ways" />
-    <trace from={`.W${n} > .LINE`} to={`net.WAY${n}_LINE`} />
-    <trace from={`.N${n} > .pin1`} to={`net.WAY${n}_LOAD`} />
+    <trace from={`.W${n} > .LINE`} to={`net.S${n}_LINE`} />
+    <trace from={`.N${n} > .pin1`} to={`net.S${n}_LOAD`} />
 
     {/* Tapped before the sensor, so the strip's own draw stays out of the reading. */}
     <SS210
@@ -66,7 +67,7 @@ export const Way = ({ n, x, schX, schY }: { n: number; x: number; schX: number; 
       schY={schY + 2}
       schRotation={90}
       schSectionName="Ways"
-      connections={{ anode: `net.WAY${n}_LINE`, cathode: "net.VSUP" }}
+      connections={{ anode: `net.S${n}_LINE`, cathode: "net.VSUP" }}
     />
 
     <capacitor
@@ -109,7 +110,7 @@ export const Way = ({ n, x, schX, schY }: { n: number; x: number; schX: number; 
       schY={schY - 2}
       schRotation={-90}
       schSectionName="Ways"
-      connections={{ pin1: `net.WAY${n}_SENSE`, pin2: "net.GND" }}
+      connections={{ pin1: `net.S${n}_SENSE`, pin2: "net.GND" }}
     />
   </>
 )
