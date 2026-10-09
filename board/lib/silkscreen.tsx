@@ -299,7 +299,7 @@ const ringFace = (): Art =>
       ),
     ),
     alongChamfer(
-      93.6,
+      95.4,
       join(
         text(5.1, 1.3, 0.8, "DESIGNED IN", { anchor: "end" }),
         text(5.1, 2.5, 0.8, "AUSTRALIA", { anchor: "end" }),
@@ -313,7 +313,6 @@ const ringFace = (): Art =>
 const PARTS_WAYS = RING_WAYS.map((x) => 2 * BOARD_HALF - x)
 
 // Gaff's origami unicorn, about 4 mm tall, in the triangle between the chamfer, U4 and C4/C5.
-// Turned 12° so its horn runs along the chamfer.
 const UNICORN: [number, number][][] = [
   [[1.6, 6], [7.2, 4.8], [7.8, 7.3], [2.2, 7.6], [1.6, 6]], // body
   [[1.6, 6], [7.8, 7.3]], // fold
@@ -387,7 +386,7 @@ const bar = (x0: number, y0: number, x1: number, y1: number) => {
 
 const partsFace = (): Art =>
   join(
-    mapArt(unicorn(0, 0, 0.36), turn(5.9, 2.8, 12)),
+    unicorn(5.69, 3.06, 0.36),
     logo(50.6, 0.9, 17),
     // JLC replaces this with the order number.
     roundRect(35.4, 0.45, 13.4, 1.3, 0.5, SW),
