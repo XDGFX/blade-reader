@@ -45,7 +45,7 @@ tr.rec td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 </style>
 <div class="wrap">
   <header style="display:grid;gap:8px">
-    <div class="eyebrow">PROTOTYPE · issue #28 · rendered from board/dist/index/circuit.json at 0719b85</div>
+    <div class="eyebrow">PROTOTYPE · final · issue #28 · rendered from board/dist/index/circuit.json at 0719b85</div>
     <h1>Parts-face silkscreen</h1>
     <p>The parts face (tscircuit's top layer) as seen from that side, without mirroring: way 1 on the right, the fingers pointing down. Every pad, hole and courtyard is from the real build. Black mask, white silk, lead-free HASL, as settled for the ring face.</p>
   </header>
@@ -57,13 +57,13 @@ tr.rec td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
       <thead><tr><th>Concept</th><th>Carries</th><th>For</th><th>Against</th></tr></thead>
       <tbody>
         <tr><td>Stock</td><td>Whatever tscircuit's footprints draw</td><td>No work</td><td>Designators sit on pads and part bodies, D11–D16's cathode bar is on the copper, the ESP32 outline runs off the board. Not acceptable as is</td></tr>
-        <tr class="rec"><td>A · Datasheet</td><td>Every designator that fits, pin-1 dots, cathode bars, test-pad net names, REV A, the JLC marker</td><td>Most useful at bring-up: find any part on the BOM, probe a test pad by name</td><td>Busy at 0.8 mm. No sense of design on its own</td></tr>
-        <tr><td>B · Echo</td><td>The ring face's language turned over: wordmark, chevrons on the fingers, S1 filled, a framed panel. Designators only on polarised parts and ICs</td><td>Reads as the same object from both sides. Best in photos</td><td>Repeats the ring face rather than adding to it. Fewer designators to debug by</td></tr>
+        <tr><td>A · Datasheet</td><td>Every designator that fits, pin-1 dots, cathode bars, test-pad net names, REV A, the JLC marker</td><td>Most useful at bring-up: find any part on the BOM, probe a test pad by name</td><td>Busy at 0.8 mm. No sense of design on its own</td></tr>
+        <tr class="rec"><td>B · Echo (chosen)</td><td>The ring face's language turned over: wordmark, chevrons on the fingers, S1 filled, a framed panel. Designators only on polarised parts and ICs</td><td>Reads as the same object from both sides. Best in photos</td><td>Repeats the ring face rather than adding to it. Fewer designators to debug by</td></tr>
         <tr><td>C · Block map</td><td>Corner brackets round each functional block, named: SUPPLY, PROG, MCU, MUX, S1–S6, TEMP, with the block's designators in its label</td><td>Explains the board: the circuit is legible at a glance, a teaching object</td><td>Brackets need re-checking whenever placement moves. Designator lists stand in for per-part labels</td></tr>
       </tbody>
     </table></div>
     <ul>
-      <li><strong>Recommendation: A, with the origami unicorn in the way 6 ear.</strong> This face is seen at assembly and bring-up, where per-part designators and named test pads earn their place. The ring face already carries the design. The unicorn adds one confident idea: Gaff's origami unicorn from <em>Blade Runner</em>, on the face nobody sees once the strip is fitted. It's hidden the way the film hides it, and it pairs with the quote on the fingers.</li>
+      <li><strong>Chosen by Cal: B, with the origami unicorn in the way 6 ear, and the JLC order-number marker kept.</strong> The recommendation was A: This face is seen at assembly and bring-up, where per-part designators and named test pads earn their place. The ring face already carries the design. The unicorn adds one confident idea: Gaff's origami unicorn from <em>Blade Runner</em>, on the face nobody sees once the strip is fitted. It's hidden the way the film hides it, and it pairs with the quote on the fingers.</li>
       <li>The <strong>way 6 ear</strong> switch below applies to every concept: empty, or the unicorn.</li>
       <li>J1 moves in <em>Move the ESP-PROG footprint out from under way 1's ring</em>. Its pin-1 mark and label move with it.</li>
     </ul>
