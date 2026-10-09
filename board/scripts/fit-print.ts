@@ -1,6 +1,6 @@
 /// <reference types="node" />
 // A 1:1 SVG of the comb for the fit check on a real panel, seen from the ring face as fitted.
-// Print at 100 % (no "fit to page"), or import into a slicer and extrude to 1.6 mm.
+// Print at 100 % (no "fit to page"). To 3D print the plate, use fit-plate.ts's STL instead.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { wayX, Y_SHIFT } from "../lib/outline"
