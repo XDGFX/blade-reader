@@ -15,7 +15,7 @@ import { lineAlphabet } from "@tscircuit/alphabet"
 import { Fragment } from "react"
 import kanaJson from "./art/kana.json"
 import logoJson from "./art/logo.json"
-import { BOARD_HALF, DEPTH, END, type Pt, wayX, Y_SHIFT } from "./outline"
+import { BOARD_HALF, CHAMFER, DEPTH, type Pt, wayX, Y_SHIFT } from "./outline"
 import { bandX, SENSOR } from "./way"
 
 /** JLC's minimum silk line. */
@@ -277,7 +277,7 @@ const crux = (ox: number, oy: number, h: number) => {
 }
 
 /** The chamfer, in ring-face coordinates: y = x − CHAMFER_AT. */
-const CHAMFER_AT = 2 * BOARD_HALF - END
+const CHAMFER_AT = 2 * BOARD_HALF - CHAMFER
 /** A block laid along the chamfer, 0.9 mm in: local x runs down the chamfer, y into the board. */
 const alongChamfer = (x0: number, a: Art) =>
   mapArt(a, turn(x0, x0 - CHAMFER_AT + 0.9 * Math.SQRT2, 45))

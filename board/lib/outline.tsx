@@ -45,9 +45,10 @@ export const ESP = { x: BOARD_HALF - 5.6, y: 1.0 + 6.85 }
 /** Centre Y of the row of 0402s just above the module. */
 export const ESP_ROW_Y = ESP.y + 7.42
 
-// The way 6 ear holds only the ground nut, low down, so its outboard corner is chamfered at 45°
-// back to the body's corner.
-const CHAMFER = END
+// The way 6 ear holds the ground nut low down and the second multiplexer above it. Its outboard
+// corner is chamfered at 45° back to the body's corner, starting 2 mm above the ear's top, which
+// leaves the multiplexer 0.3 mm clear of the chamfer.
+export const CHAMFER = END - 2
 
 export type Pt = { x: number; y: number }
 

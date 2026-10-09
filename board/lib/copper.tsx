@@ -12,8 +12,8 @@
 
 import {
   BOARD_HALF,
+  CHAMFER,
   DEPTH,
-  END,
   finger,
   keepoutEdgeX,
   NUT_Y,
@@ -80,7 +80,7 @@ const clipToNeighbours = (n: number, { x, y }: Pt): Pt => {
  * on the parts face, between the diode cathode and the sensor's caps, and full width on the ring
  * face, with a disc round the nut for the ring's tongue.
  */
-export const WayCopper = ({ n, cx }: { n: number; cx: number }) => {
+export const WayCopper = ({ n, cx, dividerVia }: { n: number; cx: number; dividerVia?: Pt }) => {
   // Pad edges from b, the column's shifted centre: diode x −5.35 to −3.35 (anode y 1.6–3.6,
   // cathode 6–8), IP pins −2.5 to −0.7, signal pins 2.7 to 4.5, caps 2.28 to 4.92 (y 6.92–8.48).
   const b = bandX(n, cx)
@@ -169,6 +169,8 @@ export const WayCopper = ({ n, cx }: { n: number; cx: number }) => {
       {nutVias.map(({ x, y }) => (
         <Via key={`n${x}`} net={load} x={x} y={y} />
       ))}
+      {/* The voltage divider's GND, down to the bus. */}
+      {dividerVia && <Via net="net.GND" x={dividerVia.x} y={dividerVia.y} />}
     </>
   )
 }
@@ -188,8 +190,8 @@ export const GroundCopper = ({ q1 }: { q1: Pt }) => {
     const y0 = 10
     return y0 + (x - edge(y0)) / (edge(y0 + 1) - edge(y0))
   }
-  // The way 6 keepout's edge meets the chamfer, which runs at 45° from (−B, DEPTH − END).
-  const yChamfer = yAt((y) => k6(y) - (y - (DEPTH - END)), -B)
+  // The way 6 keepout's edge meets the chamfer, which runs at 45° from (−B, DEPTH − CHAMFER).
+  const yChamfer = yAt((y) => k6(y) - (y - (DEPTH - CHAMFER)), -B)
   return (
     <>
       {/* Ring face: the bus along the panel edge and both ears, out of every ring keepout. */}
@@ -208,7 +210,7 @@ export const GroundCopper = ({ q1 }: { q1: Pt }) => {
           { x: ear6, y: BUS_TOP },
           { x: ear6, y: yAt(k6, ear6) },
           { x: k6(yChamfer), y: yChamfer },
-          { x: -B, y: DEPTH - END },
+          { x: -B, y: DEPTH - CHAMFER },
         ])}
       />
       <copperpour

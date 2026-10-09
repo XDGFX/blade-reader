@@ -3,8 +3,8 @@
 //
 // PCB coordinates are explained in lib/outline.tsx. The body is 25.5 mm deep, with an ear past
 // each end way. The way 1 ear (+X) has the ESP32 low down, antenna past the board end, with its
-// small parts and the multiplexer above it. The way 6 ear (−X) has only the ground nut, low
-// down. Everything else sits in the band behind the nuts: the programming footprint, LED and
+// small parts and mux 1 above it. The way 6 ear (−X) has the ground nut low down and mux 2
+// above it. Everything else sits in the band behind the nuts: the programming footprint, LED and
 // straps over way 1, test pads over way 2, then the supply over ways 4–6.
 
 import { CD4051BM96 } from "./imports/CD4051BM96"
@@ -23,7 +23,7 @@ import {
   wayX,
   Y_SHIFT,
 } from "./lib/outline"
-import { Way, WAY_PITCH } from "./lib/way"
+import { dividerAt, Way, WAY_PITCH } from "./lib/way"
 
 const WAYS = [1, 2, 3, 4, 5, 6]
 
@@ -32,6 +32,12 @@ const ESP_GND_PINS = [
 ].map((i) => `GND${i}`)
 
 const Q1 = { x: -0.6, y: 3.5 }
+/** Centre of the second multiplexer, in the way 6 ear. */
+const MUX_2 = { x: -43.7, y: 14.17 }
+
+// Way 3's divider has no room beside its diode, where Q1 is, so it stands above Q1 with its
+// 6.8k's GND end on Q1's GND patch. The rest take a via down to the ring face's bus.
+const divider = (n: number) => (n === 3 ? { x: Q1.x + 0.95, y: 6.5 } : dividerAt(n, wayX(n)))
 
 const R_10K = { resistance: "10k", footprint: "0402", supplierPartNumbers: { jlcpcb: ["C25744"] } }
 
@@ -49,16 +55,28 @@ export default () => (
     <schematicsection name="Ways" displayName="Ways 1–6" />
     <schematicsection name="Supply" displayName="Supply" />
     <schematicsection name="Mcu" displayName="ESP32-C3 and programming" />
-    <schematicsection name="Adc" displayName="Multiplexer and ADC" />
+    <schematicsection name="Adc" displayName="Multiplexers and ADC" />
 
     <group name="strip" pcbX={0} pcbY={Y_SHIFT}>
 
       {/* ── Ways ─────────────────────────────────────────────────────────────── */}
       {WAYS.map((n) => (
-        <Way key={n} n={n} x={wayX(n)} schX={-30} schY={15 - (n - 1) * WAY_PITCH} />
+        <Way
+          key={n}
+          n={n}
+          x={wayX(n)}
+          divider={divider(n)}
+          schX={-30}
+          schY={15 - (n - 1) * WAY_PITCH}
+        />
       ))}
       {WAYS.map((n) => (
-        <WayCopper key={n} n={n} cx={wayX(n)} />
+        <WayCopper
+          key={n}
+          n={n}
+          cx={wayX(n)}
+          dividerVia={n === 3 ? undefined : { x: divider(n).x, y: 0.8 }}
+        />
       ))}
       <GroundCopper q1={Q1} />
 
@@ -76,8 +94,9 @@ export default () => (
       {/* ── Supply ───────────────────────────────────────────────────────────── */}
       <Supply schX={-8} schY={22} />
 
-      {/* ── Multiplexer and ADC ──────────────────────────────────────────────── */}
-      {/* Layout may reorder the ways on X0–X5; firmware follows this schematic. */}
+      {/* ── Multiplexers and ADC ─────────────────────────────────────────────── */}
+      {/* Mux 1, for ways 1–3 and the temperature. Layout may reorder the channels; firmware
+          follows this schematic. */}
       <CD4051BM96
         name="U2"
         pcbX={46.0}
@@ -90,11 +109,11 @@ export default () => (
           X0: "net.S1_SENSE",
           X1: "net.S2_SENSE",
           X2: "net.S3_SENSE",
-          X3: "net.S4_SENSE",
-          X4: "net.S5_SENSE",
-          X5: "net.S6_SENSE",
+          X3: "net.S1_VOLTS",
+          X4: "net.S2_VOLTS",
+          X5: "net.S3_VOLTS",
           X6: "net.TEMP",
-          X7: "net.VSUP_SENSE",
+          X7: "net.GND",
           X: "net.ADC",
           A: "net.MUX_S0",
           B: "net.MUX_S1",
@@ -135,6 +154,21 @@ export default () => (
         schSectionName="Adc"
         connections={{ pin1: "net.ADC", pin2: "net.GND" }}
       />
+      {/* The same at GPIO4, on the module's side facing way 1, for mux 2's common. */}
+      <capacitor
+        name="C41"
+        pcbX={39.9}
+        pcbY={ESP.y}
+        pcbRotation={90}
+        capacitance="10nF"
+        footprint="0402"
+        supplierPartNumbers={{ jlcpcb: ["C15195"] }}
+        schX={5}
+        schY={-20}
+        schRotation={90}
+        schSectionName="Adc"
+        connections={{ pin1: "net.ADC2", pin2: "net.GND" }}
+      />
       {/* Diode-connected transistor as the temperature sensor: about 265 µA through R10 gives
           a Vbe near 0.65 V, falling about 2 mV/°C. Only the change since each way was zeroed
           is used, so its part-to-part spread doesn't matter. A basic part, unlike any NTC.
@@ -166,34 +200,50 @@ export default () => (
         schSectionName="Adc"
         connections={{ pin1: "net.TEMP", pin3: "net.TEMP", pin2: "net.GND" }}
       />
-      {/* Supply node: 100k / 6.8k gives about 2.29 V at 36 V. */}
-      <resistor
-        name="R8"
-        pcbX={wayX(3) - 2.2}
-        pcbY={20.5}
+      {/* Mux 2, for ways 4–6, in the way 6 ear above the ground nut. VDD and the selects face
+          the panel edge. X5 and X7 are the spares: with INH, VEE and VSS they make an all-GND
+          run at the row's −X end, so nothing escapes into the corner kept clear for the
+          parts-face silk. */}
+      <CD4051BM96
+        name="U4"
+        pcbX={MUX_2.x}
+        pcbY={MUX_2.y}
         pcbRotation={180}
-        resistance="100k"
-        footprint="0402"
-        supplierPartNumbers={{ jlcpcb: ["C25741"] }}
-        schX={-2}
-        schY={-6}
-        schRotation={90}
+        schX={0}
+        schY={-16}
         schSectionName="Adc"
-        connections={{ pin2: "net.VSUP", pin1: "net.VSUP_SENSE" }}
+        connections={{
+          X0: "net.S4_SENSE",
+          X1: "net.S5_SENSE",
+          X2: "net.S6_SENSE",
+          X3: "net.S4_VOLTS",
+          X4: "net.S5_VOLTS",
+          X6: "net.S6_VOLTS",
+          X5: "net.GND",
+          X7: "net.GND",
+          X: "net.ADC2",
+          A: "net.MUX_S0",
+          B: "net.MUX_S1",
+          C: "net.MUX_S2",
+          INH: "net.GND",
+          VEE: "net.GND",
+          VSS: "net.GND",
+          VDD: "net.V3V3",
+        }}
       />
-      <resistor
-        name="R9"
-        pcbX={wayX(3)}
-        pcbY={20.5}
+      <capacitor
+        name="C40"
+        pcbX={MUX_2.x + 3.7}
+        pcbY={9.3}
         pcbRotation={180}
-        resistance="6.8k"
+        capacitance="100nF"
         footprint="0402"
-        supplierPartNumbers={{ jlcpcb: ["C25917"] }}
-        schX={-2}
-        schY={-9}
-        schRotation={90}
+        supplierPartNumbers={{ jlcpcb: ["C307331"] }}
+        schX={0}
+        schY={-11}
+        schRotation={-90}
         schSectionName="Adc"
-        connections={{ pin2: "net.VSUP_SENSE", pin1: "net.GND" }}
+        connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
       />
 
       {/* ── ESP32-C3 ─────────────────────────────────────────────────────────── */}
@@ -218,7 +268,7 @@ export default () => (
           IO9: "net.IO9",
           IO0: "net.IO0",
           IO1: "net.IO1",
-          IO4: "net.IO4",
+          IO4: "net.ADC2",
           RXD0: "net.U0RXD",
           TXD0: "net.U0TXD",
           ...Object.fromEntries(ESP_GND_PINS.map((p) => [p, "net.GND"])),
@@ -369,7 +419,6 @@ export default () => (
         [
           ["TP1", "net.IO0", wayX(2) - 2.5, 22.6],
           ["TP2", "net.IO1", wayX(2), 22.6],
-          ["TP3", "net.IO4", wayX(2) + 2.5, 22.6],
           ["TP4", "net.V3V3", wayX(2) - 2.5, 24.4],
           ["TP5", "net.VSUP", wayX(2), 24.4],
           ["TP6", "net.GND", wayX(2) + 2.5, 24.4],

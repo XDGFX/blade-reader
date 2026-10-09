@@ -3,7 +3,7 @@
 import { CC6905S8_3FB030 } from "../imports/CC6905S8_3FB030"
 import { SMTSO4040CTJ } from "../imports/SMTSO4040CTJ"
 import { SS210 } from "../imports/SS210"
-import { CLAMP_Y, NUT_Y } from "./outline"
+import { CLAMP_Y, NUT_Y, type Pt } from "./outline"
 import { Finger } from "./parts"
 
 // Schematic spacing between ways.
@@ -11,8 +11,8 @@ export const WAY_PITCH = 6
 
 /**
  * The column for sensor `n` (S1–S6). Net `Sn_LINE` is the fuse panel's side (the finger),
- * `Sn_LOAD` the load's side (the output nut) and `Sn_SENSE` the sensor output to the
- * multiplexer.
+ * `Sn_LOAD` the load's side (the output nut), `Sn_SENSE` the sensor output to the
+ * multiplexer and `Sn_VOLTS` the way's voltage, divided down, to the multiplexer.
  *
  * The sensor is fitted backwards: load current runs IP− → IP+, so VOUT falls from 1.65 V as
  * load rises. The ESP32-C3's ADC is accurate only up to about 2.5 V, which positive current
@@ -25,13 +25,25 @@ export const WAY_PITCH = 6
 // above its signal pins.
 export const SENSOR = { dx: 1.0, y: 4.0 }
 const DIODE = { dx: -4.35, y: 4.8 }
+// The voltage divider stands beside the diode, outboard of the line copper: the 6.8k low, its
+// GND end on a via down to the ring face's bus, and the 100k above it, its top end tapping the
+// line copper.
+const DIVIDER_STACK = 1.9
+/** The divider's 6.8k centre beside way `n`'s diode, for the way centred on `x`. */
+export const dividerAt = (n: number, x: number): Pt => ({ x: bandX(n, x) - 6.7, y: 2.2 })
 const CAP_Y = 7.7
 // Ways 1–3 shift their sensor band towards the way 1 end and ways 4–6 towards the way 6
 // end, which opens room for the temperature transistor between ways 3 and 4.
 const BAND_SHIFT = 0.5
 export const bandX = (n: number, x: number) => x + (n <= 3 ? BAND_SHIFT : -BAND_SHIFT)
 
-export const Way = ({ n, x, schX, schY }: { n: number; x: number; schX: number; schY: number }) => (
+export const Way = ({
+  n,
+  x,
+  divider,
+  schX,
+  schY,
+}: { n: number; x: number; divider: Pt; schX: number; schY: number }) => (
   <>
     <Finger name={`W${n}`} pcbX={x} pcbY={CLAMP_Y} schX={schX} schY={schY} schSectionName="Ways" />
     <CC6905S8_3FB030
@@ -67,6 +79,37 @@ export const Way = ({ n, x, schX, schY }: { n: number; x: number; schX: number; 
       schRotation={90}
       schSectionName="Ways"
       connections={{ anode: `net.S${n}_LINE`, cathode: "net.VSUP" }}
+    />
+
+    {/* Way voltage: 100k / 6.8k gives about 2.29 V at 36 V. Tapped before the sensor, so its
+        current stays out of the reading. */}
+    <resistor
+      name={`R1${n}`}
+      pcbX={divider.x}
+      pcbY={divider.y + DIVIDER_STACK}
+      pcbRotation={90}
+      resistance="100k"
+      footprint="0402"
+      supplierPartNumbers={{ jlcpcb: ["C25741"] }}
+      schX={schX + 3}
+      schY={schY - 1}
+      schRotation={90}
+      schSectionName="Ways"
+      connections={{ pin2: `net.S${n}_LINE`, pin1: `net.S${n}_VOLTS` }}
+    />
+    <resistor
+      name={`R2${n}`}
+      pcbX={divider.x}
+      pcbY={divider.y}
+      pcbRotation={90}
+      resistance="6.8k"
+      footprint="0402"
+      supplierPartNumbers={{ jlcpcb: ["C25917"] }}
+      schX={schX + 3}
+      schY={schY - 3}
+      schRotation={90}
+      schSectionName="Ways"
+      connections={{ pin2: `net.S${n}_VOLTS`, pin1: "net.GND" }}
     />
 
     {/* tscircuit skips all autorouting if a cap's pin-to-pin trace can't meet its default
