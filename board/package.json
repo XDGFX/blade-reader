@@ -7,9 +7,10 @@
     "dev": "tsci dev index.circuit.tsx",
     "build": "tsci build index.circuit.tsx",
     "schematic": "tsci check netlist index.circuit.tsx && tsci build index.circuit.tsx --routing-disabled --schematic-png --ignore-errors",
+    "placement": "tsci check placement index.circuit.tsx && tsci build index.circuit.tsx --routing-disabled --pcb-png --ignore-errors",
     "shorts": "tsci check shorts index.circuit.tsx",
     "fab": "tsci build index.circuit.tsx && rm -rf fab && mkdir fab && tsci export index.circuit.tsx -f gerbers -o fab/blade-reader.zip && unzip -q fab/blade-reader.zip -d fab/blade-reader",
-    "step": "tsci build index.circuit.tsx && mkdir -p fab && tsci export index.circuit.tsx -f step -o fab/blade-reader.step",
+    "step": "tsci build index.circuit.tsx --routing-disabled --ignore-errors && mkdir -p fab && tsci export dist/index/circuit.json -f step -o \"$PWD/fab/blade-reader.step\"",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

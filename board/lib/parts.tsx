@@ -6,7 +6,8 @@ import { Fragment } from "react"
 const fingerPins = { pin1: ["LINE"] } as const
 
 // The finger's clamp point: a 5.4 mm round hole for the way's #8 screw, bare ENIG on both
-// faces. The finger outline and its current-path pours belong to the layout.
+// faces. The ring is the #8 washer's Ø8.13 footprint, which leaves 0.4 mm to the finger tip
+// and 0.7 mm to its sides. The rest of the finger's copper belongs to the pours.
 export const Finger = (props: ChipProps<typeof fingerPins>) => (
   <chip
     pinLabels={fingerPins}
@@ -17,7 +18,7 @@ export const Finger = (props: ChipProps<typeof fingerPins>) => (
           pcbX="0mm"
           pcbY="0mm"
           holeDiameter="5.4mm"
-          outerDiameter="9mm"
+          outerDiameter="8.13mm"
           shape="circle"
         />
       </footprint>
@@ -47,7 +48,7 @@ export const ProgLock = (props: ChipProps<typeof progPins>) => (
     pinLabels={progPins}
     doNotPlace
     footprint={
-      <footprint>
+      <footprint insertionDirection="from_above">
         {[0, 1, 2].map((col) => {
           const x = (col - 1) * PITCH + (col % 2 === 0 ? -LOCK : LOCK)
           return (

@@ -3,6 +3,7 @@
 import { CC6905S8_3FB030 } from "../imports/CC6905S8_3FB030"
 import { SMTSO4040CTJ } from "../imports/SMTSO4040CTJ"
 import { SS210 } from "../imports/SS210"
+import { CLAMP_Y, NUT_Y } from "./outline"
 import { Finger } from "./parts"
 
 // Schematic spacing between ways.
@@ -16,11 +17,28 @@ export const WAY_PITCH = 6
  * load rises. The ESP32-C3's ADC is accurate only up to about 2.5 V, which positive current
  * would leave above about +19 A (CC6905 datasheet rev 1.3, p. 41: IP+ → IP− raises VOUT).
  */
-export const Way = ({ n, schX, schY }: { n: number; schX: number; schY: number }) => (
+// PCB column, relative to the way's centre X. The sensor band is Y 1.5–9; parts stay 1 mm
+// clear of the panel side wall and 1.5 mm clear of the divider slots. The sensor's IP pins
+// face −X, IP− towards the finger, so current runs straight up the column: finger → IP− →
+// IP+ → nut. The diode sits beside IP−, anode down on the line copper. Its cathode (VSUP)
+// leaves up the −X side of the nut and VOUT up the +X side, one trace each between the nut
+// pad and the slot. VCC, GND and the sensor's caps sit above its signal pins.
+const SENSOR = { dx: 1.0, y: 4.0 }
+const DIODE = { dx: -4.35, y: 4.8 }
+const CAP_Y = 7.7
+// Ways 1–3 shift their sensor band towards the way 1 end and ways 4–6 towards the way 6
+// end, which opens room for the temperature transistor between ways 3 and 4.
+const BAND_SHIFT = 0.5
+const bandX = (n: number, x: number) => x + (n <= 3 ? BAND_SHIFT : -BAND_SHIFT)
+
+export const Way = ({ n, x, schX, schY }: { n: number; x: number; schX: number; schY: number }) => (
   <>
-    <Finger name={`W${n}`} schX={schX} schY={schY} schSectionName="Ways" />
+    <Finger name={`W${n}`} pcbX={x} pcbY={CLAMP_Y} schX={schX} schY={schY} schSectionName="Ways" />
     <CC6905S8_3FB030
       name={`U1${n}`}
+      pcbX={bandX(n, x) + SENSOR.dx}
+      pcbY={SENSOR.y}
+      pcbRotation={-90}
       schX={schX + 6}
       schY={schY}
       schSectionName="Ways"
@@ -34,13 +52,16 @@ export const Way = ({ n, schX, schY }: { n: number; schX: number; schY: number }
         VOUT: `net.WAY${n}_SENSE`,
       }}
     />
-    <SMTSO4040CTJ name={`N${n}`} schX={schX + 12} schY={schY} schSectionName="Ways" />
+    <SMTSO4040CTJ name={`N${n}`} pcbX={x} pcbY={NUT_Y} schX={schX + 12} schY={schY} schSectionName="Ways" />
     <trace from={`.W${n} > .LINE`} to={`net.WAY${n}_LINE`} />
     <trace from={`.N${n} > .pin1`} to={`net.WAY${n}_LOAD`} />
 
     {/* Tapped before the sensor, so the strip's own draw stays out of the reading. */}
     <SS210
       name={`D1${n}`}
+      pcbX={bandX(n, x) + DIODE.dx}
+      pcbY={DIODE.y}
+      pcbRotation={-90}
       schX={schX + 3}
       schY={schY + 2}
       schRotation={90}
@@ -50,6 +71,9 @@ export const Way = ({ n, schX, schY }: { n: number; schX: number; schY: number }
 
     <capacitor
       name={`C1${n}`}
+      pcbX={bandX(n, x) + 3.6}
+      pcbY={CAP_Y}
+      pcbRotation={90}
       capacitance="100nF"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C307331"] }}
@@ -61,6 +85,9 @@ export const Way = ({ n, schX, schY }: { n: number; schX: number; schY: number }
     />
     <capacitor
       name={`C2${n}`}
+      pcbX={bandX(n, x) + 2.6}
+      pcbY={CAP_Y}
+      pcbRotation={90}
       capacitance="1nF"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C1523"] }}
@@ -72,6 +99,9 @@ export const Way = ({ n, schX, schY }: { n: number; schX: number; schY: number }
     />
     <capacitor
       name={`C3${n}`}
+      pcbX={bandX(n, x) + 4.6}
+      pcbY={CAP_Y}
+      pcbRotation={90}
       capacitance="1nF"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C1523"] }}
