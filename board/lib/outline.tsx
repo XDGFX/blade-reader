@@ -1,12 +1,10 @@
-// The comb: outline and divider slots. Dimensions from
+// The comb: outline, divider lanes and ring keepouts. Dimensions from
 // docs/design.md (Mechanical, Fixing, Body) and issues #8, #9, #15 and #21.
 //
 // PCB coordinates, in mm: Y runs outboard from the panel edge (Y 0), so the fingers are at
 // negative Y. X runs along the strip, centred, as seen from the parts face (tscircuit's top),
 // so way 1 is at +X. The design docs give x from the way 1 end looking at the ring face:
 // X = 40.08 − x. The outline's bounding box is symmetric in X.
-
-import { Fragment } from "react"
 
 export const WAY_PITCH_PCB = 13.36
 export const LENGTH = 6 * WAY_PITCH_PCB // 80.16, the ways' span
@@ -88,17 +86,24 @@ const COMB: Pt[] = [
 
 export const OUTLINE = COMB.map(({ x, y }) => ({ x, y: y + Y_SHIFT }))
 
-/** Divider slots: centre Y and length, y 10–18. Parts stay 1.5 mm clear of them. */
-export const SLOT = { y: 14, length: 8 }
-const SLOT_XS = [1, 2, 3, 4, 5].map((k) => HALF - k * WAY_PITCH_PCB)
+// Ring keepout (GLOSSARY.md): a Ø10 ring on the nut with a 10 mm tongue running outboard, swung
+// up to ±20°, the goal; straight out is the minimum. Inside it the ring face carries only that
+// way's own copper.
+const RING_KEEPOUT_R = 5
+const SWING = (20 * Math.PI) / 180
 
-/** Divider slots between the ways' nuts. */
-export const CombFeatures = () => (
-  <>
-    {SLOT_XS.map((x) => (
-      <Fragment key={x}>
-        <cutout shape="rect" width="1.7mm" height={`${SLOT.length}mm`} pcbX={x} pcbY={SLOT.y} />
-      </Fragment>
-    ))}
-  </>
-)
+/**
+ * X of the outer edge of the ring keepout of the way centred on `cx`, swung towards `side`
+ * (+1 is +X), at height `y`. Valid above the ring's own disc, from y ≈ 12.3.
+ */
+export const keepoutEdgeX = (cx: number, side: 1 | -1, y: number) => {
+  const x0 = cx + side * RING_KEEPOUT_R * Math.cos(SWING)
+  const y0 = NUT_Y - RING_KEEPOUT_R * Math.sin(SWING)
+  return x0 + side * Math.tan(SWING) * (y - y0)
+}
+
+/**
+ * Divider lanes: about 2 mm wide, midway between each pair of nuts, out to the outboard edge.
+ * Kept free of parts so a printed divider could slide on from the edge later. Traces may cross.
+ */
+export const DIVIDER_LANE = { width: 2, xs: [1, 2, 3, 4, 5].map((k) => HALF - k * WAY_PITCH_PCB) }

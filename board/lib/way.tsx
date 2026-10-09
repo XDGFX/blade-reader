@@ -19,11 +19,10 @@ export const WAY_PITCH = 6
  * would leave above about +19 A (CC6905 datasheet rev 1.3, p. 41: IP+ → IP− raises VOUT).
  */
 // PCB column, relative to the way's centre X. The sensor band is Y 1.5–9; parts stay 1 mm
-// clear of the panel side wall and 1.5 mm clear of the divider slots. The sensor's IP pins
-// face −X, IP− towards the finger, so current runs straight up the column: finger → IP− →
-// IP+ → nut. The diode sits beside IP−, anode down on the line copper. Its cathode (VSUP)
-// leaves up the −X side of the nut and VOUT up the +X side, one trace each between the nut
-// pad and the slot. VCC, GND and the sensor's caps sit above its signal pins.
+// clear of the panel side wall and out of the divider lanes. The sensor's IP pins face −X,
+// IP− towards the finger, so current runs straight up the column: finger → IP− → IP+ → nut.
+// The diode sits beside IP−, anode down on the line copper. VCC, GND and the sensor's caps sit
+// above its signal pins.
 export const SENSOR = { dx: 1.0, y: 4.0 }
 const DIODE = { dx: -4.35, y: 4.8 }
 const CAP_Y = 7.7
@@ -70,6 +69,8 @@ export const Way = ({ n, x, schX, schY }: { n: number; x: number; schX: number; 
       connections={{ anode: `net.S${n}_LINE`, cathode: "net.VSUP" }}
     />
 
+    {/* tscircuit skips all autorouting if a cap's pin-to-pin trace can't meet its default
+        1 mm limit; these pads are 1.3 mm from the sensor's. */}
     <capacitor
       name={`C1${n}`}
       pcbX={bandX(n, x) + 3.6}
@@ -78,6 +79,7 @@ export const Way = ({ n, x, schX, schY }: { n: number; x: number; schX: number; 
       capacitance="100nF"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C307331"] }}
+      maxDecouplingTraceLength="3mm"
       schX={schX + 9}
       schY={schY + 2}
       schRotation={-90}
@@ -92,6 +94,7 @@ export const Way = ({ n, x, schX, schY }: { n: number; x: number; schX: number; 
       capacitance="1nF"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C1523"] }}
+      maxDecouplingTraceLength="5mm"
       schX={schX + 9}
       schY={schY - 2}
       schRotation={-90}

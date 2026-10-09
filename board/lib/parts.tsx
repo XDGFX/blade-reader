@@ -38,40 +38,28 @@ const progPins = {
 } as const
 
 const PITCH = 2.54
-// SparkFun "lock" footprint: each column is pushed 0.127 mm alternately along the row, so a
-// loose header grips without solder.
-const LOCK = 0.127
 
-// Empty 2×3 2.54 mm through-hole footprint for the ESP-PROG. Nothing is fitted.
-export const ProgLock = (props: ChipProps<typeof progPins>) => (
+// Six SMT pads, 2×3 on 2.54 mm, on the parts face only, for a pogo clamp slid on from the board
+// edge. Nothing is fitted, and nothing of J1 is on the ring face, under way 1's ring keepout.
+export const ProgPads = (props: ChipProps<typeof progPins>) => (
   <chip
     pinLabels={progPins}
     doNotPlace
     footprint={
-      <footprint insertionDirection="from_above">
-        {[0, 1, 2].map((col) => {
-          const x = (col - 1) * PITCH + (col % 2 === 0 ? -LOCK : LOCK)
-          return (
-            <Fragment key={col}>
-            <platedhole
-              portHints={[`pin${col * 2 + 1}`]}
-              pcbX={`${x}mm`}
-              pcbY={`${PITCH / 2}mm`}
-              holeDiameter="1.016mm"
-              outerDiameter="1.88mm"
-              shape="circle"
-            />
-            <platedhole
-              portHints={[`pin${col * 2 + 2}`]}
-              pcbX={`${x}mm`}
-              pcbY={`${-PITCH / 2}mm`}
-              holeDiameter="1.016mm"
-              outerDiameter="1.88mm"
-              shape="circle"
-            />
+      <footprint>
+        {[0, 1, 2].flatMap((col) =>
+          [1, -1].map((row, i) => (
+            <Fragment key={`${col}${row}`}>
+              <smtpad
+                portHints={[`pin${col * 2 + 1 + i}`]}
+                pcbX={`${(col - 1) * PITCH}mm`}
+                pcbY={`${(row * PITCH) / 2}mm`}
+                shape="circle"
+                radius="0.75mm"
+              />
             </Fragment>
-          )
-        })}
+          )),
+        )}
       </footprint>
     }
     {...props}

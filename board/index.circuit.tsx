@@ -12,11 +12,10 @@ import { ESP32_C3_MINI_1_H4X } from "./imports/ESP32_C3_MINI_1_H4X"
 import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
 import { SS210 } from "./imports/SS210"
 import { GroundCopper, WayCopper } from "./lib/copper"
-import { ProgLock } from "./lib/parts"
+import { ProgPads } from "./lib/parts"
 import { Silkscreen } from "./lib/silkscreen"
 import { Supply } from "./lib/supply"
 import {
-  CombFeatures,
   ESP,
   ESP_ROW_Y,
   GROUND_NUT,
@@ -53,7 +52,6 @@ export default () => (
     <schematicsection name="Adc" displayName="Multiplexer and ADC" />
 
     <group name="strip" pcbX={0} pcbY={Y_SHIFT}>
-      <CombFeatures />
 
       {/* ── Ways ─────────────────────────────────────────────────────────────── */}
       {WAYS.map((n) => (
@@ -109,7 +107,7 @@ export default () => (
       />
       <capacitor
         name="C9"
-        pcbX={42.0}
+        pcbX={43.0}
         pcbY={24.6}
         pcbRotation={0}
         capacitance="100nF"
@@ -228,8 +226,8 @@ export default () => (
       />
       <capacitor
         name="C6"
-        pcbX={wayX(1)}
-        pcbY={24.65}
+        pcbX={38.9}
+        pcbY={24.75}
         pcbRotation={0}
         capacitance="10uF"
         footprint="0603"
@@ -333,9 +331,10 @@ export default () => (
       />
 
       {/* ── Programming ──────────────────────────────────────────────────────── */}
-      {/* ESP-PROG on its PROG header, power jumper at 5 V. Flash off the panel, or with the
-          ground wire fitted. */}
-      <ProgLock
+      {/* ESP-PROG through a pogo clamp on J1's pads, power jumper at 5 V. The clamp slides on
+          from the board edge, so J1's column stays clear to the edge. Flash off the panel, or
+          with the ground wire fitted. */}
+      <ProgPads
         name="J1"
         pcbX={wayX(1)}
         pcbY={21.6}

@@ -4,7 +4,7 @@
 // because <copperpour> ignores the enclosing group's offset. Each pour stops boardEdgeMargin
 // (0.3 mm) inside its own outline, so an outline traced along a routed edge keeps the JLC
 // clearance, and pours that meet leave 0.6 mm between them. Pours clear other nets' pads by
-// themselves, and the slots by cutoutMargin, but not the fingers' gaps: hence the traced fingers.
+// themselves, but not the fingers' gaps: hence the traced fingers.
 // A pour that touches no pad of its net is dropped.
 //
 // The parts face (tscircuit's top) faces the panel, so it carries the bare copper that seats
@@ -15,8 +15,10 @@ import {
   DEPTH,
   END,
   finger,
+  keepoutEdgeX,
   NUT_Y,
   type Pt,
+  wayX,
   Y_SHIFT,
 } from "./outline"
 import { bandX } from "./way"
@@ -49,8 +51,6 @@ const BUS_TOP = 1.3
 const LOAD_BOTTOM = 2.3
 /** Ring face load copper round each nut, for the ring's tongue to lie on. */
 const RING_R = 6.5
-/** The GND band behind the nuts. */
-const BAND_BOTTOM = NUT_Y + RING_R
 /** The way 1 ear's GND, 0.5 mm clear of way 1's ring face copper. */
 const EAR_1 = 40.0
 
@@ -65,6 +65,14 @@ const Via = ({ net, x, y }: { net: string; x: number; y: number }) => (
     pcbY={y}
   />
 )
+
+/** Moves a point of way `n`'s ring face copper out of its neighbours' swung ring keepouts. */
+const clipToNeighbours = (n: number, { x, y }: Pt): Pt => {
+  let cx = x
+  if (n > 1) cx = Math.min(cx, keepoutEdgeX(wayX(n - 1), -1, y))
+  if (n < 6) cx = Math.max(cx, keepoutEdgeX(wayX(n + 1), 1, y))
+  return { x: cx, y }
+}
 
 /**
  * Way `n`'s line and load copper, centred on `cx`. The line covers the finger on both faces and
@@ -140,13 +148,15 @@ export const WayCopper = ({ n, cx }: { n: number; cx: number }) => {
         name={`P${n}_LOAD_BOTTOM`}
         layer="bottom"
         connectsTo={load}
-        outline={toBoard([
-          ...circle(cx, NUT_Y, RING_R).filter((p) => p.y > NUT_Y),
-          { x: cx - RING_R, y: NUT_Y },
-          { x: cx - RING_R, y: LOAD_BOTTOM },
-          { x: cx + RING_R, y: LOAD_BOTTOM },
-          { x: cx + RING_R, y: NUT_Y },
-        ])}
+        outline={toBoard(
+          [
+            ...circle(cx, NUT_Y, RING_R).filter((p) => p.y > NUT_Y),
+            { x: cx - RING_R, y: NUT_Y },
+            { x: cx - RING_R, y: LOAD_BOTTOM },
+            { x: cx + RING_R, y: LOAD_BOTTOM },
+            { x: cx + RING_R, y: NUT_Y },
+          ].map((p) => clipToNeighbours(n, p)),
+        )}
       />
 
       {/* Stitching: 10 at the clamp, above the washer; 8 above IP+; 5 below the nut. */}
@@ -164,34 +174,41 @@ export const WayCopper = ({ n, cx }: { n: number; cx: number }) => {
 }
 
 /**
- * GND: on the ring face, a bus along the panel edge, both ears and the band behind the nuts,
- * as one ring with a slit through the band; on the parts face, the way 1 ear and a patch under
- * the temperature transistor.
+ * GND: on the ring face, a bus along the panel edge and both ears, cut back to the ring
+ * keepouts, so the band behind the nuts has none; on the parts face, the way 1 ear and a patch
+ * under the temperature transistor.
  */
 export const GroundCopper = ({ q1 }: { q1: Pt }) => {
   const B = BOARD_HALF
   const ear6 = -(EAR_1 + 0.3) // way 6's ring copper is the mirror of way 1's
+  // Where the end ways' swung ring keepouts cross into the ears.
+  const k1 = (y: number) => keepoutEdgeX(wayX(1), 1, y)
+  const k6 = (y: number) => keepoutEdgeX(wayX(6), -1, y)
+  const yAt = (edge: (y: number) => number, x: number) => {
+    const y0 = 10
+    return y0 + (x - edge(y0)) / (edge(y0 + 1) - edge(y0))
+  }
+  // The way 6 keepout's edge meets the chamfer, which runs at 45° from (−B, DEPTH − END).
+  const yChamfer = yAt((y) => k6(y) - (y - (DEPTH - END)), -B)
   return (
     <>
+      {/* Ring face: the bus along the panel edge and both ears, out of every ring keepout. */}
       <copperpour
         {...pour}
         name="GND_BOTTOM"
         layer="bottom"
         connectsTo="net.GND"
         outline={toBoard([
-          { x: 0, y: DEPTH },
-          { x: -B + END, y: DEPTH },
-          { x: -B, y: DEPTH - END },
           { x: -B, y: 0 },
           { x: B, y: 0 },
           { x: B, y: DEPTH },
-          { x: 0, y: DEPTH },
-          { x: 0, y: BAND_BOTTOM },
-          { x: EAR_1, y: BAND_BOTTOM },
+          { x: k1(DEPTH), y: DEPTH },
+          { x: EAR_1, y: yAt(k1, EAR_1) },
           { x: EAR_1, y: BUS_TOP },
           { x: ear6, y: BUS_TOP },
-          { x: ear6, y: BAND_BOTTOM },
-          { x: 0, y: BAND_BOTTOM },
+          { x: ear6, y: yAt(k6, ear6) },
+          { x: k6(yChamfer), y: yChamfer },
+          { x: -B, y: DEPTH - END },
         ])}
       />
       <copperpour
@@ -214,3 +231,4 @@ export const GroundCopper = ({ q1 }: { q1: Pt }) => {
     </>
   )
 }
+

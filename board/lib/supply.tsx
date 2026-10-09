@@ -90,6 +90,7 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
       capacitance="100nF"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C307331"] }}
+      maxDecouplingTraceLength="6mm"
       schX={schX + 12}
       schY={schY + 2}
       schRotation={180}
