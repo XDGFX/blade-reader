@@ -1,9 +1,13 @@
 <section class="summary">
-    <h2>Round 9: designed in Australia, smaller</h2>
+    <h2>Final: the ring face for rev A</h2>
     <ul>
-      <li><strong>Settled:</strong> C2 with the quote across the fingers, white silk on black, lead-free HASL, Economic. The chamfer corner carries a 45° "designed in Australia" mark with the Southern Cross, and the flag is out.</li>
-      <li><strong>This round:</strong> the cross is now 2.0 mm tall, the same as the two lines of text, and right next to them. The text is right-aligned against it. The cross now stands upright with the text. It had looked turned 90° because its east–west spread wasn't scaled for its southern declination, which stretched it sideways. Now it has its true shape: tall, with Gacrux at the top and Mimosa on the left, as on the flag.</li>
-      <li>The whole mark is about 7.8 × 2.6 mm, centred along the chamfer.</li>
+      <li><strong>Board:</strong> black mask, white silk, lead-free HASL, Economic PCBA, about $28.10 fixed per order. This replaces ENIG for the clamp and nut pads.</li>
+      <li><strong>Wordmark:</strong> the banner's BLADE READER outline in silk, 58 × 4.6 mm, centred behind the nuts. No frame.</li>
+      <li><strong>Way 1 ear:</strong> the vertical katakana sign ブレードリーダー, 2.3 mm Noto Sans JP ExtraBold outlines in a double-line frame. PROG beside J1.</li>
+      <li><strong>Sensor band:</strong> three chevrons per column pointing finger to nut. Way 1's are filled as the sensor 1 mark. A spec plate sits in the five gaps between the columns: REVISION A 2026-10 · DERATE 20 A PER WAY ABOVE 40 °C · OUTPUT NUT M4 1.0–1.2 Nm · LICENCE CERN-OHL-S-2.0 · SOURCE GITHUB.COM/XDGFX/BLADE-READER.</li>
+      <li><strong>Fingers:</strong> the banner quote, two 1.0 mm lines per finger, between the panel edge and the clamp pad.</li>
+      <li><strong>Way 6 ear:</strong> an earth symbol and GND above the ground nut. Along the chamfer at 45°, "DESIGNED IN / AUSTRALIA" right-aligned against the Southern Cross as dots, 2.0 mm tall.</li>
+      <li><strong>Not used:</strong> the edge hairline, rain, a frame round the wordmark, and gold.</li>
     </ul>
   </section>
 
@@ -14,26 +18,12 @@
   </div>
 
   <section class="concept">
-    <h2>Dots</h2>
+    <h2>Rev A ring face</h2>
     <div class="board" id="ACd"></div>
     <div class="notes">
-      <div><h3>Stars</h3><p>Round dots from 0.2 to 0.4 mm across, sized by brightness. They print cleanly at any size.</p></div>
+      <div><h3>Source</h3><p>Geometry, logo path and katakana outlines are on the <code>prototype/silkscreen-concepts</code> branch, under <code>board/prototype-silkscreen/</code>. The coordinates are ring-face mm with way 1 on the left. Mirror X when drawing on tscircuit's bottom layer.</p></div>
+      <div><h3>Check at the fit check</h3><p>How much of each finger the barriers leave visible. If the lower quote line is hidden, move the quote up under the panel edge.</p></div>
     </div>
-  </section>
-
-  <section class="concept">
-    <h2>Stars</h2>
-    <div class="board" id="ACs"></div>
-    <div class="notes">
-      <div><h3>Stars</h3><p>Seven-pointed stars, with five points on Ginan as on the flag, 0.3 to 0.6 mm across. JLC can't print points this small, so they'll come out as rough blobs. This version is here to compare against the dots.</p></div>
-    </div>
-  </section>
-
-  <section class="summary questions">
-    <h2>For Cal to pick</h2>
-    <ol>
-      <li>Dots or stars? With that, the design is complete.</li>
-    </ol>
   </section>
 </div>
 

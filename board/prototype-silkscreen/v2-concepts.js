@@ -26,7 +26,7 @@ const CELLS = [
   ["DERATE", "20 A PER WAY", "ABOVE 40  C"],
   ["OUTPUT NUT", "M4", "1.0-1.2 Nm"],
   ["LICENCE", "CERN-OHL-S-2.0", ""],
-  ["SOURCE", "github.com/xdgfx", "/blade-reader", .9],
+  ["SOURCE", "GITHUB.COM/XDGFX", "/BLADE-READER", .9],
 ];
 function plate() {
   return CELLS.map(([l, a, b, s = 1], i) => {
@@ -204,7 +204,7 @@ const crux = (ox, oy, h, dots) => {
   }).join("");
 };
 // "DESIGNED IN / AUSTRALIA" right-aligned against the cross; the cross spans the text's cap height.
-const designedIn = dots => t(5.8, 1.3, .8, "DESIGNED IN", { ls: .05, a: "end" }) + t(5.8, 2.5, .8, "AUSTRALIA", { ls: .05, a: "end" }) +
+const designedIn = dots => t(5.1, 1.3, .8, "DESIGNED IN", { ls: .05, a: "end" }) + t(5.1, 2.5, .8, "AUSTRALIA", { ls: .05, a: "end" }) +
   crux(6.5, .6, 2.0, dots);
 
 // A block laid along the chamfer: local x runs down the chamfer, local y into the board. Its
@@ -213,6 +213,5 @@ const alongChamfer = (x0, body) => `<g transform="translate(${x0} ${(x0 - 92.08 
 
 const CONCEPTS = {
   ACd: () => C2() + fingers() + alongChamfer(93.6, designedIn(true)),
-  ACs: () => C2() + fingers() + alongChamfer(93.6, designedIn(false)),
 };
 
