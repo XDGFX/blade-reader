@@ -81,7 +81,8 @@ type TextOpts = { anchor?: "start" | "middle" | "end"; ls?: number; w?: number }
 
 /** Text in the alphabet's strokes, size s (em), baseline at y. */
 const text = (x: number, y: number, s: number, str: string, o: TextOpts = {}): Art => {
-  const ls = o.ls ?? 0
+  // At a 0.6 em advance the wide letters touch once stroked, so text is tracked by default.
+  const ls = o.ls ?? 0.08 * s
   const width = str.length * s * ADVANCE + Math.max(0, str.length - 1) * ls
   const x0 = o.anchor === "middle" ? x - width / 2 : o.anchor === "end" ? x - width : x
   const strokes: Stroke[] = []
@@ -212,8 +213,9 @@ const plate = () =>
         text(x, 22.3, 1, b, { anchor: "middle" }),
       )
     }),
-    // The degree sign, which the alphabet lacks, in the gap left for it in ABOVE 40  C.
-    ring(RING_GAPS[1] + 2.4, 21.75, 0.2),
+    // The degree sign, which the alphabet lacks, in the gap left for it in ABOVE 40  C: the
+    // tenth of eleven characters at 1 mm, tracked by default.
+    ring(RING_GAPS[1] - (11 * ADVANCE + 10 * 0.08) / 2 + 9 * (ADVANCE + 0.08) + ADVANCE / 2, 21.75, 0.2),
   )
 
 const earth = (x: number, y: number) =>
@@ -365,7 +367,7 @@ const partsFace = (): Art =>
     roundRect(35.4, 0.45, 13.4, 1.3, 0.5, SW),
     text(42.1, 1.4, 0.8, "JLCJLCJLCJLC", { anchor: "middle" }),
     // Above the bare copper, which starts 3.0 into the panel.
-    ...PARTS_WAYS.flatMap((x, i) => [24.95, 26.15].map((y) => chevron(x, y, i === 0))),
+    ...PARTS_WAYS.flatMap((x, i) => [24.55, 26.25].map((y) => chevron(x, y, i === 0))),
     ...[1, 2, 3, 4, 5, 6].map((n) =>
       text(bandX(n, wayX(n)) + SENSOR.dx + BOARD_HALF, 17.2, 0.8, `S${n}`, { anchor: "middle", w: 0.2 }),
     ),
