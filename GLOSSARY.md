@@ -1,0 +1,44 @@
+# Blade Reader
+
+A board that measures the current on every way of a blade fuse panel. These are the words for
+the panel it fits and the parts of the board itself.
+
+## The fuse panel
+
+**Fuse panel**:
+The blade fuse block a strip fits, such as the Blue Sea ST Blade.
+_Avoid_: Fuse box, fuse block
+
+**Way**:
+One numbered fuse position on the fuse panel, and the circuit it feeds.
+_Avoid_: Channel, slot
+
+**Pocket**:
+The space between two barriers of the fuse panel where a way's output screw sits on its pad.
+
+## The strip
+
+**Strip**:
+One 6-way Blade Reader board, fitted along one long side of a fuse panel.
+_Avoid_: Board (when the fitted unit is meant), module
+
+**Finger**:
+The part of a strip that reaches into one way's pocket and is clamped under that way's screw.
+One finger per way.
+_Avoid_: Tab, tooth, prong
+
+**Body**:
+The part of a strip outboard of the fuse panel's edge, which carries the electronics and the
+output nuts.
+
+**Comb**:
+The strip's outline: six fingers joined by the body.
+
+**Parts face**:
+The face of a strip that carries every assembled part. It faces down, towards the bulkhead.
+_Avoid_: Top, bottom (tscircuit's "top" is the parts face)
+
+**Ring face**:
+The face of a strip opposite the parts face. It is bare copper where ring terminals land, and
+faces up.
+_Avoid_: Top, bottom

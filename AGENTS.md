@@ -6,9 +6,8 @@ reopen a decision there without saying so explicitly.
 
 ## Vocabulary
 
-- **Fuse panel**: the blade fuse block the strip fits. Not "fuse box" or "fuse block".
-- **Way**: one numbered fuse position, and the circuit it feeds. Not "channel" or "slot".
-- **Strip**: one 6-way Blade Reader board, fitted along one long side of a fuse panel.
+Use the terms in `GLOSSARY.md` (fuse panel, way, strip, finger, body, parts face, ring face),
+and none of the words it says to avoid.
 
 ## Conventions
 
