@@ -47,3 +47,8 @@ _Avoid_: Top, bottom (tscircuit's "top" is the parts face)
 The face of a strip opposite the parts face. It is bare copper where ring terminals land, and
 faces up.
 _Avoid_: Top, bottom
+
+**Ring keepout**:
+The area of the ring face that a way's fitted ring and its tongue can cover, including as they
+swing. Only that way's own copper may sit there; every other net, ground included, stays out.
+_Avoid_: Ring zone, danger zone
