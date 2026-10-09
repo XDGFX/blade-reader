@@ -47,16 +47,16 @@ code { font: 13px var(--f-mono); }
 
 <div class="wrap">
   <header style="display:grid;gap:8px">
-    <span class="eyebrow">PROTOTYPE · round 6 · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
+    <span class="eyebrow">PROTOTYPE · round 7 · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
     <h1>Ring-face silkscreen concepts</h1>
   </header>
 
   <section class="summary">
-    <h2>Round 6: the chamfer corner</h2>
+    <h2>Round 7: the chamfer corner, second try</h2>
     <ul>
       <li><strong>Settled:</strong> C2 with the quote across the fingers, white silk on black, lead-free HASL, Economic.</li>
-      <li><strong>This round:</strong> what goes in the free corner of the way 6 ear, between the wordmark, way 6's nut, GND and the chamfer. It's about 9 × 9 mm, a triangle cut by the chamfer. Three options below, everything else unchanged.</li>
-      <li>With rings fitted, the ground cable runs up through the right of the corner, and way 6's cable passes its left edge. Try the Rings toggle.</li>
+      <li><strong>Not it:</strong> the unicorn, a rain patch and chamfer stripes.</li>
+      <li><strong>This round:</strong> three ideas drawn from the board's own story. One finishes the quote, one shows what the quote is about, and one shows what the board does.</li>
     </ul>
   </section>
 
@@ -67,33 +67,33 @@ code { font: 13px var(--f-mono); }
   </div>
 
   <section class="concept">
-    <h2>U · Origami unicorn</h2>
-    <div class="board" id="U"></div>
+    <h2>O · The shoulder of Orion</h2>
+    <div class="board" id="O"></div>
     <div class="notes">
-      <div><h3>Idea</h3><p>Gaff's folded unicorn from Blade Runner, as 0.18 mm line art, about 8 × 7.5 mm. It faces the wordmark, with its horn following the chamfer's slope. It pairs with the quote as the second film reference. Only someone who knows the film will spot it.</p></div>
+      <div><h3>Idea</h3><p>The constellation at the end of the quote, just above “OF ORION.” on finger 6. The eight main stars sit at their real positions, sized by brightness, joined by 0.15 mm lines. Betelgeuse, the shoulder, has a ring round it. About 4.5 × 8.6 mm, fitted under the chamfer.</p></div>
     </div>
   </section>
 
   <section class="concept">
-    <h2>R · A patch of rain</h2>
-    <div class="board" id="R"></div>
+    <h2>F · A fridge drawing amps</h2>
+    <div class="board" id="F"></div>
     <div class="notes">
-      <div><h3>Idea</h3><p>Round 3's rain, limited to this corner: the same grid and angle, about 15 streaks. It echoes the banner's rain without spreading across the body. It balances the katakana sign at the other end.</p></div>
+      <div><h3>Idea</h3><p>A small current-over-time trace of a fridge compressor cycling. Each cycle has an inrush spike, then a running plateau, then off. That's the kind of thing a strip actually records, and it's the punchline of the quote. Axes labelled A and t. About 6 × 5 mm.</p></div>
     </div>
   </section>
 
   <section class="concept">
-    <h2>S · Chamfer stripes</h2>
-    <div class="board" id="S"></div>
+    <h2>D · Unlit readout</h2>
+    <div class="board" id="D"></div>
     <div class="notes">
-      <div><h3>Idea</h3><p>Five 0.2 mm lines parallel to the chamfer, 0.8 mm apart, shortening inwards. It's a plain graphic that makes the cut corner look intended. It's the most restrained of the three.</p></div>
+      <div><h3>Idea</h3><p>A three-digit seven-segment display with every segment drawn, reading 88.8 A, like the per-way displays in the banner. It shows what the board does at a glance. About 7.2 × 3.2 mm.</p></div>
     </div>
   </section>
 
   <section class="summary questions">
     <h2>For Cal to pick</h2>
     <ol>
-      <li>Unicorn, rain, stripes, or leave the corner empty?</li>
+      <li>Orion, the fridge trace, the readout, or still none of these?</li>
     </ol>
   </section>
 </div>
@@ -277,10 +277,52 @@ const stripes = () => [1.2, 2.0, 2.8, 3.6, 4.4].map((d, i) => {
 // Rain limited to the corner, at round 3's density.
 const cornerRain = () => rain(true).replace(/<line x1="([\d.]+)" y1="([\d.]+)"[^>]*\/>/g, (m, x, y) => (+x > 88 && +y < 11 ? m : ""));
 
+// Orion as seen in the sky (east on the left): RA in degrees, Dec in degrees, silk radius.
+const ORION = {
+  betelgeuse: [88.79, 7.41, .5], bellatrix: [81.28, 6.35, .32], meissa: [83.78, 9.93, .2],
+  mintaka: [83.00, -0.30, .26], alnilam: [84.05, -1.20, .3], alnitak: [85.19, -1.94, .29],
+  saiph: [86.94, -9.67, .27], rigel: [78.63, -8.20, .45],
+};
+const ORION_LINES = [["betelgeuse", "meissa"], ["meissa", "bellatrix"], ["betelgeuse", "alnitak"], ["bellatrix", "mintaka"],
+  ["mintaka", "alnilam"], ["alnilam", "alnitak"], ["alnitak", "saiph"], ["mintaka", "rigel"]];
+function orion(ox, oy, k) {
+  // ox, oy: where Betelgeuse's RA and Meissa's Dec land; k: mm per degree.
+  const p = n => [ox + (88.79 - ORION[n][0]) * k, oy + (9.93 - ORION[n][1]) * k];
+  const lines = ORION_LINES.map(([a, b]) => { const [x1, y1] = p(a), [x2, y2] = p(b);
+    return `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}"/>`; }).join("");
+  const stars = Object.keys(ORION).map(n => { const [x, y] = p(n);
+    return `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${ORION[n][2]}" fill="var(--silk)"/>`; }).join("");
+  const [bx, by] = p("betelgeuse");
+  return `<g stroke="var(--silk)" stroke-width=".15">${lines}</g>${stars}
+    <circle cx="${bx.toFixed(2)}" cy="${by.toFixed(2)}" r="1.0" fill="none" stroke="var(--silk)" stroke-width=".15"/>`;
+}
+
+// A fridge's compressor current: inrush spike, running plateau, off, twice over.
+function fridge(ox, oy) {
+  const P = [[0, 3.6], [.8, 3.6], [.8, .3], [1.05, 2.0], [2.6, 2.0], [2.6, 3.6], [3.5, 3.6], [3.5, .3], [3.75, 2.0], [5.3, 2.0], [5.3, 3.6], [6.0, 3.6]];
+  return `<g fill="none" stroke="var(--silk)" stroke-linejoin="round" stroke-linecap="round">
+    <polyline points="${ox},${oy - .2} ${ox},${oy + 4} ${ox + 6.2},${oy + 4}" stroke-width=".15"/>
+    <polyline points="${P.map(([x, y]) => `${(ox + x).toFixed(2)},${(oy + y).toFixed(2)}`).join(" ")}" stroke-width=".2"/></g>
+    ${t(ox - .3, oy + .6, .8, "A", { a: "end" })}${t(ox + 6.2, oy + 5.0, .8, "t", { a: "end" })}`;
+}
+
+// An unlit seven-segment readout, like the banner's per-way displays.
+function readout(ox, oy) {
+  const W = 1.25, H = 2.2, g = .12;
+  const segs = (x, y) => [[x + g, y, x + W - g, y], [x + W, y + g, x + W, y + H / 2 - g], [x + W, y + H / 2 + g, x + W, y + H - g],
+    [x + g, y + H, x + W - g, y + H], [x, y + H / 2 + g, x, y + H - g], [x, y + g, x, y + H / 2 - g], [x + g, y + H / 2, x + W - g, y + H / 2]]
+    .map(([a, b, c, d]) => `<line x1="${a.toFixed(2)}" y1="${b.toFixed(2)}" x2="${c.toFixed(2)}" y2="${d.toFixed(2)}"/>`).join("");
+  const dx = 1.75, x0 = ox + .55, y0 = oy + .5;
+  return `<rect x="${ox}" y="${oy}" width="7.2" height="3.2" rx=".5" fill="none" stroke="var(--silk)" stroke-width=".15"/>
+    <g stroke="var(--silk)" stroke-width=".2" stroke-linecap="round">${segs(x0, y0)}${segs(x0 + dx, y0)}${segs(x0 + 2 * dx, y0)}</g>
+    <circle cx="${(x0 + 2 * dx - .25).toFixed(2)}" cy="${(y0 + H).toFixed(2)}" r=".15" fill="var(--silk)"/>
+    ${t(ox + 6.9, oy + 2.7, 1.0, "A", { a: "end" })}`;
+}
+
 const CONCEPTS = {
-  U: () => C2() + fingers() + unicorn(87.6, 2.6),
-  R: () => C2() + fingers() + cornerRain(),
-  S: () => C2() + fingers() + stripes(),
+  O: () => C2() + fingers() + orion(90.9, 1.8, .44),
+  F: () => C2() + fingers() + fridge(91.4, 5.9),
+  D: () => C2() + fingers() + readout(90.9, 7.4),
 };
 
 function render() {
