@@ -33,8 +33,9 @@ re-crimping, and the panel's cover still goes back on.
   30 A per way, and none of the panel's bus current crosses the strip.
 - **Brains:** an ESP32-C3 on every strip, running ESPHome, reporting over Wi-Fi. Each strip is a
   self-contained device; there are no cables between strips.
-- **Power:** taken from any one of the strip's own ways through a jumper, with a fuse on the
-  board. It accepts 12 V and 24 V systems.
+- **Power:** taken from whichever of the strip's own ways are live, through a diode on each,
+  with a fuse on the board and one ground wire to the negative bus. It accepts 12 V and 24 V
+  systems.
 - **Accuracy:** aiming for about ±0.3 A, after zeroing each way in firmware and correcting for
   board temperature. That is enough to find the heater, fridge or inverter responsible for the
   missing amp-hours. It is not a laboratory instrument. A way drawing a few milliamps will read
