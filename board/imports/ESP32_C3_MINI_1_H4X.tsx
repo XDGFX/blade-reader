@@ -112,17 +112,17 @@ const pinAttributes = {
   pin31: {isInput: true, isOutput: true, isBidirectional: true, canUseTriState: true, capabilities: ["i2c_sda","i2c_scl","spi_cs","spi_sck","spi_mosi","spi_miso","uart_tx","uart_rx"], canUseInternalPullup: true, canUseInternalPulldown: true, isGpio: true}
 } satisfies NonNullable<ChipProps["pinAttributes"]>
 
-export const ESP32_C3_MINI_1_N4 = (props: ChipProps<typeof pinLabels>) => {
+export const ESP32_C3_MINI_1_H4X = (props: ChipProps<typeof pinLabels>) => {
   return (
     <chip
       pinLabels={pinLabels}
       pinAttributes={pinAttributes}
       supplierPartNumbers={{
   "jlcpcb": [
-    "C2838502"
+    "C41349510"
   ]
 }}
-      manufacturerPartNumber="ESP32-C3-MINI-1-N4"
+      manufacturerPartNumber="ESP32-C3-MINI-1-H4X"
       footprint={<footprint>
         <smtpad portHints={["pin1"]} pcbX="-5.899912mm" pcbY="3.999992mm" width="0.7999984mm" height="0.3999992mm" shape="rect" />
 <smtpad portHints={["pin2"]} pcbX="-5.899912mm" pcbY="3.199892mm" width="0.7999984mm" height="0.3999992mm" shape="rect" />

@@ -4,7 +4,7 @@
 // Board size is a placeholder until the layout ticket draws the comb.
 
 import { CD4051BM96 } from "./imports/CD4051BM96"
-import { ESP32_C3_MINI_1_N4 } from "./imports/ESP32_C3_MINI_1_N4"
+import { ESP32_C3_MINI_1_H4X } from "./imports/ESP32_C3_MINI_1_H4X"
 import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
 import { SS210 } from "./imports/SS210"
 import { ProgLock } from "./lib/parts"
@@ -149,7 +149,7 @@ export default () => (
     />
 
     {/* ── ESP32-C3 ─────────────────────────────────────────────────────────── */}
-    <ESP32_C3_MINI_1_N4
+    <ESP32_C3_MINI_1_H4X
       name="U1"
       schX={22}
       schY={0}
