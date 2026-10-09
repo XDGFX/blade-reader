@@ -23,9 +23,10 @@ and none of the words it says to avoid.
 
 ## Tooling
 
-The board is designed in [tscircuit](https://tscircuit.com), installed with Bun
-(`bun add -g tscircuit`), with the version pinned. Known caveats are in `docs/design.md` under
-Tooling.
+The board is designed in [tscircuit](https://tscircuit.com), in `board/`, with the version pinned
+by `board/bun.lock`. Run it through `bun run` or `bunx tsci` in `board/`, so the pinned copy is
+used: read every bare `tsci` in the `tscircuit` skill that way. Known caveats are in
+`docs/design.md` under Tooling.
 
 ## Issue tracker
 
