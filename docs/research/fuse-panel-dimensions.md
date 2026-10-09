@@ -1,0 +1,99 @@
+# Fuse panel fit dimensions
+
+Fit dimensions of the Blue Sea ST Blade 12-way fuse panel (with negative bus), for laying out the
+way monitor that bolts onto its positive output screws (XDGFX/hailey#178). Answers XDGFX/hailey#191.
+
+Source: Fusion document `fuse_block_12`, measured on 2026-10-09 with read-only scripts (bounding
+boxes and ray casts). Each value is marked **CAD** (measured), **DS** (datasheet drawing) or
+**unknown**.
+
+## The model
+
+- 40 bodies: the base in two pieces, 24 screws, 22 lock washers and the two studs.
+- **The cover is not modelled.** Nothing about the cover comes from CAD.
+- The screws are modelled seated hard down with no ring terminal under them.
+
+Axes used below:
+
+- **Height** is measured up from the mounting face (the underside of the base).
+- **Inset** is measured in from the long side edge the screws sit along.
+- **Along** is measured from the positive end, the end with the + stud and ways 11–12.
+
+## Envelope
+
+| Dimension | Value | Source |
+|---|---|---|
+| Length | 164.40 mm | CAD (DS 164.39) |
+| Width | 84.20 mm | CAD (DS 84.20) |
+| Base height, no cover | 26.21 mm | CAD |
+| Height with cover | 38.57 mm, so the cover adds about 12.4 mm above the base | DS |
+| Mounting holes | Two sets at the corners: Ø3.15 on a 75.6 × 148.6 mm rectangle, and Ø2.84 (Ø5.56 counterbore) on a 53.84 × 125.96 mm rectangle. Neither matches the DS 63.50 mm figure, which was not reconciled | CAD |
+
+## Positive output screws (the ways)
+
+| Dimension | Value | Source |
+|---|---|---|
+| Count | 12: six down each long side, ways paired across the panel | CAD |
+| Pitch | 13.36 mm (13.360 between centres) | CAD |
+| Inset from the long edge | 8.52 mm | CAD |
+| Centre to centre across the panel | 67.16 mm | CAD |
+| Along, ways 11–12 to ways 1–2 | 27.83, 41.19, 54.55, 67.91, 81.27, 94.63 mm | CAD |
+| From the negative end, same screws in reverse | 69.77 to 136.57 mm | CAD |
+| Thread | Ø4.17 mm, which is #8 major diameter | CAD; DS says #8-32 |
+| Head | Pan head, Ø8.18 mm, 2.9 mm tall | CAD |
+| Lock washer | Ø8.13 OD, Ø4.31 ID, about 0.5 mm | CAD |
+| Terminal pad top | 14.33 mm height | CAD |
+| Head underside, as modelled | 15.14 mm height (pad + washer) | CAD |
+| Head top, as modelled | 18.02 mm height | CAD |
+| Thread below the pad | 7.1 mm | CAD |
+
+The negative bus has six more screws, three per side at the negative end, 11.07 mm pitch and
+8.45 mm inset. The way monitor does not touch them.
+
+## Pocket around each screw
+
+Each screw sits in a pocket between two barriers. The pocket is open to the long side and runs
+inwards to the fuse holder wall.
+
+| Dimension | Value | Source |
+|---|---|---|
+| Clear width between barriers | 11.11 mm at the pad, widening to 11.6 mm at the barrier top (draft) | CAD |
+| Barrier thickness | about 2.25 mm | CAD |
+| Pocket depth, from the side | From the base edge to the fuse holder wall, inset 0.3 to about 14.5 mm. Screw centre 8.5 mm in | CAD |
+| Pad step at the outer end | Pad steps down from 14.3 to about 12.3 mm height in the last 3 mm before the edge | CAD |
+| Side wall below the pocket | Solid base side up to about 11.7 mm height; above that the pocket is open to the side | CAD |
+| Barrier top | Slopes from 22.9 mm height at the inner end to about 18.7 mm at the outer end | CAD |
+| Base top (fuse area) | 26.21 mm height | CAD |
+
+## Cover
+
+| Dimension | Value | Source |
+|---|---|---|
+| Overall top | 38.57 mm height | DS |
+| Wall thickness, inside top height | unknown; about 36 mm if the wall is 2.5 mm | unknown |
+| Side cutout size and position | unknown | unknown |
+| Head top to cover inside | about 18 mm with the screw as modelled; about 16.5 mm with a 1.5 mm ring terminal under the head | estimate from DS, not CAD |
+
+## Design implications
+
+- **A single board cannot sit flat on the pads under all the screws.** The barriers rise 4 to
+  8.5 mm above the pads, so a board spanning ways has to sit above the barrier tops (above
+  22.9 mm height at the inner end, 18.7 mm at the outer end), or beside the panel, or reach in
+  as fingers no wider than 11.1 mm, one per pocket.
+- **Stacking a 1.6 mm board under a screw clears the cover comfortably on height**: ring
+  terminal plus board lifts the head about 3 mm, to roughly 21 mm, against a cover inside of
+  about 36 mm. What cannot be checked is whether the cover's side skirt and cutouts let a
+  board pass out of the side at pad height; that needs the cover.
+- The screws have about 7 mm of thread below the pad. A 1.6 mm board plus a ring terminal
+  lifts the head about 3 mm and leaves about 4 mm engaged, which should hold, but check a longer #8-32 if the stack
+  grows.
+- The XUNPU PCB-05-M4 terminal from `way-monitor-terminals-and-copper.md` is 11 mm tall. Fitted
+  on a board at pad level it would reach about 27 mm height, above the barriers and below the
+  cover's likely inside.
+
+## Not determinable from CAD
+
+- Anything about the cover: wall thickness, side skirt depth, cutout size and position.
+- Ring terminal thickness: depends on the crimps actually fitted. Take 1–1.5 mm for typical #8 rings
+  until measured.
+- Space beside the panel in the cabinet: not in this model; it depends on the cabinet layout.
