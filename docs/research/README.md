@@ -12,5 +12,6 @@ design basis says so; the notes themselves are not rewritten.
 | [`way-monitor-power-supply.md`](way-monitor-power-supply.md) | Current budget, regulator and input protection. Its 65 V sizing and its 3.3 V-over-cable sections are superseded |
 | [`jlc-panelised-assembly.md`](jlc-panelised-assembly.md) | JLC fees and panel rules, and shipping to Australia |
 | [`fuse-panel-dimensions.md`](fuse-panel-dimensions.md) | Blue Sea ST Blade 12-way, measured from CAD |
+| [`strip-thermal.md`](strip-thermal.md) | Temperature rise of a loaded strip, layout rules and a derating note. Model in [`strip-thermal-model.py`](strip-thermal-model.py) |
 
 "Way monitor" was the working name before the project became Blade Reader.
