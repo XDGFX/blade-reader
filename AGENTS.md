@@ -27,3 +27,7 @@ reopen a decision there without saying so explicitly.
 The board is designed in [tscircuit](https://tscircuit.com), installed with Bun
 (`bun add -g tscircuit`), with the version pinned. Known caveats are in `docs/design.md` under
 Tooling.
+
+## Issue tracker
+
+GitHub Issues on this repo. Conventions, including how `/wayfinder` maps and tickets work here, are in `docs/agents/issue-tracker.md`.
