@@ -1,0 +1,347 @@
+<title>Parts Face Silkscreen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* PROTOTYPE (issue #28). One column: the decision first, then each concept as a full-width render of the parts face. */
+:root {
+  --bg: #f3f4f1; --fg: #1d211f; --muted: #5d655f; --line: #d3d7d1; --panel: #ffffff; --accent: #2f6b4f; --warn: #b4441f;
+  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151816; --fg: #e4e7e3; --muted: #9aa39c; --line: #2d332f; --panel: #1d211f; --accent: #7cc3a0; --warn: #f08a62; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #151816; --fg: #e4e7e3; --muted: #9aa39c; --line: #2d332f; --panel: #1d211f; --accent: #7cc3a0; --warn: #f08a62; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); margin: 0; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 28px; }
+h1 { font: 700 clamp(26px, 4vw, 36px)/1.1 var(--f-display); font-stretch: 118%; letter-spacing: .01em; margin: 0; text-wrap: balance; }
+h2 { font: 650 20px/1.2 var(--f-display); font-stretch: 112%; margin: 0; text-wrap: balance; }
+h3 { font: 600 13px/1.3 var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0; }
+p, li { max-width: 72ch; }
+p { margin: 0; }
+.eyebrow { font: 500 12px var(--f-mono); color: var(--muted); letter-spacing: .04em; }
+.summary { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 20px; display: grid; gap: 14px; }
+.summary ul, .questions ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+tr.rec td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.controls { position: sticky; top: 0; z-index: 2; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.controls label { font: 500 12px var(--f-mono); color: var(--muted); margin-right: 6px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); background: var(--panel); color: var(--fg); border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.concept { display: grid; gap: 12px; }
+.board { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px; overflow-x: auto; }
+.board svg { display: block; width: 100%; min-width: 720px; height: auto; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.notes div { display: grid; gap: 4px; align-content: start; }
+.check { font: 500 12px var(--f-mono); color: var(--muted); }
+.check .bad { color: var(--warn); }
+</style>
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <div class="eyebrow">PROTOTYPE · issue #28 · rendered from board/dist/index/circuit.json at 0719b85</div>
+    <h1>Parts-face silkscreen</h1>
+    <p>The parts face (tscircuit's top layer) as seen from that side, without mirroring: way 1 on the right, the fingers pointing down. Every pad, hole and courtyard is from the real build. Black mask, white silk, lead-free HASL, as settled for the ring face.</p>
+  </header>
+
+  <section class="summary">
+    <h2>Decision</h2>
+    <p>Silk on this face is free at JLC and adds no part types, so every option costs the same, <strong>$0</strong>. The choice is about legibility at assembly and how the face looks out of the box. Once fitted, the face is against the panel and the bulkhead.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Concept</th><th>Carries</th><th>For</th><th>Against</th></tr></thead>
+      <tbody>
+        <tr><td>Stock</td><td>Whatever tscircuit's footprints draw</td><td>No work</td><td>Designators sit on pads and part bodies, D11–D16's cathode bar is on the copper, the ESP32 outline runs off the board. Not acceptable as is</td></tr>
+        <tr class="rec"><td>A · Datasheet</td><td>Every designator that fits, pin-1 dots, cathode bars, test-pad net names, REV A, the JLC marker</td><td>Most useful at bring-up: find any part on the BOM, probe a test pad by name</td><td>Busy at 0.8 mm. No sense of design on its own</td></tr>
+        <tr><td>B · Echo</td><td>The ring face's language turned over: wordmark, chevrons on the fingers, S1 filled, a framed panel. Designators only on polarised parts and ICs</td><td>Reads as the same object from both sides. Best in photos</td><td>Repeats the ring face rather than adding to it. Fewer designators to debug by</td></tr>
+        <tr><td>C · Block map</td><td>Corner brackets round each functional block, named: SUPPLY, PROG, MCU, MUX, S1–S6, TEMP, with the block's designators in its label</td><td>Explains the board: the circuit is legible at a glance, a teaching object</td><td>Brackets need re-checking whenever placement moves. Designator lists stand in for per-part labels</td></tr>
+      </tbody>
+    </table></div>
+    <ul>
+      <li><strong>Recommendation: A, with the origami unicorn in the way 6 ear.</strong> This face is seen at assembly and bring-up, where per-part designators and named test pads earn their place. The ring face already carries the design. The unicorn adds one confident idea: Gaff's origami unicorn from <em>Blade Runner</em>, on the face nobody sees once the strip is fitted. It's hidden the way the film hides it, and it pairs with the quote on the fingers.</li>
+      <li>The <strong>way 6 ear</strong> switch below applies to every concept: empty, or the unicorn.</li>
+      <li>J1 moves in <em>Move the ESP-PROG footprint out from under way 1's ring</em>. Its pin-1 mark and label move with it.</li>
+    </ul>
+  </section>
+
+  <div class="controls">
+    <span><label>Way 6 ear</label><span class="seg" data-k="ear"><button data-v="none" aria-pressed="false">Empty</button><button data-v="unicorn" aria-pressed="true">Unicorn</button></span></span>
+    <span><label>Parts</label><span class="seg" data-k="parts"><button data-v="off" aria-pressed="true">Bare board</button><button data-v="on" aria-pressed="false">Fitted</button></span></span>
+    <span><label>Courtyards</label><span class="seg" data-k="court"><button data-v="off" aria-pressed="true">Off</button><button data-v="on" aria-pressed="false">On</button></span></span>
+  </div>
+
+  <section class="concept"><h2>Stock: what tscircuit draws now</h2><div class="board" id="stock"></div>
+    <p class="check" id="stock-check"></p></section>
+
+  <section class="concept"><h2>A · Datasheet</h2><div class="board" id="A"></div>
+    <p class="check" id="A-check"></p>
+    <div class="notes">
+      <div><h3>Designators</h3><p>0.8 mm text, placed by a search round each part's courtyard (above, below, then either side), clear of every pad, hole, slot, courtyard and the board edge. The six sensor cap trios share one label each, e.g. C11–31, because three 0402s at 1 mm pitch leave no room.</p></div>
+      <div><h3>Marks</h3><p>One mark per kind across the board: a Ø0.5 dot by pin 1 of every IC, a bar beside every cathode (SS210s, TVS, LED). The stock silk outlines are dropped.</p></div>
+      <div><h3>Free space</h3><p>The JLC order-number marker (JLCJLCJLCJLC, 1.0 mm) and REV A go in the strip above D1 and F1. Test-pad nets are written as a legend left of the pads, in the pads' order.</p></div>
+    </div></section>
+
+  <section class="concept"><h2>B · Echo the ring face</h2><div class="board" id="B"></div>
+    <p class="check" id="B-check"></p>
+    <div class="notes">
+      <div><h3>Wordmark</h3><p>The banner's BLADE READER outline at 17 mm, in the free strip between F1 and the test pads, the only place on this face with the room.</p></div>
+      <div><h3>Fingers</h3><p>Two chevrons on each finger between the panel edge and the clamp pad, pointing at the sensor. Way 1's are filled for Sensor 1, as on the ring face. Hidden against the panel once fitted.</p></div>
+      <div><h3>Labels</h3><p>Designators only on ICs, diodes and the LED, where polarity or pin 1 matters. S1–S6 above each sensor. The JLC marker sits in a double frame like the ring face's sign.</p></div>
+    </div></section>
+
+  <section class="concept"><h2>C · Block map</h2><div class="board" id="C"></div>
+    <p class="check" id="C-check"></p>
+    <div class="notes">
+      <div><h3>Blocks</h3><p>Corner brackets, 0.15 mm, round SUPPLY, PROG, MCU, MUX, TEMP and each sensor column. Each label names the block and lists its designators, so a BOM line can still be found.</p></div>
+      <div><h3>Flow</h3><p>A small arrow on each finger root reads LINE, the sensor column reads up to LOAD at the nut: the current's path, stated once.</p></div>
+      <div><h3>Upkeep</h3><p>Brackets are hand-placed. Moving a block means moving its brackets.</p></div>
+    </div></section>
+
+  <section class="summary">
+    <h2>What is seen, and when</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Moment</th><th>Who</th><th>What they need from this face</th></tr></thead>
+      <tbody>
+        <tr><td>JLC assembly</td><td>Machine and JLC's checker</td><td>Nothing: the CPL drives placement. The order-number marker, if kept, goes where we say rather than anywhere</td></tr>
+        <tr><td>Bring-up and repair</td><td>Cal</td><td>Designators, pin 1, polarity, test-pad nets, the ESP-PROG pin 1</td></tr>
+        <tr><td>Unboxing and photos</td><td>Anyone</td><td>A face that looks designed: the second side of the object</td></tr>
+        <tr><td>Fitted</td><td>No one</td><td>Nothing. The face is against the panel, the body faces the bulkhead</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="summary questions">
+    <h2>For Cal</h2>
+    <ol>
+      <li>Which concept: A, B or C, or parts of each?</li>
+      <li>The unicorn in the way 6 ear: yes or no?</li>
+      <li>Keep the JLC order-number marker on this face, or remove it (free)?</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+const G = /*GEOM*/null;
+const LOGO = /*LOGO*/null;
+const S = { ear: "unicorn", parts: "off", court: "off" };
+const C = { bg: "var(--panel)", panel: "var(--line)", mask: "#16181a", edge: "var(--muted)", cu: "#24221f", via: "#2c2925", body: "#3a3d40", bodyEdge: "#55595d", court: "#ff5a36", silk: "#f4f4ee" };
+const SILK = C.silk, SW = .15, CW = .6; // stroke width; mono glyph width per em
+const ring = a => "M" + a.map(p => p.join(",")).join("L") + "Z";
+const WAYS = [1, 2, 3, 4, 5, 6].map(n => 85.41 - (n - 1) * 13.36);
+const comp = Object.fromEntries(G.comps.map(k => [k.n, k]));
+
+// ---------- geometry checks ----------
+const bboxOf = pts => pts.reduce((b, [x, y]) => [Math.min(b[0], x), Math.min(b[1], y), Math.max(b[2], x), Math.max(b[3], y)], [1e9, 1e9, -1e9, -1e9]);
+const grow = (b, d) => [b[0] - d, b[1] - d, b[2] + d, b[3] + d];
+const hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+const padBox = p => p.c ? [p.c[0] - p.c[2], p.c[1] - p.c[2], p.c[0] + p.c[2], p.c[1] + p.c[2]] : bboxOf(p.poly);
+const PADS = [...G.pads.map(p => ({ n: p.n, b: padBox(p) })), ...G.holes.map(h => ({ n: h.n, b: [h.x - h.r, h.y - h.r, h.x + h.r, h.y + h.r] })),
+  ...G.slots.map(s => ({ n: "slot", b: [s.x - s.w / 2, s.y - s.h / 2, s.x + s.w / 2, s.y + s.h / 2] }))];
+const COURT = {};
+for (const k of G.courtyards) COURT[k.n] = COURT[k.n] ? bboxOf([...[[COURT[k.n][0], COURT[k.n][1]], [COURT[k.n][2], COURT[k.n][3]]], ...k.poly]) : bboxOf(k.poly);
+for (const k of G.comps) if (!COURT[k.n]) COURT[k.n] = [k.x - k.w / 2, k.y - k.h / 2, k.x + k.w / 2, k.y + k.h / 2];
+const inside = ([x, y]) => { let c = false; const o = G.outline; for (let i = 0, j = o.length - 1; i < o.length; j = i++) { const [xi, yi] = o[i], [xj, yj] = o[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c } return c };
+const segD = ([px, py], [ax, ay], [bx, by]) => { const dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy; const t = l ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l)) : 0; return Math.hypot(px - ax - t * dx, py - ay - t * dy) };
+const edgeD = p => { let m = 1e9; const o = G.outline; for (let i = 0; i < o.length; i++) m = Math.min(m, segD(p, o[i], o[(i + 1) % o.length])); return m };
+const onBoard = b => [[b[0], b[1]], [b[2], b[1]], [b[0], b[3]], [b[2], b[3]], [(b[0] + b[2]) / 2, b[1]], [(b[0] + b[2]) / 2, b[3]]].every(p => inside(p) && edgeD(p) >= .3);
+
+// Every silk element registers its box so the page can check it against pads and the edge.
+let BOXES = [];
+const reg = (b, what) => { BOXES.push({ b, what }); return b };
+function audit(id) {
+  const bad = [];
+  for (const { b, what } of BOXES) {
+    const p = PADS.find(p => hit(b, grow(p.b, .1)));
+    if (p) bad.push(`${what} on ${p.n} pad${window.DBG ? ` [${b.map(v => v.toFixed(2))}] vs [${p.b.map(v => v.toFixed(2))}]` : ""}`);
+    else if (!onBoard(b)) bad.push(`${what} off the board or within 0.3 mm of the edge`);
+  }
+  return bad;
+}
+
+// ---------- silk primitives ----------
+const T = (x, y, s, txt, o = {}) => {
+  const w = txt.length * s * CW + Math.max(0, txt.length - 1) * (o.ls || 0), a = o.a || "start";
+  const x0 = a === "middle" ? x - w / 2 : a === "end" ? x - w : x;
+  reg([x0, y - s * .72, x0 + w, y], o.what || `“${txt}”`);
+  return `<text x="${x}" y="${y}" font-size="${s}" fill="${SILK}" font-family="IBM Plex Mono, monospace" font-weight="${o.w || 500}" letter-spacing="${o.ls || 0}" text-anchor="${a}"${o.rot ? ` transform="rotate(${o.rot} ${x} ${y})"` : ""}>${txt}</text>`;
+};
+const dot = (x, y, what) => { reg([x - .25, y - .25, x + .25, y + .25], what); return `<circle cx="${x}" cy="${y}" r=".25" fill="${SILK}"/>` };
+const bar = (x0, y0, x1, y1, what) => { reg([Math.min(x0, x1) - .1, Math.min(y0, y1) - .1, Math.max(x0, x1) + .1, Math.max(y0, y1) + .1], what); return `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${SILK}" stroke-width=".25" stroke-linecap="butt"/>` };
+const line = (pts, what, w = SW) => { pts.slice(1).forEach((p, i) => reg(grow(bboxOf([pts[i], p]), w / 2), what)); return `<polyline points="${pts.map(p => p.join(",")).join(" ")}" fill="none" stroke="${SILK}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>` };
+const frame = (x, y, w, h, what) => [0].map(i => { reg([x + i - .1, y + i - .1, x + w - i + .1, y + h - i + .1].map(v => v), what); return `<rect x="${x + i}" y="${y + i}" width="${w - 2 * i}" height="${h - 2 * i}" rx="${Math.max(.5 - i, .15)}" fill="none" stroke="${SILK}" stroke-width=".15"/>` }).join("");
+// Corner brackets on one edge of a box; the block's label forms the opposite edge.
+const brackets = (b, what, a, edge) => { const [x0, y0, x1, y1] = b; return (edge === "top"
+  ? [[[x0, y0 + a], [x0, y0], [x0 + a, y0]], [[x1 - a, y0], [x1, y0], [x1, y0 + a]]]
+  : [[[x1, y1 - a], [x1, y1], [x1 - a, y1]], [[x0 + a, y1], [x0, y1], [x0, y1 - a]]]).map(p => line(p, what)).join("") };
+function logo(x, y, w) {
+  const k = w / LOGO.w; reg([x, y, x + w, y + LOGO.h * k], "wordmark");
+  return `<path d="${LOGO.d}" fill="${SILK}" transform="translate(${x} ${y}) scale(${k}) translate(${-LOGO.x0} ${-LOGO.y0})"/>`;
+}
+const chevron = (x, y, solid) => {
+  const d = `M${x - 1.4},${y + .9} L${x},${y - .5} L${x + 1.4},${y + .9} L${x + 1.4},${y + 1.6} L${x},${y + .2} L${x - 1.4},${y + 1.6} Z`;
+  reg([x - 1.5, y - .6, x + 1.5, y + 1.7], "chevron");
+  return solid ? `<path d="${d}" fill="${SILK}"/>` : `<path d="${d}" fill="none" stroke="${SILK}" stroke-width=".15"/>`;
+};
+
+// ---------- functional marks ----------
+const padsOf = n => G.pads.filter(p => p.n === n);
+const pin = (n, name) => G.pads.find(p => p.n === n && p.pin === name);
+// Pin-1 dot: try each side of the pad, furthest from the part's centre first.
+function pin1(n, name = "1") {
+  const p = pin(n, name) || pin(n, "pin1"); if (!p) return "";
+  const b = padBox(p), k = comp[n], cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2, g = .5;
+  const cands = [[b[0] - g, cy], [b[2] + g, cy], [cx, b[1] - g], [cx, b[3] + g], [b[0] - g, b[1] - g], [b[2] + g, b[1] - g], [b[0] - g, b[3] + g], [b[2] + g, b[3] + g]]
+    .sort((u, v) => Math.hypot(v[0] - k.x, v[1] - k.y) - Math.hypot(u[0] - k.x, u[1] - k.y));
+  for (const [x, y] of cands) { const bb = [x - .25, y - .25, x + .25, y + .25]; if (!PADS.some(q => hit(bb, grow(q.b, .15))) && onBoard(bb) && !placed.some(q => hit(bb, q))) { placed.push(bb); return dot(x, y, `${n} pin 1`) } }
+  return "";
+}
+// Cathode bar: beside the cathode pad, on the side away from the anode.
+function cathode(n, name) {
+  const c = pin(n, name), a = padsOf(n).find(p => p !== c), cb = padBox(c), ab = padBox(a);
+  const vert = Math.abs((cb[1] + cb[3]) - (ab[1] + ab[3])) > Math.abs((cb[0] + cb[2]) - (ab[0] + ab[2]));
+  const g = .45;
+  if (vert) { const y = (cb[1] + cb[3]) < (ab[1] + ab[3]) ? cb[1] - g : cb[3] + g; return bar(cb[0], y, cb[2], y, `${n} cathode`) }
+  const x = (cb[0] + cb[2]) < (ab[0] + ab[2]) ? cb[0] - g : cb[2] + g; return bar(x, cb[1], x, cb[3], `${n} cathode`);
+}
+const CATHODES = [["D1", "1"], ["D2", "pin1"], ...[11, 12, 13, 14, 15, 16].map(i => [`D${i}`, "pin1"]), ["LED1", "2"]];
+const marks = () => CATHODES.map(([n, p]) => cathode(n, p)).join("") +
+  ["U2", "U3", "U11", "U12", "U13", "U14", "U15", "U16", "Q1"].map(n => pin1(n)).join("") + pin1("U1", "pin1") + j1Pin1();
+function j1Pin1() { const h = G.holes.find(h => h.n === "J1" && Math.abs(h.x - 82.743) < .01 && Math.abs(h.y - 2.63) < .01); return h ? dot(h.x, h.y - 1.55, "J1 pin 1") : "" }
+
+// ---------- designator placement ----------
+let placed = [];
+function place(label, n, s = .8, extra = []) {
+  const c = COURT[n], w = label.length * s * CW, h = s * .72, g = .3, mx = (c[0] + c[2]) / 2, my = (c[1] + c[3]) / 2;
+  const cands = [];
+  for (const d of [0, -1, 1, -2, 2]) cands.push([mx - w / 2 + d, c[1] - g - h], [mx - w / 2 + d, c[3] + g]);
+  for (const d of [0, -1, 1]) cands.push([c[0] - g - w, my - h / 2 + d], [c[2] + g, my - h / 2 + d]);
+  for (const [x, y] of cands) {
+    const b = [x, y, x + w, y + h];
+    if (PADS.some(p => hit(b, grow(p.b, .15)))) continue;
+    if (Object.entries(COURT).some(([m, cb]) => hit(b, cb))) continue;
+    if (placed.some(q => hit(b, grow(q, .2))) || BOXES.some(q => hit(b, grow(q.b, .2))) || !onBoard(b) || b[3] > 25.2) continue;
+    placed.push(b); return { svg: T(x, y + h, s, label, { what: label }), ok: true };
+  }
+  return { svg: "", ok: false };
+}
+const TRIOS = [1, 2, 3, 4, 5, 6].map(i => [`C1${i}`, `C2${i}`, `C3${i}`]);
+function designators(names) {
+  let svg = "", miss = [], tried = 0;
+  for (const n of names) { tried++; const r = place(n, n); svg += r.svg; if (!r.ok) miss.push(n) }
+  return { svg, miss, tried };
+}
+const ALL = G.comps.map(k => k.n).filter(n => !/^W\d|^TP\d|^C[123][1-6]$|^J1$|^N\d$|^U1$/.test(n));
+
+// ---------- the ear ----------
+// Gaff's origami unicorn, about 6 × 6.5 mm, standing in the way 6 ear clear of the chamfer.
+function unicorn(ox = 3.1, oy = 7.7, k = .62) {
+  const P = a => a.map(([x, y]) => [+(ox + x * k).toFixed(3), +(oy + y * k).toFixed(3)]);
+  const parts = [
+    [[1.6, 6], [7.2, 4.8], [7.8, 7.3], [2.2, 7.6], [1.6, 6]],        // body
+    [[1.6, 6], [7.8, 7.3]],                                          // fold
+    [[7.2, 4.8], [8.2, 1.6], [9.1, 2], [7.8, 7.3]],                  // neck
+    [[8.2, 1.6], [10.4, 2.9], [9.1, 2]],                             // head
+    [[8.6, 1.8], [10.8, -1.6], [9, 1.95]],                           // horn
+    [[1.6, 6], [0, 8.3], [2.2, 7.6]],                                // tail
+    [[2.4, 7.55], [2, 10.4], [3, 7.5]], [[3.6, 7.45], [3.9, 10.4], [4.2, 7.4]],
+    [[6.4, 7.35], [6.1, 10.4], [7, 7.32]], [[7.3, 7.3], [7.8, 10.4], [7.8, 7.3]],
+  ];
+  return parts.map(p => line(P(p), "unicorn", .15)).join("");
+}
+const ear = () => S.ear === "unicorn" ? unicorn() : "";
+
+// ---------- concepts ----------
+const tpLegend = (x = 68.4) => T(x, 1.4, .8, "3V3 VSUP GND", { a: "end", what: "test-pad legend" }) + T(x, 3.2, .8, "IO0 IO1 IO4", { a: "end", what: "test-pad legend" });
+const jlc = (x = 35.6, y = 1.55) => T(x, y, 1.0, "JLCJLCJLCJLC", { what: "JLC marker" });
+const CONCEPTS = {
+  stock() { BOXES = []; return { svg: "", note: "Stock silk is drawn as tscircuit outputs it; the audit below covers it." } },
+  A() {
+    let svg = ear() + marks() + jlc() + T(48.7, 1.55, 1.0, "REV A", { a: "end", what: "REV A" }) + tpLegend()
+      + T(81.5, 4.2, .8, "PROG", { a: "end", what: "PROG" }) + T(98.42, 25.0, .8, "U1", { a: "middle", what: "U1" });
+    const d = designators(ALL);
+    svg += d.svg;
+    for (const t of TRIOS) { const r = place(`${t[0]}-${t[2].slice(1)}`, t[1]); svg += r.svg; if (!r.ok) d.miss.push(t.join("/")) }
+    return { svg, note: `Designators placed: ${d.tried + 7 - d.miss.length} of ${d.tried + 7}${d.miss.length ? `; no room for ${d.miss.join(", ")}` : ""}. Nuts N1–N7 go unlabelled: they're the obvious parts in column order.` };
+  },
+  B() {
+    let svg = ear() + marks() + logo(50.6, .9, 17) + frame(35.4, .5, 13.4, 1.4, "JLC frame") + T(42.1, 1.5, .8, "JLCJLCJLCJLC", { a: "middle", what: "JLC marker" });
+    WAYS.forEach((x, i) => { svg += chevron(x, 26.4, i === 0) + chevron(x, 28.1, i === 0) });
+    WAYS.forEach((x, i) => { const u = comp[`U1${i + 1}`]; svg += T(u.x, 17.2, .8, `S${i + 1}`, { a: "middle", what: `S${i + 1}`, w: 600 }) });
+    const d = designators(["U1", "U2", "U3", "D1", "D2", "D11", "D12", "D13", "D14", "D15", "D16", "LED1", "Q1"]);
+    return { svg: svg + d.svg, note: `Designators placed: ${d.tried - d.miss.length} of ${d.tried}${d.miss.length ? `; no room for ${d.miss.join(", ")}` : ""}.` };
+  },
+  C() {
+    let svg = ear() + marks() + jlc(50.4, 4.1);
+    const box = (ns, pad = .25) => grow(ns.map(n => COURT[n]).reduce((a, b) => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])]), pad);
+    // Brackets where a block has clear corners; SUPPLY and PROG are too hemmed in, so they get a title only.
+    svg += T(35.4, 1.55, .8, "SUPPLY  F1 D1 U3 L1 C1-5 R1-2", { what: "SUPPLY" });
+    svg += T(68.4, 1.4, .8, "PROG", { a: "end", what: "PROG" }) + T(68.4, 3.2, .8, "J1 D2 LED1 R5-7 TP1-6", { a: "end", what: "PROG list" });
+    svg += brackets([92.4, .45, 103.6, 24.2], "MCU", .6, "top") + T(103.6, 25.05, .8, "MCU  U1 U2 C7-10 R3-4", { a: "end", what: "MCU" });
+    svg += T(55.4, 6.4, .8, "TEMP  Q1 R8-10", { what: "TEMP" });
+    WAYS.forEach((x, i) => {
+      const n = i + 1, ns = [`D1${n}`, `U1${n}`, `C1${n}`, `C2${n}`, `C3${n}`];
+      // The label is the block's top edge; only the bottom corners are bracketed.
+      svg += brackets(box(ns, .12).map((v, j) => n === 4 && j === 2 ? 49.9 : v), `S${n}`, .8, "bottom") + T(comp[`D1${n}`].x - .6, 16.85, .8, `S${n}  U1${n} D1${n} C1${n}-3${n}`, { what: `S${n}`, w: 600 });
+      svg += T(x, 27.2, .8, "LINE", { a: "middle", what: "LINE", ls: .1 }) + line([[x, 28.9], [x, 27.9]], "arrow") + line([[x - .4, 28.3], [x, 27.9], [x + .4, 28.3]], "arrow");
+    });
+    return { svg, note: "Block labels stand in for per-part designators." };
+  },
+};
+
+function stockSilk() {
+  const s = G.silk;
+  for (const p of s.paths) reg(grow(bboxOf(p.pts), p.w / 2), `${p.n} stock outline`);
+  for (const t of s.text) reg([t.at[0] - t.t.length * t.s * .3, t.at[1] - t.s * .4, t.at[0] + t.t.length * t.s * .3, t.at[1] + t.s * .4], `${t.n} designator`);
+  return `<g fill="none" stroke="${SILK}" stroke-linecap="round" stroke-linejoin="round">
+  ${s.paths.map(p => `<polyline points="${p.pts.map(q => q.join(",")).join(" ")}" stroke-width="${p.w}"/>`).join("")}
+  ${s.circles.map(p => `<circle cx="${p.c[0]}" cy="${p.c[1]}" r="${p.c[2]}" stroke-width="${p.w}"/>`).join("")}</g>
+  <g fill="${SILK}" font-family="IBM Plex Mono, monospace" text-anchor="middle" dominant-baseline="central">
+  ${s.text.map(t => `<text x="${t.at[0]}" y="${t.at[1]}" font-size="${t.s}"${t.rot ? ` transform="rotate(${-t.rot} ${t.at[0]} ${t.at[1]})"` : ""}>${t.t}</text>`).join("")}</g>`;
+}
+
+function base() {
+  const pad = p => p.c ? `<circle cx="${p.c[0]}" cy="${p.c[1]}" r="${p.c[2]}"/>`
+    : p.w && p.r ? (p.deg % 180 === 0
+      ? `<rect x="${p.x - p.w / 2}" y="${p.y - p.h / 2}" width="${p.w}" height="${p.h}" rx="${Math.min(p.r, p.w / 2, p.h / 2)}"/>`
+      : `<rect x="${p.x - p.h / 2}" y="${p.y - p.w / 2}" width="${p.h}" height="${p.w}" rx="${Math.min(p.r, p.w / 2, p.h / 2)}"/>`)
+    : `<path d="${ring(p.poly)}"/>`;
+  return `
+  <defs><clipPath id="brd"><path d="${ring(G.outline)}"/></clipPath>
+    <linearGradient id="hasl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9dde1"/><stop offset=".45" stop-color="#a9afb5"/><stop offset="1" stop-color="#cfd3d7"/></linearGradient></defs>
+  <rect x="-4" y="-2" width="112" height="44" fill="${C.bg}"/>
+  <rect x="-4" y="25.5" width="112" height="16.5" fill="${C.panel}" opacity=".45"/>
+  <text x="107.5" y="41.2" font-size="1.3" fill="var(--muted)" text-anchor="end" font-family="IBM Plex Sans, sans-serif">fuse panel side (fingers go under the way screws)</text>
+  <text x="-3.5" y="41.2" font-size="1.3" fill="var(--muted)" font-family="IBM Plex Sans, sans-serif">way 6 end · parts face, seen from the parts side · way 1 end →</text>
+  <path d="${ring(G.outline)}" fill="${C.mask}" stroke="${C.edge}" stroke-width=".12"/>
+  <g clip-path="url(#brd)">${G.pours.map(p => `<path d="${p.map(ring).join("")}" fill="${C.cu}" fill-rule="evenodd"/>`).join("")}
+  ${G.vias.map(v => `<circle cx="${v[0]}" cy="${v[1]}" r="${v[2]}" fill="${C.via}"/>`).join("")}</g>
+  ${G.slots.map(s => `<rect x="${s.x - s.w / 2}" y="${s.y - s.h / 2}" width="${s.w}" height="${s.h}" rx="${s.w / 2}" fill="${C.bg}"/>`).join("")}
+  <g fill="url(#hasl)">${G.pads.map(pad).join("")}${G.holes.map(h => `<circle cx="${h.x}" cy="${h.y}" r="${h.r}"/>`).join("")}</g>
+  ${G.holes.map(h => `<circle cx="${h.x}" cy="${h.y}" r="${h.h}" fill="${C.bg}"/>`).join("")}`;
+}
+const fitted = () => S.parts !== "on" ? "" : `<g fill="${C.body}" stroke="${C.bodyEdge}" stroke-width=".08" opacity=".92">${G.comps.filter(k => !/^W\d|^TP|^J1$/.test(k.n)).map(k => {
+  const r = Math.min(k.w, k.h) / 2; return /^N\d/.test(k.n) ? `<circle cx="${k.x}" cy="${k.y}" r="3.6"/><circle cx="${k.x}" cy="${k.y}" r="2.1" fill="${C.bg}"/>` : `<rect x="${k.x - k.w * .4}" y="${k.y - k.h * .4}" width="${k.w * .8}" height="${k.h * .8}" rx="${Math.min(.3, r)}"/>` }).join("")}</g>`;
+const courts = () => S.court !== "on" ? "" : `<g fill="none" stroke="${C.court}" stroke-width=".06" stroke-dasharray=".3 .2">${G.courtyards.map(k => `<path d="${ring(k.poly)}"/>`).join("")}</g>`;
+
+function render() {
+  for (const k of Object.keys(CONCEPTS)) {
+    BOXES = []; placed = [];
+    const r = CONCEPTS[k]();
+    const silk = k === "stock" ? stockSilk() : r.svg;
+    const bad = audit(k);
+    document.getElementById(k).innerHTML = `<svg viewBox="-4 -2 112 44" role="img" aria-label="Parts face, concept ${k}">${base()}${silk}${fitted()}${courts()}</svg>`;
+    document.getElementById(k + "-check").innerHTML = `${r.note} Silk check: ${bad.length ? `<span class="bad">${bad.length} clash${bad.length > 1 ? "es" : ""}: ${[...new Set(bad)].slice(0, 12).join("; ")}${bad.length > 12 ? " …" : ""}</span>` : "clear of every pad, hole and slot, and 0.3 mm inside the edge."}`;
+  }
+}
+document.querySelectorAll(".seg").forEach(seg => seg.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  S[seg.dataset.k] = b.dataset.v;
+  seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  render();
+}));
+render();
+</script>
