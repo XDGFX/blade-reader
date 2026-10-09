@@ -92,9 +92,15 @@ const QUOTE = "I'VE SEEN THINGS YOU PEOPLE WOULDN'T BELIEVE. FRIDGES DRAWING AMP
 const C2 = (rows) => `${common(rows)}${logo(LOGO_BOX[0], LOGO_BOX[1], LOGO_BOX[2] - LOGO_BOX[0])}
     ${frame(3.4, 1.2, 5.8, 22.4, 1)}${kana(6.3, 2.5, 2.3, 2.55)}
     ${earth(96.6, 12.2)}${t(98.2, 14.2, 1.2, "GND")}`;
+// The quote, two lines on each finger: the first sentence on ways 1–3, the second on ways 4–6.
+const FINGER_LINES = [
+  ["I'VE SEEN", "THINGS"], ["YOU", "PEOPLE"], ["WOULDN'T", "BELIEVE."],
+  ["FRIDGES", "DRAWING"], ["AMPS OFF", "THE SHOULDER"], ["OF", "ORION."],
+];
+const fingers = () => WAYS.map((x, i) =>
+  t(x, 27.25, 1, FINGER_LINES[i][0], { a: "middle", ls: .1 }) + t(x, 28.85, 1, FINGER_LINES[i][1], { a: "middle", ls: .1 })).join("");
+
 const CONCEPTS = {
-  C2a: () => C2([17.3, 19.25, 21.2, 23.15]),
-  C2b: () => C2() + edge(TAGLINE, 1.3, .42),
-  C2c: () => C2() + edge(QUOTE, 1.0, .12),
+  C2c: () => C2() + fingers(),
 };
 

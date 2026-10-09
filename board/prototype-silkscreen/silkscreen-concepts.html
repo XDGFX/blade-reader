@@ -47,15 +47,16 @@ code { font: 13px var(--f-mono); }
 
 <div class="wrap">
   <header style="display:grid;gap:8px">
-    <span class="eyebrow">PROTOTYPE · round 4 · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
+    <span class="eyebrow">PROTOTYPE · round 5 · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
     <h1>Ring-face silkscreen concepts</h1>
   </header>
 
   <section class="summary">
-    <h2>Round 4: C2, and what goes along the panel edge</h2>
+    <h2>Round 5: the quote on the fingers</h2>
     <ul>
-      <li><strong>Settled:</strong> C2 with no rain. White silk on black, lead-free HASL, Economic. The banner wordmark has no frame. The katakana sign is framed. Way 1's filled chevrons are the sensor 1 mark. The fifth spec cell is the repo URL.</li>
-      <li><strong>Still to settle:</strong> the strip along the panel edge, now that the hairline is gone. It's the part of the board most often seen, since it stays in view with the rings and cables fitted. Three ways to use it are below.</li>
+      <li><strong>Settled:</strong> C2 with no rain and no edge line. White silk on black, lead-free HASL, Economic. The banner wordmark has no frame. The katakana sign is framed. Way 1's filled chevrons are the sensor 1 mark. The fifth spec cell is the repo URL. The banner quote goes on the board.</li>
+      <li><strong>This round:</strong> the quote moves off the body edge onto the six fingers, two lines each, between the panel edge and the clamp pad. The first sentence runs across ways 1–3 and the second across ways 4–6. The break between the sentences falls between ways 3 and 4, the middle of the strip.</li>
+      <li>Each line is 1.0 mm stroke text, centred on its finger. The longest, THE SHOULDER, is 8.4 mm on a 9.5 mm finger. The lines sit 0.8 mm below the panel edge, and 1.1 mm above the bare clamp pad.</li>
     </ul>
   </section>
 
@@ -66,33 +67,18 @@ code { font: 13px var(--f-mono); }
   </div>
 
   <section class="concept">
-    <h2>C2a · Chevrons down to the fingers</h2>
-    <div class="board" id="C2a"></div>
-    <div class="notes">
-      <div><h3>Edge</h3><p>Four chevrons per column instead of three, closer together, the last one ending 0.75 mm above the panel edge. The current path then reads from the finger to the nut without a break. The edge itself stays plain black.</p></div>
-    </div>
-  </section>
-
-  <section class="concept">
-    <h2>C2b · Tagline</h2>
-    <div class="board" id="C2b"></div>
-    <div class="notes">
-      <div><h3>Edge</h3><p>The banner's subtitle, CURRENT ON EVERY WAY OF A BLADE FUSE PANEL, at 1.3 mm and tracked wide. It runs under the spec plate and the chevrons, about 50 mm long, centred on the ways.</p></div>
-    </div>
-  </section>
-
-  <section class="concept">
-    <h2>C2c · The quote</h2>
+    <h2>C2c · Quote across the fingers</h2>
     <div class="board" id="C2c"></div>
     <div class="notes">
-      <div><h3>Edge</h3><p>The banner's two-line joke as one line at 1.0 mm: I'VE SEEN THINGS YOU PEOPLE WOULDN'T BELIEVE. FRIDGES DRAWING AMPS OFF THE SHOULDER OF ORION. About 67 mm, small enough to read as texture until someone leans in.</p></div>
+      <div><h3>Reading order</h3><p>I'VE SEEN / THINGS · YOU / PEOPLE · WOULDN'T / BELIEVE. — FRIDGES / DRAWING · AMPS OFF / THE SHOULDER · OF / ORION.</p></div>
+      <div><h3>To check at the fit check</h3><p>How much of each finger stays visible between the barriers once the panel's screws are in. If the barriers hide the lower line, the quote moves up to sit right under the panel edge.</p></div>
     </div>
   </section>
 
   <section class="summary questions">
     <h2>For Cal to pick</h2>
     <ol>
-      <li>C2a, C2b or C2c? The edge text also works with four chevrons if you want both.</li>
+      <li>Is this the final design? If so, the ticket closes and drawing it in <code>board/</code> becomes the next ticket.</li>
     </ol>
   </section>
 </div>
@@ -243,10 +229,16 @@ const QUOTE = "I'VE SEEN THINGS YOU PEOPLE WOULDN'T BELIEVE. FRIDGES DRAWING AMP
 const C2 = (rows) => `${common(rows)}${logo(LOGO_BOX[0], LOGO_BOX[1], LOGO_BOX[2] - LOGO_BOX[0])}
     ${frame(3.4, 1.2, 5.8, 22.4, 1)}${kana(6.3, 2.5, 2.3, 2.55)}
     ${earth(96.6, 12.2)}${t(98.2, 14.2, 1.2, "GND")}`;
+// The quote, two lines on each finger: the first sentence on ways 1–3, the second on ways 4–6.
+const FINGER_LINES = [
+  ["I'VE SEEN", "THINGS"], ["YOU", "PEOPLE"], ["WOULDN'T", "BELIEVE."],
+  ["FRIDGES", "DRAWING"], ["AMPS OFF", "THE SHOULDER"], ["OF", "ORION."],
+];
+const fingers = () => WAYS.map((x, i) =>
+  t(x, 27.25, 1, FINGER_LINES[i][0], { a: "middle", ls: .1 }) + t(x, 28.85, 1, FINGER_LINES[i][1], { a: "middle", ls: .1 })).join("");
+
 const CONCEPTS = {
-  C2a: () => C2([17.3, 19.25, 21.2, 23.15]),
-  C2b: () => C2() + edge(TAGLINE, 1.3, .42),
-  C2c: () => C2() + edge(QUOTE, 1.0, .12),
+  C2c: () => C2() + fingers(),
 };
 
 function render() {
