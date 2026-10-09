@@ -20,8 +20,10 @@ import { bandX, SENSOR } from "./way"
 
 /** JLC's minimum silk line. */
 const SW = 0.15
-/** Glyph advance per em: the prototypes' mono metrics, which the layouts were spaced for. */
-const ADVANCE = 0.6
+/** Clear space between glyphs, a space's advance and the degree sign's radius, per em. */
+const GAP = 0.12
+const SPACE = 0.4
+const DEGREE = 0.2
 /** The alphabet's baseline, in em. */
 const BASELINE = 0.051
 
@@ -79,32 +81,56 @@ const roundRect = (x: number, y: number, w: number, h: number, r: number, sw: nu
 
 type TextOpts = { anchor?: "start" | "middle" | "end"; ls?: number; w?: number }
 
-/** Text in the alphabet's strokes, size s (em), baseline at y. */
+/** A glyph's ink: its strokes in em, x from its left edge, and its width. */
+type Glyph = { segs: { x1: number; y1: number; x2: number; y2: number }[]; ink: number }
+const glyph = (ch: string): Glyph => {
+  const segs = lineAlphabet[ch]
+  if (!segs) throw new Error(`silkscreen: the alphabet has no "${ch}"`)
+  const xs = segs.flatMap((g) => [g.x1, g.x2])
+  const x0 = Math.min(...xs)
+  return {
+    segs: segs.map((g) => ({ ...g, x1: g.x1 - x0, x2: g.x2 - x0 })),
+    ink: Math.max(...xs) - x0,
+  }
+}
+
+/**
+ * Text in the alphabet's strokes, size s (em), baseline at y. It is spaced by each glyph's ink,
+ * not on a mono grid, so a narrow I doesn't sit in a wide gap; ls adds to the gap.
+ */
 const text = (x: number, y: number, s: number, str: string, o: TextOpts = {}): Art => {
-  // At a 0.6 em advance the wide letters touch once stroked, so text is tracked by default.
-  const ls = o.ls ?? 0.08 * s
-  const width = str.length * s * ADVANCE + Math.max(0, str.length - 1) * ls
+  const w = o.w ?? SW
+  const gap = GAP * s + (o.ls ?? 0)
+  // Each character's ink width in mm, without the stroke; a space is only a gap.
+  const inks = [...str].map((ch) =>
+    ch === " " ? SPACE * s - w : ch === "." ? 0.25 - w : ch === "°" ? 2 * DEGREE * s : glyph(ch).ink * s,
+  )
+  const width = inks.reduce((a, b) => a + b + w, 0) + (inks.length - 1) * gap
   const x0 = o.anchor === "middle" ? x - width / 2 : o.anchor === "end" ? x - width : x
   const strokes: Stroke[] = []
+  let gx = x0 + w / 2
   ;[...str].forEach((ch, i) => {
-    const gx = x0 + i * (s * ADVANCE + ls)
-    // The alphabet's full stop is a short dash, which reads as one at this stroke.
     if (ch === ".") {
-      strokes.push(...dot(gx + 0.3 * s, y - 0.1 * s, 0.25).strokes)
-      return
-    }
-    let run: Pt[] = []
-    for (const seg of lineAlphabet[ch] ?? []) {
-      const a = P(gx + seg.x1 * s, y - (seg.y1 - BASELINE) * s)
-      const b = P(gx + seg.x2 * s, y - (seg.y2 - BASELINE) * s)
-      const last = run[run.length - 1]
-      if (last && Math.hypot(last.x - a.x, last.y - a.y) < 1e-6) run.push(b)
-      else {
-        if (run.length) strokes.push({ pts: run, w: o.w ?? SW })
-        run = [a, b]
+      // The alphabet's full stop is a short dash, which reads as one at this stroke.
+      strokes.push(...dot(gx + inks[i] / 2, y - 0.1 * s, 0.25).strokes)
+    } else if (ch === "°") {
+      // The alphabet has no degree sign.
+      strokes.push(...ring(gx + DEGREE * s, y - 0.5 * s, DEGREE * s, w).strokes)
+    } else if (ch !== " ") {
+      let run: Pt[] = []
+      for (const seg of glyph(ch).segs) {
+        const a = P(gx + seg.x1 * s, y - (seg.y1 - BASELINE) * s)
+        const b = P(gx + seg.x2 * s, y - (seg.y2 - BASELINE) * s)
+        const last = run[run.length - 1]
+        if (last && Math.hypot(last.x - a.x, last.y - a.y) < 1e-6) run.push(b)
+        else {
+          if (run.length) strokes.push({ pts: run, w })
+          run = [a, b]
+        }
       }
+      if (run.length) strokes.push({ pts: run, w })
     }
-    if (run.length) strokes.push({ pts: run, w: o.w ?? SW })
+    gx += inks[i] + w + gap
   })
   return art(strokes)
 }
@@ -197,7 +223,7 @@ const RING_GAPS = [0, 1, 2, 3, 4].map((i) => RING_WAYS[i] + PITCH / 2)
 /** The spec plate, one fact per gap between chevron columns: label, then two value lines. */
 const CELLS = [
   ["REVISION", "A", "2026-10"],
-  ["DERATE", "20 A PER WAY", "ABOVE 40  C"],
+  ["DERATE", "20 A PER WAY", "ABOVE 40 °C"],
   ["OUTPUT NUT", "M4", "1.0-1.2 Nm"],
   ["LICENCE", "CERN-OHL-S-2.0", ""],
   ["SOURCE", "XDGFX", "/BLADE-READER"],
@@ -207,15 +233,12 @@ const plate = () =>
     ...CELLS.map(([label, a, b], i) => {
       const x = RING_GAPS[i]
       return join(
-        text(x, 18.4, 0.8, label, { anchor: "middle", ls: 0.12 }),
+        text(x, 18.4, 0.8, label, { anchor: "middle", ls: 0.06 }),
         line([[x - 3, 18.95], [x + 3, 18.95]]),
         text(x, 20.6, 1, a, { anchor: "middle" }),
         text(x, 22.3, 1, b, { anchor: "middle" }),
       )
     }),
-    // The degree sign, which the alphabet lacks, in the gap left for it in ABOVE 40  C: the
-    // tenth of eleven characters at 1 mm, tracked by default.
-    ring(RING_GAPS[1] - (11 * ADVANCE + 10 * 0.08) / 2 + 9 * (ADVANCE + 0.08) + ADVANCE / 2, 21.75, 0.2),
   )
 
 const earth = (x: number, y: number) =>
@@ -271,15 +294,15 @@ const ringFace = (): Art =>
     text(98.2, 14.2, 1.2, "GND"),
     ...RING_WAYS.map((x, i) =>
       join(
-        text(x, 27.25, 1, FINGER_LINES[i][0], { anchor: "middle", ls: 0.1 }),
-        text(x, 28.85, 1, FINGER_LINES[i][1], { anchor: "middle", ls: 0.1 }),
+        text(x, 27.25, 1, FINGER_LINES[i][0], { anchor: "middle" }),
+        text(x, 28.85, 1, FINGER_LINES[i][1], { anchor: "middle" }),
       ),
     ),
     alongChamfer(
       93.6,
       join(
-        text(5.1, 1.3, 0.8, "DESIGNED IN", { anchor: "end", ls: 0.05 }),
-        text(5.1, 2.5, 0.8, "AUSTRALIA", { anchor: "end", ls: 0.05 }),
+        text(5.1, 1.3, 0.8, "DESIGNED IN", { anchor: "end" }),
+        text(5.1, 2.5, 0.8, "AUSTRALIA", { anchor: "end" }),
         crux(6.5, 0.6, 2.0),
       ),
     ),
