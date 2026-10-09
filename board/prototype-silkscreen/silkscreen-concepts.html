@@ -47,16 +47,16 @@ code { font: 13px var(--f-mono); }
 
 <div class="wrap">
   <header style="display:grid;gap:8px">
-    <span class="eyebrow">PROTOTYPE · round 5 · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
+    <span class="eyebrow">PROTOTYPE · round 6 · issue #24 · ring face, seen from above · 104 × 25.5 mm · rendered from board/dist circuit.json</span>
     <h1>Ring-face silkscreen concepts</h1>
   </header>
 
   <section class="summary">
-    <h2>Round 5: the quote on the fingers</h2>
+    <h2>Round 6: the chamfer corner</h2>
     <ul>
-      <li><strong>Settled:</strong> C2 with no rain and no edge line. White silk on black, lead-free HASL, Economic. The banner wordmark has no frame. The katakana sign is framed. Way 1's filled chevrons are the sensor 1 mark. The fifth spec cell is the repo URL. The banner quote goes on the board.</li>
-      <li><strong>This round:</strong> the quote moves off the body edge onto the six fingers, two lines each, between the panel edge and the clamp pad. The first sentence runs across ways 1–3 and the second across ways 4–6. The break between the sentences falls between ways 3 and 4, the middle of the strip.</li>
-      <li>Each line is 1.0 mm stroke text, centred on its finger. The longest, THE SHOULDER, is 8.4 mm on a 9.5 mm finger. The lines sit 0.8 mm below the panel edge, and 1.1 mm above the bare clamp pad.</li>
+      <li><strong>Settled:</strong> C2 with the quote across the fingers, white silk on black, lead-free HASL, Economic.</li>
+      <li><strong>This round:</strong> what goes in the free corner of the way 6 ear, between the wordmark, way 6's nut, GND and the chamfer. It's about 9 × 9 mm, a triangle cut by the chamfer. Three options below, everything else unchanged.</li>
+      <li>With rings fitted, the ground cable runs up through the right of the corner, and way 6's cable passes its left edge. Try the Rings toggle.</li>
     </ul>
   </section>
 
@@ -67,18 +67,33 @@ code { font: 13px var(--f-mono); }
   </div>
 
   <section class="concept">
-    <h2>C2c · Quote across the fingers</h2>
-    <div class="board" id="C2c"></div>
+    <h2>U · Origami unicorn</h2>
+    <div class="board" id="U"></div>
     <div class="notes">
-      <div><h3>Reading order</h3><p>I'VE SEEN / THINGS · YOU / PEOPLE · WOULDN'T / BELIEVE. — FRIDGES / DRAWING · AMPS OFF / THE SHOULDER · OF / ORION.</p></div>
-      <div><h3>To check at the fit check</h3><p>How much of each finger stays visible between the barriers once the panel's screws are in. If the barriers hide the lower line, the quote moves up to sit right under the panel edge.</p></div>
+      <div><h3>Idea</h3><p>Gaff's folded unicorn from Blade Runner, as 0.18 mm line art, about 8 × 7.5 mm. It faces the wordmark, with its horn following the chamfer's slope. It pairs with the quote as the second film reference. Only someone who knows the film will spot it.</p></div>
+    </div>
+  </section>
+
+  <section class="concept">
+    <h2>R · A patch of rain</h2>
+    <div class="board" id="R"></div>
+    <div class="notes">
+      <div><h3>Idea</h3><p>Round 3's rain, limited to this corner: the same grid and angle, about 15 streaks. It echoes the banner's rain without spreading across the body. It balances the katakana sign at the other end.</p></div>
+    </div>
+  </section>
+
+  <section class="concept">
+    <h2>S · Chamfer stripes</h2>
+    <div class="board" id="S"></div>
+    <div class="notes">
+      <div><h3>Idea</h3><p>Five 0.2 mm lines parallel to the chamfer, 0.8 mm apart, shortening inwards. It's a plain graphic that makes the cut corner look intended. It's the most restrained of the three.</p></div>
     </div>
   </section>
 
   <section class="summary questions">
     <h2>For Cal to pick</h2>
     <ol>
-      <li>Is this the final design? If so, the ticket closes and drawing it in <code>board/</code> becomes the next ticket.</li>
+      <li>Unicorn, rain, stripes, or leave the corner empty?</li>
     </ol>
   </section>
 </div>
@@ -237,8 +252,35 @@ const FINGER_LINES = [
 const fingers = () => WAYS.map((x, i) =>
   t(x, 27.25, 1, FINGER_LINES[i][0], { a: "middle", ls: .1 }) + t(x, 28.85, 1, FINGER_LINES[i][1], { a: "middle", ls: .1 })).join("");
 
+// The chamfer corner: free mask between the logo, way 6's nut, the GND label and the chamfer.
+const UNICORN = [
+  [[0.1, -0.2], [2.2, 1.55], [1.65, 2.05]],                     // horn
+  [[1.65, 2.05], [3.2, 0.9], [3.9, 2.5], [1.4, 4.3], [0.7, 3.9]], // head, muzzle down-left
+  [[3.2, 0.9], [3.5, 0.1], [3.7, 1.4]],                         // ear
+  [[3.9, 2.5], [1.4, 4.3], [3.6, 5.0], [4.6, 3.3]],             // neck
+  [[4.6, 3.3], [7.3, 3.0], [7.2, 5.0], [3.6, 5.0]],             // body
+  [[7.3, 3.0], [8.3, 2.6], [7.6, 4.0]],                         // tail
+  [[3.6, 5.0], [4.3, 5.0], [3.8, 7.7]],                         // front legs
+  [[4.3, 5.0], [4.9, 5.0], [4.8, 7.7]],
+  [[6.3, 5.0], [6.8, 5.0], [6.5, 7.7]],                         // back legs
+  [[6.8, 5.0], [7.2, 5.0], [7.5, 7.7]],
+];
+const unicorn = (ox, oy) => `<g fill="none" stroke="var(--silk)" stroke-width=".18" stroke-linejoin="round">
+  ${UNICORN.map(p => `<polygon points="${p.map(([x, y]) => `${(ox + x).toFixed(2)},${(oy + y).toFixed(2)}`).join(" ")}"/>`).join("")}
+  <line x1="${ox + 4.6}" y1="${oy + 3.3}" x2="${ox + 7.2}" y2="${oy + 5.0}"/></g>`;
+// Parallel lines inset from the chamfer, shortening towards the corner.
+const stripes = () => [1.2, 2.0, 2.8, 3.6, 4.4].map((d, i) => {
+  // The chamfer is y = x − 92.08; a line inset by d runs along y = x − 92.08 + d·√2.
+  const c = 92.08 - d * Math.SQRT2, x0 = c + 1.6 + d * 0.9, x1 = c + 10.4 - i * 0.6;
+  return `<line x1="${x0.toFixed(2)}" y1="${(x0 - c).toFixed(2)}" x2="${x1.toFixed(2)}" y2="${(x1 - c).toFixed(2)}" stroke="var(--silk)" stroke-width=".2" stroke-linecap="round"/>`;
+}).join("");
+// Rain limited to the corner, at round 3's density.
+const cornerRain = () => rain(true).replace(/<line x1="([\d.]+)" y1="([\d.]+)"[^>]*\/>/g, (m, x, y) => (+x > 88 && +y < 11 ? m : ""));
+
 const CONCEPTS = {
-  C2c: () => C2() + fingers(),
+  U: () => C2() + fingers() + unicorn(87.6, 2.6),
+  R: () => C2() + fingers() + cornerRain(),
+  S: () => C2() + fingers() + stripes(),
 };
 
 function render() {

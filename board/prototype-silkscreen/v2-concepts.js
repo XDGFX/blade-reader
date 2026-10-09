@@ -100,7 +100,34 @@ const FINGER_LINES = [
 const fingers = () => WAYS.map((x, i) =>
   t(x, 27.25, 1, FINGER_LINES[i][0], { a: "middle", ls: .1 }) + t(x, 28.85, 1, FINGER_LINES[i][1], { a: "middle", ls: .1 })).join("");
 
+// The chamfer corner: free mask between the logo, way 6's nut, the GND label and the chamfer.
+const UNICORN = [
+  [[0.1, -0.2], [2.2, 1.55], [1.65, 2.05]],                     // horn
+  [[1.65, 2.05], [3.2, 0.9], [3.9, 2.5], [1.4, 4.3], [0.7, 3.9]], // head, muzzle down-left
+  [[3.2, 0.9], [3.5, 0.1], [3.7, 1.4]],                         // ear
+  [[3.9, 2.5], [1.4, 4.3], [3.6, 5.0], [4.6, 3.3]],             // neck
+  [[4.6, 3.3], [7.3, 3.0], [7.2, 5.0], [3.6, 5.0]],             // body
+  [[7.3, 3.0], [8.3, 2.6], [7.6, 4.0]],                         // tail
+  [[3.6, 5.0], [4.3, 5.0], [3.8, 7.7]],                         // front legs
+  [[4.3, 5.0], [4.9, 5.0], [4.8, 7.7]],
+  [[6.3, 5.0], [6.8, 5.0], [6.5, 7.7]],                         // back legs
+  [[6.8, 5.0], [7.2, 5.0], [7.5, 7.7]],
+];
+const unicorn = (ox, oy) => `<g fill="none" stroke="var(--silk)" stroke-width=".18" stroke-linejoin="round">
+  ${UNICORN.map(p => `<polygon points="${p.map(([x, y]) => `${(ox + x).toFixed(2)},${(oy + y).toFixed(2)}`).join(" ")}"/>`).join("")}
+  <line x1="${ox + 4.6}" y1="${oy + 3.3}" x2="${ox + 7.2}" y2="${oy + 5.0}"/></g>`;
+// Parallel lines inset from the chamfer, shortening towards the corner.
+const stripes = () => [1.2, 2.0, 2.8, 3.6, 4.4].map((d, i) => {
+  // The chamfer is y = x − 92.08; a line inset by d runs along y = x − 92.08 + d·√2.
+  const c = 92.08 - d * Math.SQRT2, x0 = c + 1.6 + d * 0.9, x1 = c + 10.4 - i * 0.6;
+  return `<line x1="${x0.toFixed(2)}" y1="${(x0 - c).toFixed(2)}" x2="${x1.toFixed(2)}" y2="${(x1 - c).toFixed(2)}" stroke="var(--silk)" stroke-width=".2" stroke-linecap="round"/>`;
+}).join("");
+// Rain limited to the corner, at round 3's density.
+const cornerRain = () => rain(true).replace(/<line x1="([\d.]+)" y1="([\d.]+)"[^>]*\/>/g, (m, x, y) => (+x > 88 && +y < 11 ? m : ""));
+
 const CONCEPTS = {
-  C2c: () => C2() + fingers(),
+  U: () => C2() + fingers() + unicorn(87.6, 2.6),
+  R: () => C2() + fingers() + cornerRain(),
+  S: () => C2() + fingers() + stripes(),
 };
 
