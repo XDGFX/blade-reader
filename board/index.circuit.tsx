@@ -63,7 +63,7 @@ export default () => (
         X3: "net.WAY4_SENSE",
         X4: "net.WAY5_SENSE",
         X5: "net.WAY6_SENSE",
-        X6: "net.NTC",
+        X6: "net.TEMP",
         X7: "net.VSUP_SENSE",
         X: "net.ADC",
         A: "net.MUX_S0",
@@ -99,8 +99,11 @@ export default () => (
       schSectionName="Adc"
       connections={{ pin1: "net.ADC", pin2: "net.GND" }}
     />
-    {/* NTC to ground, so the voltage falls as the strip warms and stays under the ADC's
-        accurate 2.5 V limit above about 3 °C. 1.65 V at 25 °C. */}
+    {/* Diode-connected transistor as the temperature sensor: about 265 µA through R10 gives
+        a Vbe near 0.65 V, falling about 2 mV/°C. Only the change since each way was zeroed
+        is used, so its part-to-part spread doesn't matter. A basic part, unlike any NTC.
+        Wired by pad number: the MMBT3904's SOT-23 is 1 = B, 2 = E, 3 = C, but tscircuit's
+        transistor names pin1 collector and pin3 emitter, so its pin labels would be wrong. */}
     <resistor
       name="R10"
       {...R_10K}
@@ -108,19 +111,18 @@ export default () => (
       schY={-6}
       schRotation={90}
       schSectionName="Adc"
-      connections={{ pin2: "net.V3V3", pin1: "net.NTC" }}
+      connections={{ pin2: "net.V3V3", pin1: "net.TEMP" }}
     />
-    <resistor
-      name="TH1"
-      resistance="10k"
-      footprint="0402"
-      manufacturerPartNumber="NCP15XH103F03RC"
-      supplierPartNumbers={{ jlcpcb: ["C77131"] }}
+    <transistor
+      name="Q1"
+      type="npn"
+      footprint="sot23"
+      manufacturerPartNumber="MMBT3904"
+      supplierPartNumbers={{ jlcpcb: ["C20526"] }}
       schX={-5}
       schY={-9}
-      schRotation={90}
       schSectionName="Adc"
-      connections={{ pin2: "net.NTC", pin1: "net.GND" }}
+      connections={{ pin1: "net.TEMP", pin3: "net.TEMP", pin2: "net.GND" }}
     />
     {/* Supply node: 100k / 6.8k gives about 2.29 V at 36 V. */}
     <resistor
