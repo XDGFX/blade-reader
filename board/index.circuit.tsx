@@ -1,9 +1,11 @@
 // Blade Reader rev A: one 6-way strip.
 // Decisions behind every part are in docs/design.md. Part codes are LCSC/JLCPCB.
 //
-// PCB coordinates are explained in lib/outline.tsx. The body behind the nut row has the
-// ESP32 in the middle, the multiplexer, the ground nut and the ESP32's small parts on the −X
-// side (ways 4–6), and the supply and programming header on the +X side (ways 1–3).
+// PCB coordinates are explained in lib/outline.tsx. The body is a 27.5 mm band behind the
+// nut row with an extension past each end way. The way 6 end (−X) has the ESP32, its
+// antenna past the board end, the multiplexer, the ESP32's small parts and the programming
+// footprint. The way 1 end (+X) has the supply and the ground nut. Test pads sit behind the
+// nuts.
 
 import { CD4051BM96 } from "./imports/CD4051BM96"
 import { ESP32_C3_MINI_1_H4X } from "./imports/ESP32_C3_MINI_1_H4X"
@@ -11,7 +13,7 @@ import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
 import { SS210 } from "./imports/SS210"
 import { ProgLock } from "./lib/parts"
 import { Supply } from "./lib/supply"
-import { CombFeatures, ESP_Y, OUTLINE, wayX, Y_SHIFT } from "./lib/outline"
+import { BOARD_HALF, CombFeatures, ESP, OUTLINE, wayX, Y_SHIFT } from "./lib/outline"
 import { Way, WAY_PITCH } from "./lib/way"
 
 const WAYS = [1, 2, 3, 4, 5, 6]
@@ -25,6 +27,7 @@ const R_10K = { resistance: "10k", footprint: "0402", supplierPartNumbers: { jlc
 export default () => (
   <board
     outline={OUTLINE}
+    thickness="1.6mm"
     nominalTraceWidth="0.25mm"
     minViaHoleDiameter="0.3mm"
     minViaPadDiameter="0.6mm"
@@ -45,8 +48,8 @@ export default () => (
       {/* Ground: a ring-terminated wire from this nut to the panel's negative bus. */}
       <SMTSO4040CTJ
         name="N7"
-        pcbX={-20.5}
-        pcbY={35}
+        pcbX={BOARD_HALF - 6.08}
+        pcbY={19.6}
         schX={-18}
         schY={-24}
         schSectionName="Ways"
@@ -60,9 +63,9 @@ export default () => (
       {/* Layout may reorder the ways on X0–X5; firmware follows this schematic. */}
       <CD4051BM96
         name="U2"
-        pcbX={-16}
-        pcbY={26.1}
-        pcbRotation={0}
+        pcbX={-44.6}
+        pcbY={21.6}
+        pcbRotation={90}
         schX={0}
         schY={0}
         schSectionName="Adc"
@@ -87,8 +90,8 @@ export default () => (
       />
       <capacitor
         name="C9"
-        pcbX={-23.2}
-        pcbY={29.6}
+        pcbX={-47.2}
+        pcbY={15.8}
         pcbRotation={0}
         capacitance="100nF"
         footprint="0402"
@@ -103,8 +106,8 @@ export default () => (
           or more. The mux's on-resistance isolates it from the CC6905's 2.2 nF load limit. */}
       <capacitor
         name="C10"
-        pcbX={-8.5}
-        pcbY={28.1}
+        pcbX={-51.0}
+        pcbY={12.75}
         pcbRotation={0}
         capacitance="10nF"
         footprint="0402"
@@ -122,9 +125,9 @@ export default () => (
           transistor names pin1 collector and pin3 emitter, so its pin labels would be wrong. */}
       <resistor
         name="R10"
-        pcbX={-23.2}
-        pcbY={24.0}
-        pcbRotation={90}
+        pcbX={-44.7}
+        pcbY={11.3}
+        pcbRotation={0}
         {...R_10K}
         schX={-5}
         schY={-6}
@@ -149,9 +152,9 @@ export default () => (
       {/* Supply node: 100k / 6.8k gives about 2.29 V at 36 V. */}
       <resistor
         name="R8"
-        pcbX={-23.2}
+        pcbX={BOARD_HALF - 5.5}
         pcbY={25.9}
-        pcbRotation={90}
+        pcbRotation={180}
         resistance="100k"
         footprint="0402"
         supplierPartNumbers={{ jlcpcb: ["C25741"] }}
@@ -163,9 +166,9 @@ export default () => (
       />
       <resistor
         name="R9"
-        pcbX={-23.2}
-        pcbY={27.8}
-        pcbRotation={90}
+        pcbX={BOARD_HALF - 3.5}
+        pcbY={25.9}
+        pcbRotation={0}
         resistance="6.8k"
         footprint="0402"
         supplierPartNumbers={{ jlcpcb: ["C25917"] }}
@@ -179,9 +182,9 @@ export default () => (
       {/* ── ESP32-C3 ─────────────────────────────────────────────────────────── */}
       <ESP32_C3_MINI_1_H4X
         name="U1"
-        pcbX={0}
-        pcbY={ESP_Y}
-        pcbRotation={0}
+        pcbX={ESP.x}
+        pcbY={ESP.y}
+        pcbRotation={90}
         schX={22}
         schY={0}
         schSectionName="Mcu"
@@ -206,8 +209,8 @@ export default () => (
       />
       <capacitor
         name="C6"
-        pcbX={-8.5}
-        pcbY={30.6}
+        pcbX={-46.3}
+        pcbY={9.8}
         pcbRotation={0}
         capacitance="10uF"
         footprint="0603"
@@ -220,8 +223,8 @@ export default () => (
       />
       <capacitor
         name="C7"
-        pcbX={-8.5}
-        pcbY={32.6}
+        pcbX={ESP.x - 3.2}
+        pcbY={12.75}
         pcbRotation={0}
         capacitance="100nF"
         footprint="0402"
@@ -235,9 +238,9 @@ export default () => (
       {/* EN: the module has no RC of its own. Also gives esptool's auto-reset a clean edge. */}
       <resistor
         name="R3"
-        pcbX={-8.5}
-        pcbY={25.9}
-        pcbRotation={0}
+        pcbX={-43.8}
+        pcbY={9.8}
+        pcbRotation={180}
         {...R_10K}
         schX={14}
         schY={-6}
@@ -247,8 +250,8 @@ export default () => (
       />
       <capacitor
         name="C8"
-        pcbX={-8.5}
-        pcbY={27.0}
+        pcbX={-41.8}
+        pcbY={9.8}
         pcbRotation={0}
         capacitance="1uF"
         footprint="0402"
@@ -262,9 +265,9 @@ export default () => (
       {/* Strapping pins: normal boot needs GPIO2 and GPIO9 high. */}
       {(
         [
-          ["R4", "net.IO2", -8.5, 29.2, 0],
-          ["R5", "net.IO8", 8.0, 24.6, 90],
-          ["R6", "net.IO9", 9.2, 24.6, 90],
+          ["R4", "net.IO2", -46.9, 11.3, 0],
+          ["R5", "net.IO8", -47.2, 14.5, 0],
+          ["R6", "net.IO9", -45.0, 14.5, 0],
         ] as const
       ).map(([name, net, pcbX, pcbY, pcbRotation], i) => (
         <resistor
@@ -284,9 +287,9 @@ export default () => (
       {/* Status LED, ESPHome status_led. */}
       <resistor
         name="R7"
-        pcbX={10.4}
-        pcbY={24.6}
-        pcbRotation={90}
+        pcbX={-47.2}
+        pcbY={12.9}
+        pcbRotation={0}
         resistance="1k"
         footprint="0402"
         supplierPartNumbers={{ jlcpcb: ["C11702"] }}
@@ -297,9 +300,9 @@ export default () => (
       />
       <led
         name="LED1"
-        pcbX={9.6}
-        pcbY={28.5}
-        pcbRotation={90}
+        pcbX={-44.6}
+        pcbY={12.9}
+        pcbRotation={0}
         color="red"
         footprint="0603"
         supplierPartNumbers={{ jlcpcb: ["C2286"] }}
@@ -315,9 +318,9 @@ export default () => (
           ground wire fitted. */}
       <ProgLock
         name="J1"
-        pcbX={11.6}
-        pcbY={36.0}
-        pcbRotation={90}
+        pcbX={-44.2}
+        pcbY={3.8}
+        pcbRotation={0}
         schX={38}
         schY={0}
         schSectionName="Mcu"
@@ -333,9 +336,9 @@ export default () => (
       {/* Stops a live strip back-feeding 12–24 V into the ESP-PROG. */}
       <SS210
         name="D2"
-        pcbX={13.0}
-        pcbY={28.6}
-        pcbRotation={90}
+        pcbX={-44.2}
+        pcbY={7.45}
+        pcbRotation={180}
         schX={38}
         schY={5}
         schSectionName="Mcu"
@@ -343,22 +346,25 @@ export default () => (
       />
 
       {/* ── Test pads ────────────────────────────────────────────────────────── */}
-      {[
-        ["TP1", "net.IO0"],
-        ["TP2", "net.IO1"],
-        ["TP3", "net.IO4"],
-        ["TP4", "net.V3V3"],
-        ["TP5", "net.VSUP"],
-        ["TP6", "net.GND"],
-      ].map(([name, net], i) => (
+      {/* One behind each nut, clear of the copper paths beside it. */}
+      {(
+        [
+          ["TP1", "net.IO0", 6],
+          ["TP2", "net.IO1", 5],
+          ["TP3", "net.IO4", 4],
+          ["TP4", "net.V3V3", 3],
+          ["TP5", "net.VSUP", 2],
+          ["TP6", "net.GND", 1],
+        ] as const
+      ).map(([name, net, way], i) => (
         <testpoint
           key={name}
           name={name}
           footprintVariant="pad"
           padShape="circle"
           padDiameter="1.5mm"
-          pcbX={-14.5 + (i % 3) * 2}
-          pcbY={i < 3 ? 38.6 : 36.4}
+          pcbX={wayX(way)}
+          pcbY={20.0}
           schX={30 + i * 2}
           schY={-14}
           schSectionName="Mcu"

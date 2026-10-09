@@ -1,5 +1,5 @@
 // The comb: outline, divider slots, support holes and keepouts. Dimensions from
-// docs/design.md (Mechanical, Fixing, Body) and issues #8, #9 and #15.
+// docs/design.md (Mechanical, Fixing, Body) and issues #8, #9, #15 and #21.
 //
 // PCB coordinates, in mm: Y runs outboard from the panel edge (Y 0), so the fingers are at
 // negative Y. X runs along the strip, centred, as seen from the parts face (tscircuit's top),
@@ -9,10 +9,15 @@
 import { Fragment } from "react"
 
 export const WAY_PITCH_PCB = 13.36
-export const LENGTH = 6 * WAY_PITCH_PCB // 80.16
-export const DEPTH = 40
+export const LENGTH = 6 * WAY_PITCH_PCB // 80.16, the ways' span
+export const DEPTH = 27.5
+
+/** Body past each end way, along the panel's side: 21.15 mm of panel lies past the strip. */
+export const END = 20
 
 const HALF = LENGTH / 2
+/** X of the board's way 1 end; the way 6 end is at −BOARD_HALF. */
+export const BOARD_HALF = HALF + END
 const FINGER_WIDTH = 9.5
 const FINGER_LENGTH = 13.0
 const TIP_RADIUS = 0.5
@@ -25,13 +30,16 @@ export const wayX = (n: number) => HALF - WAY_PITCH_PCB / 2 - (n - 1) * WAY_PITC
 export const CLAMP_Y = -8.52
 
 /** Output nut centres. */
-export const NUT_Y = 16
+export const NUT_Y = 14
 
-// ESP32-C3-MINI-1: body 13.2 wide, from Y 23.4 to the outboard edge, antenna end outboard.
-// The footprint's origin is 5.6 mm above the body's inboard end.
-export const ESP_Y = 23.4 + 5.6
-const NOTCH_HALF = 6.6
-const NOTCH_Y = 35
+// ESP32-C3-MINI-1 at the way 6 end, lying along the strip (rotated 90°), antenna past the end
+// of the board. Its 11.2 mm pad area is on the board, 0.7 mm in from the outboard edge so
+// RXD and TXD can leave along it. The footprint's origin is 5.6 mm from that area's ends.
+export const ESP = { x: -(BOARD_HALF - 5.6), y: DEPTH - 0.7 - 6.6 }
+
+/** Support hole zone: 12 × 12, in the panel-edge corner at each end. */
+const ZONE = 12
+export const M3_Y = ZONE / 2
 
 type Pt = { x: number; y: number }
 
@@ -59,29 +67,26 @@ const finger = (cx: number): Pt[] => {
 export const Y_SHIFT = -(DEPTH - FINGER_LENGTH) / 2
 
 const COMB: Pt[] = [
-  { x: -HALF, y: DEPTH },
-  { x: -NOTCH_HALF, y: DEPTH },
-  { x: -NOTCH_HALF, y: NOTCH_Y },
-  { x: NOTCH_HALF, y: NOTCH_Y },
-  { x: NOTCH_HALF, y: DEPTH },
-  { x: HALF, y: DEPTH },
-  { x: HALF, y: 0 },
+  { x: -BOARD_HALF, y: DEPTH },
+  { x: BOARD_HALF, y: DEPTH },
+  { x: BOARD_HALF, y: 0 },
   ...[1, 2, 3, 4, 5, 6].flatMap((n) => finger(wayX(n))),
-  { x: -HALF, y: 0 },
+  { x: -BOARD_HALF, y: 0 },
 ]
 
 export const OUTLINE = COMB.map(({ x, y }) => ({ x, y: y + Y_SHIFT }))
 
+/** Divider slots: centre Y and length. Parts stay 1.5 mm clear of them. */
+export const SLOT = { y: 15.5, length: 11 }
 const SLOT_XS = [1, 2, 3, 4, 5].map((k) => HALF - k * WAY_PITCH_PCB)
-const M3_XS = [HALF - 7, -(HALF - 7)]
-const M3_Y = 33
+const M3_XS = [BOARD_HALF - ZONE / 2, -(BOARD_HALF - ZONE / 2)]
 
 export const CombFeatures = () => (
   <>
     {/* Divider slots between the nuts, for an optional clip-on printed divider. */}
     {SLOT_XS.map((x) => (
       <Fragment key={x}>
-        <cutout shape="rect" width="1.7mm" height="11mm" pcbX={x} pcbY={NUT_Y} />
+        <cutout shape="rect" width="1.7mm" height={`${SLOT.length}mm`} pcbX={x} pcbY={SLOT.y} />
       </Fragment>
     ))}
 
@@ -90,24 +95,8 @@ export const CombFeatures = () => (
     {M3_XS.map((x) => (
       <Fragment key={x}>
         <hole diameter="3.2mm" pcbX={x} pcbY={M3_Y} />
-        <keepout shape="rect" width="12mm" height="12mm" pcbX={x} pcbY={M3_Y} layer="top" />
+        <keepout shape="rect" width={`${ZONE}mm`} height={`${ZONE}mm`} pcbX={x} pcbY={M3_Y} layer="top" />
         <keepout shape="circle" radius="4mm" pcbX={x} pcbY={M3_Y} layer="bottom" />
-      </Fragment>
-    ))}
-
-    {/* Antenna: no copper on either face beside the notch or under the 0.4 mm of antenna
-        area that overhangs the board, 2 mm wider than the module on each side. */}
-    {(["top", "bottom"] as const).map((layer) => (
-      <Fragment key={layer}>
-        <keepout
-          shape="rect"
-          width={`${2 * NOTCH_HALF + 4}mm`}
-          height={`${DEPTH - (ESP_Y + 5.6)}mm`}
-          pcbX={0}
-          pcbY={(DEPTH + ESP_Y + 5.6) / 2}
-          layer={layer}
-          excludeRefs={[".U1"]}
-        />
       </Fragment>
     ))}
   </>
