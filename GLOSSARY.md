@@ -31,6 +31,11 @@ _Avoid_: Tab, tooth, prong
 The part of a strip outboard of the fuse panel's edge, which carries the electronics and the
 output nuts.
 
+**Sensor**:
+One finger's current sensor, numbered S1–S6 from the ESP32 end of the strip. A sensor's
+number is the strip's own; which way it reads depends on the side of the panel the strip fits.
+_Avoid_: Channel, way (for the strip's own numbering)
+
 **Comb**:
 The strip's outline: six fingers joined by the body.
 
