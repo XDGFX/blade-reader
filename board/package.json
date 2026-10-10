@@ -12,7 +12,7 @@
     "keepout": "bun scripts/check-ring-keepout.ts",
     "clearance": "bun scripts/check-clearance.ts",
     "silk": "tsci build index.circuit.tsx --routing-disabled --ignore-errors && bun scripts/silk.ts",
-    "fab": "tsci build index.circuit.tsx && bun scripts/silk.ts && rm -rf fab && mkdir fab && tsci export dist/index/circuit.json -f gerbers -o \"$PWD/fab/blade-reader.zip\" && unzip -q fab/blade-reader.zip -d fab/blade-reader && bun scripts/silk.ts dist/index/circuit.json fab/blade-reader",
+    "fab": "tsci build index.circuit.tsx && bun scripts/silk.ts && rm -rf fab/blade-reader fab/blade-reader.zip && mkdir -p fab && tsci export dist/index/circuit.json -f gerbers -o \"$PWD/fab/blade-reader.zip\" && unzip -q fab/blade-reader.zip -d fab/blade-reader && bun scripts/silk.ts dist/index/circuit.json fab/blade-reader",
     "step": "tsci build index.circuit.tsx --routing-disabled --ignore-errors && mkdir -p fab && tsci export dist/index/circuit.json -f step -o \"$PWD/fab/blade-reader.step\"",
     "fit-print": "tsci build index.circuit.tsx --routing-disabled --ignore-errors && bun scripts/fit-print.ts && bun scripts/fit-plate.ts",
     "typecheck": "tsc --noEmit"
