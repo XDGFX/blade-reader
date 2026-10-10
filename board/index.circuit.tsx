@@ -35,23 +35,24 @@ const WAYS = [1, 2, 3, 4, 5, 6]
 // The way 1 ear's small parts: [X, Y above the module's lands, rotation].
 // The caps for 3V3, EN and IO4 stand above their lands, courtyards against the module's, with
 // mux 1 beside them. The pocket past mux 1 at the board end takes the parts whose lines come up
-// there: IO1–IO3 cross under the module and leave between its outboard lands. The IO8 and IO9
-// pull-ups and mux 1's cap stand beside the module's blind end, towards J1.
+// between the module's outboard lands: IO3's cap, the LED and its resistor and the IO2 pull-up,
+// then the module's bulk cap and mux 1's cap on the 3V3 line round the outboard edge. The EN,
+// IO8 and IO9 pull-ups stand beside the module's blind end, on the lines to J1.
 const CAP_ROW = 1.21
 const EAR: Record<string, readonly [number, number, number]> = {
   C7: [espPinX(0), CAP_ROW, 90],
   C8: [espPinX(1), CAP_ROW, 90],
   C10: [espPinX(2), CAP_ROW, 90],
   U2: [43.8, 4.24, 180],
-  C41: [50.0, 3.3, 90],
-  C6: [50.0, 6.0, 90],
-  R3: [52.2, 3.0, 0],
-  R4: [52.2, 4.0, 0],
-  R7: [52.2, 5.0, 0],
-  LED1: [52.0, 6.3, 0],
-  C9: [38.45, -0.75, 90],
-  R5: [37.45, 0.15, 90],
-  R6: [38.45, -2.65, 90],
+  C41: [espPinX(2), 3.9, -90],
+  R7: [52.2, 3.3, 0],
+  LED1: [51.8, 4.6, 180],
+  R4: [52.2, 5.9, 0],
+  C6: [51.5, 7.1, 180],
+  C9: [49.6, 5.81, 90],
+  R3: [38.14, -0.4, 180],
+  R6: [38.7, -7.93, -90],
+  R5: [38.7, -9.89, 90],
 }
 const ear = (name: string) => {
   const [pcbX, dy, pcbRotation] = EAR[name]
@@ -120,8 +121,9 @@ export default () => (
       <Supply schX={-8} schY={22} />
 
       {/* ── Multiplexers and ADC ─────────────────────────────────────────────── */}
-      {/* Mux 1, for ways 1–3 and the temperature, above the module with A, B and C over
-          GPIO7, 6 and 5. Firmware follows this schematic. X5 is the spare. */}
+      {/* Mux 1, for ways 1–3 and the temperature, above the module. Its inputs are in the order
+          the lines come up under the module (lib/routes.tsx), so none cross. Firmware follows
+          this schematic. X5 is the spare. */}
       <CD4051BM96
         name="U2"
         {...ear("U2")}
@@ -129,13 +131,13 @@ export default () => (
         schY={0}
         schSectionName="Adc"
         connections={{
-          X2: "net.S1_SENSE",
-          X4: "net.S1_VOLTS",
-          X1: "net.S2_SENSE",
-          X6: "net.S2_VOLTS",
-          X7: "net.S3_SENSE",
-          X0: "net.S3_VOLTS",
-          X3: "net.TEMP",
+          X3: "net.S1_SENSE",
+          X7: "net.S1_VOLTS",
+          X0: "net.S2_SENSE",
+          X1: "net.S2_VOLTS",
+          X6: "net.S3_SENSE",
+          X2: "net.S3_VOLTS",
+          X4: "net.TEMP",
           X5: "net.GND",
           X: "net.ADC",
           A: "net.MUX_S0",
@@ -174,7 +176,8 @@ export default () => (
         connections={{ pin1: "net.ADC", pin2: "net.GND" }}
       />
       {/* The same for mux 2's common, on GPIO3. GPIO3 is on the module's panel-edge row, with no
-          room beside it, so its line crosses under the module to the cap in the pocket. */}
+          room beside it, so its line crosses under the module on the ring face to the cap in
+          the pocket. */}
       <capacitor
         name="C41"
         {...ear("C41")}
@@ -267,8 +270,8 @@ export default () => (
 
       {/* ── ESP32-C3 ─────────────────────────────────────────────────────────── */}
       {/* GPIO4 is the only ADC1 pin on the module's outboard row, so it reads mux 1 and GPIO3
-          reads mux 2. The selects run GPIO7, 6, 5 for A, B, C, the order mux 1's pins stand
-          over them. GPIO0, GPIO10, GPIO18 and GPIO19 are unused. */}
+          reads mux 2. The selects run GPIO7, 6, 5 for A, B, C, so their lines nest on the way to
+          both muxes. GPIO0, GPIO10, GPIO18 and GPIO19 are unused. */}
       <ESP32_C3_WROOM_02_N4
         name="U1"
         pcbX={ESP.x}

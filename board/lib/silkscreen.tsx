@@ -15,7 +15,7 @@ import { lineAlphabet } from "@tscircuit/alphabet"
 import { Fragment } from "react"
 import kanaJson from "./art/kana.json"
 import logoJson from "./art/logo.json"
-import { BOARD_HALF, CHAMFER, type Pt, wayX, X_SHIFT, Y_SHIFT } from "./outline"
+import { BOARD_HALF, CHAMFER, DEPTH, type Pt, wayX, X_SHIFT, Y_SHIFT } from "./outline"
 import { bandX, SENSOR } from "./way"
 
 /** JLC's minimum silk line. */
@@ -28,11 +28,12 @@ const DEGREE = 0.2
 const BASELINE = 0.051
 
 /**
- * Where both faces measure y from, in the board's Y: 25.5 out, which was the outboard edge
- * when they were laid out. The body is deeper now and the way 1 ear longer; the silk has not
- * followed, so x still runs from 18.6 past way 1's centre.
+ * The datum both faces measure from: y from 25.5 out, and x from 18.6 past an end way's centre.
+ * What sits against the parts stays put when the body grows; what belongs to the outboard edge
+ * is placed OUT beyond the datum.
  */
 const TOP = 25.5 + Y_SHIFT
+const OUT = DEPTH - 25.5
 const RING = ({ x, y }: Pt): Pt => ({ x: BOARD_HALF + X_SHIFT - x, y: TOP - y })
 const PARTS = ({ x, y }: Pt): Pt => ({ x: x - BOARD_HALF + X_SHIFT, y: TOP - y })
 
@@ -281,17 +282,17 @@ const crux = (ox: number, oy: number, h: number) => {
 }
 
 /** The chamfer, in ring-face coordinates: y = x − CHAMFER_AT. */
-const CHAMFER_AT = 2 * BOARD_HALF - CHAMFER
+const CHAMFER_AT = 2 * BOARD_HALF - CHAMFER + OUT
 /** A block laid along the chamfer, 0.9 mm in: local x runs down the chamfer, y into the board. */
 const alongChamfer = (x0: number, a: Art) =>
   mapArt(a, turn(x0, x0 - CHAMFER_AT + 0.9 * Math.SQRT2, 45))
 
 const ringFace = (): Art =>
   join(
-    logo(28.5, 1.1, 58),
-    frame(3.4, 1.2, 5.8, 22.4, 1),
-    kana(6.3, 2.5, 2.3, 2.55),
-    text(23.2, 4.6, 1.0, "PROG"),
+    logo(28.5, 1.1 - OUT, 58),
+    frame(1.9, 1.2 - OUT, 6.4, 24.9, 1.1),
+    kana(5.1, 2.63 - OUT, 2.55, 2.83),
+    text(23.2, 4.6 - OUT, 1.0, "PROG"),
     ...RING_WAYS.flatMap((x, i) => [17.3, 19.4, 21.5].map((y) => chevron(x, y, i === 0))),
     plate(),
     earth(96.6, 12.2),
@@ -336,7 +337,7 @@ const unicorn = (ox: number, oy: number, k: number) =>
 // part moves, scripts/silk.ts fails until they follow it.
 /** Pin-1 dots, Ø0.46, so a dot placed 0.5 off its pad keeps 0.25 clear. */
 const PIN1_DOTS: [number, number][] = [
-  [92.765, 8.365], // U2
+  [101.06, -1.6], // U2, beside pin 1's pad
   [27.96, 5.4], // U3
   [82.91, 20.39], // U11
   [69.55, 20.39], // U12
@@ -345,8 +346,8 @@ const PIN1_DOTS: [number, number][] = [
   [28.47, 20.39], // U15
   [15.11, 20.39], // U16
   [53.36, 16.56], // Q1
-  [102.42, 12.65], // U1
-  [82.743, 1.08], // J1, outboard of pin 1
+  [105.21, 8.1], // U1, under the module's corner at pin 1
+  [82.743, -1.42], // J1, outboard of pin 1
   [12.755, 7.11], // U4, outboard of pin 1
 ]
 /** Cathode bars, 0.25 wide, beside the cathode pad on the side away from the anode. */
@@ -356,10 +357,10 @@ const CATHODE_BARS: [number, number, number, number][] = [
   // D11–D16
   ...[80.56, 67.2, 53.84, 39.48, 26.12, 12.76].map((x): [number, number, number, number] => [x, 17.05, x + 2, 17.05]),
 ]
-/** LED1's cathode: a 0.15 tick beside the pad on the side away from the anode, short of mux 1's body. */
+/** LED1's cathode: a 0.15 tick along the outboard side of its pad, at the end away from the anode. */
 const LED1_CATHODE: [number, number][] = [
-  [92.88, 6.5],
-  [92.88, 5.7],
+  [102.66, 0.67],
+  [103.11, 0.67],
 ]
 /** Designators, 0.8 mm, only where polarity or pin 1 matters: start of the baseline. */
 const DESIGNATORS: [string, number, number][] = [

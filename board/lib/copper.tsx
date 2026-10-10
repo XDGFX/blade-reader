@@ -60,19 +60,24 @@ export const LOAD_BOTTOM = 6.0
 const RING_R = 6.5
 /** The way 1 ear's GND, 0.5 mm clear of way 1's ring face copper. */
 const EAR_1 = 40.0
-/** Where way 1's ring face copper stops for the 3V3 line at the edge of the bundle. */
-const BUNDLE_EDGE = 39.2
+/** Where way 1's ring face copper stops for 3V3, which comes up from the channel beside the module. */
+const RISER_EDGE = 39.2
 /** The centre of the module's ground pad, 0.96 mm off its centre line. */
 const EPAD_Y = ESP.y - 0.96
 /**
- * GND vias under the module, joining the way 1 ear's two faces. Each stands midway between two
- * of the module's lands, so a line can drop straight from a land past it: two beside the
- * panel-edge row at the board end, and two each side of the ground pad.
+ * GND vias under the module, joining the way 1 ear's two faces. Each stands between two of the
+ * lines that run up the ring face there (lib/routes.tsx): two above the panel-edge row at the
+ * board end, two beside the ground pad, two along the board end, and three at the blind end.
  */
 const EAR_VIAS: Pt[] = [
-  { x: espPinX(0.5), y: 3.0 },
-  { x: espPinX(1.5), y: 3.0 },
-  ...[-2.25, 2.25].flatMap((dy) => [3.5, 4.5].map((i) => ({ x: espPinX(i), y: EPAD_Y + dy }))),
+  { x: espPinX(1), y: 3.6 },
+  { x: espPinX(2), y: 3.6 },
+  ...[-2.25, 2.25].map((dy) => ({ x: espPinX(3), y: EPAD_Y + dy })),
+  { x: 52.9, y: 6.0 },
+  { x: 52.9, y: 11.5 },
+  { x: 40.9, y: 6.8 },
+  { x: 40.75, y: 17.1 },
+  { x: 45.4, y: 16.0 },
 ]
 /** The parts face's GND in the band behind the nuts starts above the VSUP trunk. */
 const BAND_BOTTOM = 19.3
@@ -189,16 +194,12 @@ export const WayCopper = ({ n, cx, dividerVia }: { n: number; cx: number; divide
           [
             ...circle(cx, NUT_Y, RING_R).filter((p) => p.y > NUT_Y && (n < 6 || p.x > cx || p.y > WAY_6_CUT_TOP)),
             ...(n === 6 ? WAY_6_CORNER : [{ x: cx - RING_R, y: NUT_Y }, { x: cx - RING_R, y: LOAD_BOTTOM }]),
-            // Way 1's corner gives way to the bundle from the channel to mux 1.
-            ...(n === 1
-              ? [
-                  { x: BUNDLE_EDGE, y: LOAD_BOTTOM },
-                  { x: BUNDLE_EDGE, y: 11.6 },
-                  { x: cx + RING_R, y: 11.6 },
-                ]
-              : [{ x: cx + RING_R, y: LOAD_BOTTOM }]),
+            { x: cx + RING_R, y: LOAD_BOTTOM },
             { x: cx + RING_R, y: NUT_Y },
-          ].map((p) => clipToNeighbours(n, p)),
+          ]
+            .map((p) => clipToNeighbours(n, p))
+            // Way 1's side gives way to 3V3; the ring's own keepout ends 0.8 short of it.
+            .map((p) => (n === 1 ? { x: Math.min(p.x, RISER_EDGE), y: p.y } : p)),
         )}
       />
 
