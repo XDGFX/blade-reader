@@ -15,5 +15,6 @@ design basis says so; the notes themselves are not rewritten.
 | [`silkscreen-design.md`](silkscreen-design.md) | Silkscreen exemplars, JLC mask colours and fees, tscircuit silk authoring, torque on the finger |
 | [`cable-aperture-sensing.md`](cable-aperture-sensing.md) | Sensing current around each output cable instead of through the board. Not pursued |
 | [`economic-pcba-wifi-mcu.md`](economic-pcba-wifi-mcu.md) | Which Wi-Fi modules and chips JLC places under Economic PCBA, and what each costs the way 1 ear |
+| [`feed-cable-stray-field.md`](feed-cable-stray-field.md) | Whether the CC6905 is differential, and the error the feed cable's field puts on the sensors nearest the positive end, by cable route |
 
 "Way monitor" was the working name before the project became Blade Reader.
