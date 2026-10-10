@@ -4,7 +4,7 @@
 // laid out here, not a design. Run in board/: bun scripts/yoke-view.ts [strip circuit.json]
 //
 // Everything is drawn in panel coordinates, in mm: c across from the centreline and a along
-// from the positive end, which is at the top.
+// from the positive end. The sheets are drawn as the panel is fitted, positive end down.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import {
@@ -319,41 +319,45 @@ const wordmark = (w: number, y: number, gap: number) => {
 }
 
 const G = yokeAt(GROUND_NUT)
-/** The chamfer over the module: x along it from the chin's outer edge towards the arm, y into the board. */
-const rightChamfer = turn(HALF_WIDTH - CHAMFER.across, A_OUTER, (Math.atan2(CHAMFER.along, CHAMFER.across) * 180) / Math.PI)
+/** The chin's layout assumes its outer edge 22 past the panel's end; this is how far it really is from that. */
+const CHIN_SHIFT = A_OUTER + 22
+/** The chamfer over the module, in the chin's own view: x along it from the arm's corner towards the centre, y out of the board. */
+const moduleChamfer = turn(-HALF_WIDTH, 22 - CHAMFER.along, (Math.atan2(CHAMFER.along, CHAMFER.across) * 180) / Math.PI)
 
-/** The chin: the wordmark either side of the feed, the spec plate above it, a sign on each shoulder. */
-const chin = (): Art =>
-  mapArt(chinArt(), (p) => P(p.x, p.y + A_OUTER + 22))
-// Laid out for a chin whose outer edge is 22 past the panel's end.
-const chinArt = (): Art =>
-  join(
-    // As wide as the ground nut's land leaves room for.
-    wordmark(56, -9.2, 9.2),
-    cells(CELLS.left, -10.5, -1, -16.5),
-    cells(CELLS.right, 10.5, 1, -16.5),
+// The panel is fitted positive end down, so the chin is read from the other way up than the
+// panel's coordinates run: it is laid out in its own view, x = −c and y = −a, outer edge at the bottom.
+const chin = (): Art => mapArt(chinArt(), (p) => P(-p.x, -p.y + CHIN_SHIFT))
+/** The chin: the spec plate, the wordmark below it either side of the feed, a sign on each shoulder. */
+const chinArt = (): Art => {
+  const g = P(-G.x, -(G.y - CHIN_SHIFT))
+  return join(
+    cells(CELLS.left, -10.5, -1, 5.6),
+    cells(CELLS.right, 10.5, 1, 5.6),
+    // As wide as the ground nut's land and the chamfer leave room for.
+    wordmark(50, 13.2, 9.2),
     // The feed's corridor, and its polarity under the lug.
-    line([[-8, -20.8], [-8, -3.2]]),
-    line([[8, -20.8], [8, -3.2]]),
-    ring(0, -11.5, 3.2, 0.3),
-    line([[-1.7, -11.5], [1.7, -11.5]], 0.4),
-    line([[0, -13.2], [0, -9.8]], 0.4),
+    line([[-8, 3.2], [-8, 20.8]]),
+    line([[8, 3.2], [8, 20.8]]),
+    ring(0, 11.5, 3.2, 0.3),
+    line([[-1.7, 11.5], [1.7, 11.5]], 0.4),
+    line([[0, 9.8], [0, 13.2]], 0.4),
     // The framed sign, as in the strip's way 1 ear, and its twin.
-    frame(50.2, -8.5, 5.8, 22.4, 1),
-    kana(53.1, -7.2, 2.3, 2.55),
-    frame(-56, -8.5, 5.8, 22.4, 1),
-    mapArt(text(0, 0, 1.6, "12 WAY ST BLADE", { anchor: "middle", w: 0.2 }), turn(-53.1 - 0.56, 2.7, 90)),
-    earth(G.x - 7.6, G.y - A_OUTER - 22 + 1.1),
-    text(G.x - 5.7, G.y - A_OUTER - 22 - 0.2, 1.2, "GND", { anchor: "end" }),
+    frame(-56, -13.9, 5.8, 22.4, 1),
+    kana(-53.1, -12.6, 2.3, 2.55),
+    frame(50.2, -13.9, 5.8, 22.4, 1),
+    mapArt(text(0, 0, 1.6, "12 WAY ST BLADE", { anchor: "middle", w: 0.2 }), turn(53.1 - 0.56, -2.7, 90)),
+    text(g.x + 5.7, g.y - 0.2, 1.2, "GND"),
+    earth(g.x + 7.6, g.y + 1.1),
     mapArt(
       join(
-        text(22.5, 2.2, 0.8, "DESIGNED IN", { anchor: "end" }),
-        text(22.5, 3.4, 0.8, "AUSTRALIA", { anchor: "end" }),
-        crux(23.9, 1.5, 2.0),
+        text(21, -2.1, 0.8, "DESIGNED IN", { anchor: "end" }),
+        text(21, -0.9, 0.8, "AUSTRALIA", { anchor: "end" }),
+        crux(22.4, -2.9, 2.0),
       ),
-      rightChamfer,
+      moduleChamfer,
     ),
   )
+}
 
 /** A point on the module's chamfer: along from its middle towards the arm, outward past the edge. */
 const on = (along: number, outward: number) => {
@@ -423,11 +427,14 @@ const chinParts = () => {
   out.push(block([on(-5, 0), on(13, 0), on(13, -14), on(-5, -14)], "ic"))
   for (const k of [-2, 1, 4]) out.push(block([on(k, -14.6), on(k + 1.6, -14.6), on(k + 1.6, -15.5), on(k, -15.5)], "passive"))
   const u1 = on(4, -7)
-  out.push(`<text x="${f(u1.x)}" y="${f(u1.y + 0.6)}" ${SMALL}>WROOM-02</text>`)
+  // Upright on a sheet drawn positive end down.
+  const label = (p: Pt, name: string) =>
+    `<text x="${f(p.x)}" y="${f(p.y + 0.6)}" transform="rotate(180 ${f(p.x)} ${f(p.y)})" ${SMALL}>${name}</text>`
+  out.push(label(u1, "WROOM-02"))
   for (const b of BLOCKS) {
-    const a = b.a + A_OUTER + 22
+    const a = b.a + CHIN_SHIFT
     out.push(block([P(b.c - b.w / 2, a - b.h / 2), P(b.c + b.w / 2, b.a - b.h / 2), P(b.c + b.w / 2, b.a + b.h / 2), P(b.c - b.w / 2, b.a + b.h / 2)], b.kind))
-    if (b.name) out.push(`<text x="${f(b.c)}" y="${f(b.a + 0.6)}" ${SMALL}>${b.name}</text>`)
+    if (b.name) out.push(label(P(b.c, a), b.name))
   }
   return out.join("")
 }
@@ -458,10 +465,11 @@ const sheet = (cells: { title: string; body: string }[][], view: View, px: numbe
       return (
         `<text x="${x}" y="${y + 6}" font-size="${Math.min(5, view.w / 40)}" ${LABEL}>${title}</text>` +
         `<clipPath id="${id}"><rect x="${view.x0}" y="${view.y0}" width="${view.w}" height="${view.h}"/></clipPath>` +
-        `<g transform="translate(${x - view.x0} ${y + head - view.y0})" clip-path="url(#${id})">` +
+        // Views are given in panel coordinates and drawn as fitted, positive end down.
+        `<g transform="translate(${x + view.x0 + view.w} ${y + head + view.y0 + view.h}) rotate(180)"><g clip-path="url(#${id})">` +
         rect(view.x0, view.y0, view.w, view.h, C.bulkhead) +
         body +
-        `</g>`
+        `</g></g>`
       )
     }),
   )
