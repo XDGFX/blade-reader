@@ -5,7 +5,7 @@
 // Run after a routed build: `bun run keepout`.
 
 import { readFileSync } from "node:fs"
-import { NUT_Y, wayX, Y_SHIFT } from "../lib/outline"
+import { NUT_Y, wayX, X_SHIFT, Y_SHIFT } from "../lib/outline"
 
 const circuit: any[] = JSON.parse(readFileSync("dist/index/circuit.json", "utf8"))
 const of = (type: string) => circuit.filter((e) => e.type === type)
@@ -70,7 +70,7 @@ for (const [swing, label, fatal] of [
     const own = `S${n}_LOAD`
     for (const c of copper) {
       if (name(c.key) === own) continue
-      const depth = depthInside(wayX(n), swing, c.x, c.y) + c.r
+      const depth = depthInside(wayX(n) + X_SHIFT, swing, c.x, c.y) + c.r
       if (depth <= 0) continue
       const k = `way ${n}: ${name(c.key)} ${c.what}`
       hits.set(k, Math.max(hits.get(k) ?? 0, depth))

@@ -1,14 +1,14 @@
 // Blade Reader rev A: one 6-way strip.
 // Decisions behind every part are in docs/design.md. Part codes are LCSC/JLCPCB.
 //
-// PCB coordinates are explained in lib/outline.tsx. The body is 25.5 mm deep, with an ear past
-// each end way. The way 1 ear (+X) has the ESP32 low down, antenna past the board end, with its
-// small parts and mux 1 above it. The way 6 ear (−X) has the ground nut low down and mux 2
+// PCB coordinates are explained in lib/outline.tsx. The body is 28.0 mm deep, with an ear past
+// each end way. The way 1 ear (+X) has the ESP32 low down, antenna past the board end, with
+// mux 1 and its small parts above it. The way 6 ear (−X) has the ground nut low down and mux 2
 // above it. Everything else sits in the band behind the nuts: the programming footprint over
 // way 1, test pads over way 2, then the supply over ways 4–6.
 
 import { CD4051BM96 } from "./imports/CD4051BM96"
-import { ESP32_C3_MINI_1_H4X } from "./imports/ESP32_C3_MINI_1_H4X"
+import { ESP32_C3_WROOM_02_N4 } from "./imports/ESP32_C3_WROOM_02_N4"
 import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
 import { SS210 } from "./imports/SS210"
 import { GroundCopper, WayCopper } from "./lib/copper"
@@ -17,21 +17,48 @@ import { Routes } from "./lib/routes"
 import { Silkscreen } from "./lib/silkscreen"
 import { Supply } from "./lib/supply"
 import {
+  DEPTH,
   ESP,
   ESP_ROW_Y,
+  espPinX,
   GROUND_NUT,
   MUX_2,
   OUTLINE,
   wayX,
+  X_SHIFT,
   Y_SHIFT,
 } from "./lib/outline"
 import { dividerAt, Way, WAY_PITCH } from "./lib/way"
 
 const WAYS = [1, 2, 3, 4, 5, 6]
 
-const ESP_GND_PINS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-].map((i) => `GND${i}`)
+// The way 1 ear's small parts: [X, Y above the module's lands, rotation].
+// The caps for 3V3, EN and IO4 stand above their lands, courtyards against the module's, with
+// mux 1 beside them. The pocket past mux 1 at the board end takes the parts whose lines come up
+// there: IO1–IO3 cross under the module and leave between its outboard lands. The IO8 and IO9
+// pull-ups and mux 1's cap stand beside the module's blind end, towards J1.
+const CAP_ROW = 1.21
+const EAR: Record<string, readonly [number, number, number]> = {
+  C7: [espPinX(0), CAP_ROW, 90],
+  C8: [espPinX(1), CAP_ROW, 90],
+  C10: [espPinX(2), CAP_ROW, 90],
+  U2: [43.8, 4.24, 180],
+  C41: [50.0, 3.3, 90],
+  C6: [50.0, 6.0, 90],
+  R3: [52.2, 3.0, 0],
+  R4: [52.2, 4.0, 0],
+  R7: [52.2, 5.0, 0],
+  LED1: [52.0, 6.3, 0],
+  C9: [38.45, -0.75, 90],
+  R5: [37.45, 0.15, 90],
+  R6: [38.45, -2.65, 90],
+}
+const ear = (name: string) => {
+  const [pcbX, dy, pcbRotation] = EAR[name]
+  return { pcbX, pcbY: ESP_ROW_Y + dy, pcbRotation }
+}
+/** J1 keeps its distance from the outboard edge, which is the pogo clamp's reach. */
+const J1_Y = DEPTH - 3.9
 
 // Between ways 3 and 4, above the channel, so way 3's divider stands beside its diode like the
 // others and its line can drop into the channel.
@@ -59,7 +86,7 @@ export default () => (
     <schematicsection name="Mcu" displayName="ESP32-C3 and programming" />
     <schematicsection name="Adc" displayName="Multiplexers and ADC" />
 
-    <group name="strip" pcbX={0} pcbY={Y_SHIFT}>
+    <group name="strip" pcbX={X_SHIFT} pcbY={Y_SHIFT}>
 
       {/* ── Ways ─────────────────────────────────────────────────────────────── */}
       {WAYS.map((n) => (
@@ -93,13 +120,11 @@ export default () => (
       <Supply schX={-8} schY={22} />
 
       {/* ── Multiplexers and ADC ─────────────────────────────────────────────── */}
-      {/* Mux 1, for ways 1–3 and the temperature. Its inputs are in the order the lines arrive,
-          so none cross; firmware follows this schematic. X5 is the spare. */}
+      {/* Mux 1, for ways 1–3 and the temperature, above the module with A, B and C over
+          GPIO7, 6 and 5. Firmware follows this schematic. X5 is the spare. */}
       <CD4051BM96
         name="U2"
-        pcbX={46.0}
-        pcbY={19.87}
-        pcbRotation={0}
+        {...ear("U2")}
         schX={0}
         schY={0}
         schSectionName="Adc"
@@ -124,9 +149,7 @@ export default () => (
       />
       <capacitor
         name="C9"
-        pcbX={40.2}
-        pcbY={22.41}
-        pcbRotation={-90}
+        {...ear("C9")}
         capacitance="100nF"
         footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C307331"] }}
@@ -140,9 +163,7 @@ export default () => (
           or more. The mux's on-resistance isolates it from the CC6905's 2.2 nF load limit. */}
       <capacitor
         name="C10"
-        pcbX={ESP.x + 0.11}
-        pcbY={ESP_ROW_Y}
-        pcbRotation={0}
+        {...ear("C10")}
         capacitance="10nF"
         footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C15195"] }}
@@ -152,14 +173,11 @@ export default () => (
         schSectionName="Adc"
         connections={{ pin1: "net.ADC", pin2: "net.GND" }}
       />
-      {/* The same at GPIO4, on the module's side facing way 1, for mux 2's common. It stands
-          above the corridor's narrow end, where there is room to keep it off the module, with
-          its GND pad at the module's GND pin. */}
+      {/* The same for mux 2's common, on GPIO3. GPIO3 is on the module's panel-edge row, with no
+          room beside it, so its line crosses under the module to the cap in the pocket. */}
       <capacitor
         name="C41"
-        pcbX={40.05}
-        pcbY={ESP.y + 2.35}
-        pcbRotation={90}
+        {...ear("C41")}
         capacitance="10nF"
         footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C15195"] }}
@@ -248,7 +266,10 @@ export default () => (
       />
 
       {/* ── ESP32-C3 ─────────────────────────────────────────────────────────── */}
-      <ESP32_C3_MINI_1_H4X
+      {/* GPIO4 is the only ADC1 pin on the module's outboard row, so it reads mux 1 and GPIO3
+          reads mux 2. The selects run GPIO7, 6, 5 for A, B, C, the order mux 1's pins stand
+          over them. GPIO0, GPIO10, GPIO18 and GPIO19 are unused. */}
+      <ESP32_C3_WROOM_02_N4
         name="U1"
         pcbX={ESP.x}
         pcbY={ESP.y}
@@ -259,26 +280,24 @@ export default () => (
         connections={{
           "3V3": "net.V3V3",
           EN: "net.EN",
-          IO3: "net.ADC",
-          IO5: "net.MUX_S0",
+          IO4: "net.ADC",
+          IO7: "net.MUX_S0",
           IO6: "net.MUX_S1",
-          IO7: "net.MUX_S2",
+          IO5: "net.MUX_S2",
           IO1: "net.LED",
           IO2: "net.IO2",
           IO8: "net.IO8",
           IO9: "net.IO9",
-          IO0: "net.IO0",
-          IO4: "net.ADC2",
-          RXD0: "net.U0RXD",
-          TXD0: "net.U0TXD",
-          ...Object.fromEntries(ESP_GND_PINS.map((p) => [p, "net.GND"])),
+          IO3: "net.ADC2",
+          RXD: "net.U0RXD",
+          TXD: "net.U0TXD",
+          GND: "net.GND",
+          EP: "net.GND",
         }}
       />
       <capacitor
         name="C6"
-        pcbX={39.3}
-        pcbY={20.6}
-        pcbRotation={0}
+        {...ear("C6")}
         capacitance="10uF"
         footprint={FP_0603}
         supplierPartNumbers={{ jlcpcb: ["C19702"] }}
@@ -290,9 +309,7 @@ export default () => (
       />
       <capacitor
         name="C7"
-        pcbX={ESP.x + 3.87}
-        pcbY={ESP_ROW_Y}
-        pcbRotation={0}
+        {...ear("C7")}
         capacitance="100nF"
         footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C307331"] }}
@@ -305,9 +322,7 @@ export default () => (
       {/* EN: the module has no RC of its own. Also gives esptool's auto-reset a clean edge. */}
       <resistor
         name="R3"
-        pcbX={39.2}
-        pcbY={23.54}
-        pcbRotation={-90}
+        {...ear("R3")}
         {...R_10K}
         schX={14}
         schY={-6}
@@ -317,9 +332,7 @@ export default () => (
       />
       <capacitor
         name="C8"
-        pcbX={ESP.x - 1.77}
-        pcbY={ESP_ROW_Y}
-        pcbRotation={180}
+        {...ear("C8")}
         capacitance="1uF"
         footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C52923"] }}
@@ -329,23 +342,19 @@ export default () => (
         schSectionName="Mcu"
         connections={{ pin1: "net.EN", pin2: "net.GND" }}
       />
-      {/* Strapping pins: normal boot needs GPIO2 and GPIO9 high. R4 stands outboard of mux 1,
-          the only spot GPIO2 reaches that is clear of the module; R5 and R6 straddle the LED's
-          line beside the mux. */}
+      {/* Strapping pins: normal boot needs GPIO2 and GPIO9 high. */}
       {(
         [
-          ["R4", "net.IO2", 48.0, 24.4, 180],
-          ["R5", "net.IO8", 39.0, 17.25, 0],
-          ["R6", "net.IO9", 39.0, 18.3, 0],
+          ["R4", "net.IO2"],
+          ["R5", "net.IO8"],
+          ["R6", "net.IO9"],
         ] as const
-      ).map(([name, net, pcbX, pcbY, pcbRotation], i) => (
+      ).map(([name, net], i) => (
         <resistor
           key={name}
           name={name}
           {...R_10K}
-          pcbX={pcbX}
-          pcbY={pcbY}
-          pcbRotation={pcbRotation}
+          {...ear(name)}
           schX={30 + i * 1.5}
           schY={8}
           schRotation={90}
@@ -353,13 +362,10 @@ export default () => (
           connections={{ pin2: "net.V3V3", pin1: net }}
         />
       ))}
-      {/* Status LED, ESPHome status_led. R7 stands at the top of the corridor, and the LED
-          beside mux 1, straddling the 3V3 line, with its cathode at the GND line there. */}
+      {/* Status LED, ESPHome status_led, on GPIO1. */}
       <resistor
         name="R7"
-        pcbX={39.6}
-        pcbY={15.75}
-        pcbRotation={90}
+        {...ear("R7")}
         resistance="1k"
         footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C11702"] }}
@@ -370,9 +376,7 @@ export default () => (
       />
       <led
         name="LED1"
-        pcbX={39.375}
-        pcbY={19.4}
-        pcbRotation={0}
+        {...ear("LED1")}
         color="red"
         footprint={FP_LED_0603}
         supplierPartNumbers={{ jlcpcb: ["C2286"] }}
@@ -390,7 +394,7 @@ export default () => (
       <ProgPads
         name="J1"
         pcbX={wayX(1)}
-        pcbY={21.6}
+        pcbY={J1_Y}
         pcbRotation={0}
         schX={38}
         schY={0}
@@ -417,12 +421,9 @@ export default () => (
       />
 
       {/* ── Test pads ────────────────────────────────────────────────────────── */}
-      {/* GPIO0 and 1 beside their module pins, Ø1.0 to fit there; the rest behind way 2's nut,
-          3V3 on the way 1 side, where its trace arrives from the ear. */}
+      {/* Behind way 2's nut, 3V3 on the way 1 side, where its trace arrives from the ear. */}
       {(
         [
-          ["TP1", "net.IO0", 40.3, 13.15, 1.0],
-          ["TP2", "net.LED", 40.3, 11.95, 1.0],
           ["TP4", "net.V3V3", wayX(2) + 2.5, 24.4, 1.5],
           ["TP5", "net.VSUP", wayX(2), 24.4, 1.5],
           ["TP6", "net.GND", wayX(2) - 2.5, 24.4, 1.5],

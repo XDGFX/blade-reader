@@ -15,7 +15,7 @@ import { lineAlphabet } from "@tscircuit/alphabet"
 import { Fragment } from "react"
 import kanaJson from "./art/kana.json"
 import logoJson from "./art/logo.json"
-import { BOARD_HALF, CHAMFER, DEPTH, type Pt, wayX, Y_SHIFT } from "./outline"
+import { BOARD_HALF, CHAMFER, type Pt, wayX, X_SHIFT, Y_SHIFT } from "./outline"
 import { bandX, SENSOR } from "./way"
 
 /** JLC's minimum silk line. */
@@ -27,10 +27,14 @@ const DEGREE = 0.2
 /** The alphabet's baseline, in em. */
 const BASELINE = 0.051
 
-/** The body's outboard edge, in the board's Y. */
-const TOP = DEPTH + Y_SHIFT
-const RING = ({ x, y }: Pt): Pt => ({ x: BOARD_HALF - x, y: TOP - y })
-const PARTS = ({ x, y }: Pt): Pt => ({ x: x - BOARD_HALF, y: TOP - y })
+/**
+ * Where both faces measure y from, in the board's Y: 25.5 out, which was the outboard edge
+ * when they were laid out. The body is deeper now and the way 1 ear longer; the silk has not
+ * followed, so x still runs from 18.6 past way 1's centre.
+ */
+const TOP = 25.5 + Y_SHIFT
+const RING = ({ x, y }: Pt): Pt => ({ x: BOARD_HALF + X_SHIFT - x, y: TOP - y })
+const PARTS = ({ x, y }: Pt): Pt => ({ x: x - BOARD_HALF + X_SHIFT, y: TOP - y })
 
 type Stroke = { pts: Pt[]; w: number }
 /** Strokes and filled polygons; a fill is a set of rings, nested rings cut holes. */
