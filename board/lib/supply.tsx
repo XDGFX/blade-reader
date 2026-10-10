@@ -3,7 +3,9 @@
 // and BOM", with its D1 replaced by the six way diodes and its F1 by the fuse (issue #6).
 //
 // PCB: a line along the band behind ways 4–6, in the order the current flows towards the way 6
-// end: fuse, TVS diode, input caps and buck, then the inductor and output caps.
+// end: fuse, TVS diode, input caps and buck, then the inductor and output caps. U3 lies with
+// VIN and EN towards the input caps and SW towards L1: C2 stands across its VIN end, C3 across
+// its SW end, and the feedback divider sits under its FB pin.
 
 import { A_0466001_NRHF } from "../imports/A_0466001_NRHF"
 import { LMR51610XDBVR } from "../imports/LMR51610XDBVR"
@@ -37,9 +39,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C1"
-      pcbX={-19.4}
-      pcbY={24.3}
-      pcbRotation={0}
+      pcbX={-18.3}
+      pcbY={22.5}
+      pcbRotation={-90}
       capacitance="2.2uF"
       footprint="1206"
       maxVoltageRating="50V"
@@ -52,9 +54,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C2"
-      pcbX={-23.4}
-      pcbY={24.15}
-      pcbRotation={0}
+      pcbX={-20.4}
+      pcbY={22.95}
+      pcbRotation={-90}
       capacitance="100nF"
       footprint="0805"
       maxVoltageRating="100V"
@@ -67,9 +69,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <LMR51610XDBVR
       name="U3"
-      pcbX={-23.4}
-      pcbY={21.4}
-      pcbRotation={0}
+      pcbX={-23.1}
+      pcbY={22.5}
+      pcbRotation={-90}
       schX={schX + 9}
       schY={schY}
       schSectionName="Supply"
@@ -84,9 +86,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C3"
-      pcbX={-20.2}
-      pcbY={20.0}
-      pcbRotation={0}
+      pcbX={-25.35}
+      pcbY={22.5}
+      pcbRotation={90}
       capacitance="100nF"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C307331"] }}
@@ -110,8 +112,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     {/* 0.8 V × (1 + 75k / 24k) = 3.30 V */}
     <resistor
       name="R1"
-      pcbX={-20.2}
-      pcbY={21.15}
+      pcbX={-21.6}
+      pcbY={19.85}
       pcbRotation={180}
       resistance="75k"
       footprint="0402"
@@ -124,9 +126,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <resistor
       name="R2"
-      pcbX={-20.2}
-      pcbY={22.3}
-      pcbRotation={0}
+      pcbX={-20.1}
+      pcbY={20.3}
+      pcbRotation={-90}
       resistance="24k"
       footprint="0402"
       supplierPartNumbers={{ jlcpcb: ["C25769"] }}
@@ -142,7 +144,7 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
         name={`C${i}`}
         pcbX={-39.6}
         pcbY={i === 4 ? 20.05 : 22.35}
-        pcbRotation={0}
+        pcbRotation={180}
         capacitance="22uF"
         footprint="1206"
         maxVoltageRating="25V"

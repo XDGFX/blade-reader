@@ -56,6 +56,8 @@ export const LOAD_BOTTOM = 6.0
 const RING_R = 6.5
 /** The way 1 ear's GND, 0.5 mm clear of way 1's ring face copper. */
 const EAR_1 = 40.0
+/** The parts face's GND in the band behind the nuts starts above the VSUP trunk. */
+const BAND_BOTTOM = 19.3
 
 const Via = ({ net, x, y }: { net: string; x: number; y: number }) => (
   <via
@@ -76,6 +78,20 @@ const clipToNeighbours = (n: number, { x, y }: Pt): Pt => {
   if (n < 6) cx = Math.max(cx, keepoutEdgeX(wayX(n + 1), 1, y))
   return { x: cx, y }
 }
+
+/** Way 6's ring face copper is cut back up to here, beside the ground nut. */
+const WAY_6_CUT_TOP = 14.8
+/**
+ * The cut: the channel's lanes turn outboard there (lib/routes.tsx). It stays outside the
+ * ring's straight-out keepout.
+ */
+const WAY_6_CORNER: Pt[] = [
+  { x: wayX(6) - RING_R, y: WAY_6_CUT_TOP },
+  { x: -38.8, y: WAY_6_CUT_TOP },
+  { x: -38.8, y: 10.5 },
+  { x: -38.0, y: 10.5 },
+  { x: -38.0, y: LOAD_BOTTOM },
+]
 
 /**
  * Way `n`'s line and load copper, centred on `cx`. The line covers the finger on both faces and
@@ -153,9 +169,8 @@ export const WayCopper = ({ n, cx, dividerVia }: { n: number; cx: number; divide
         connectsTo={load}
         outline={toBoard(
           [
-            ...circle(cx, NUT_Y, RING_R).filter((p) => p.y > NUT_Y),
-            { x: cx - RING_R, y: NUT_Y },
-            { x: cx - RING_R, y: LOAD_BOTTOM },
+            ...circle(cx, NUT_Y, RING_R).filter((p) => p.y > NUT_Y && (n < 6 || p.x > cx || p.y > WAY_6_CUT_TOP)),
+            ...(n === 6 ? WAY_6_CORNER : [{ x: cx - RING_R, y: NUT_Y }, { x: cx - RING_R, y: LOAD_BOTTOM }]),
             { x: cx + RING_R, y: LOAD_BOTTOM },
             { x: cx + RING_R, y: NUT_Y },
           ].map((p) => clipToNeighbours(n, p)),
@@ -221,6 +236,26 @@ export const GroundCopper = () => {
         layer="top"
         connectsTo="net.GND"
         outline={toBoard(rect(EAR_1, 0, B, DEPTH))}
+      />
+      {/* Parts face: the band behind the nuts, above the VSUP trunk, and the way 6 ear above
+          mux 2's outboard pads. L1 and the test pads cut it into pieces, which the GND spine
+          (lib/routes.tsx) joins as far as TP6; the piece over way 1 laps the way 1 ear's pour. */}
+      <copperpour
+        {...pour}
+        name="GND_TOP_BAND"
+        layer="top"
+        connectsTo="net.GND"
+        outline={toBoard([
+          { x: EAR_1 + 1, y: BAND_BOTTOM },
+          { x: EAR_1 + 1, y: DEPTH },
+          { x: -B + CHAMFER, y: DEPTH },
+          { x: -B, y: DEPTH - CHAMFER },
+          { x: -B, y: 15.3 },
+          { x: -42.5, y: 15.3 },
+          { x: -42.5, y: 18.3 },
+          { x: -40.2, y: 18.3 },
+          { x: -40.2, y: BAND_BOTTOM },
+        ])}
       />
     </>
   )
