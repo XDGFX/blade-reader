@@ -17,12 +17,12 @@ export const SMTSO4040CTJ = (props: ChipProps<typeof pinLabels>) => {
       // Hand-written: the EasyEDA footprint puts a plated hole and an SMD pad on pin1, which
       // fails the DRC. Sinhoo's drawing (rev A, 2017-09-08) gives a Ø6.22 mm max pilot and a
       // Ø8.74 mm body but no land pattern, so the 6.4 mm hole clears the pilot after plating
-      // tolerance, and the 9.3 mm pad, as in the EasyEDA footprint, covers the body.
+      // tolerance, and the 9.37 mm pad is PEM's minimum for its SMTSO-M4, which this nut copies.
       footprint={<footprint>
-        <platedhole portHints={["pin1"]} pcbX="0mm" pcbY="0mm" outerDiameter="9.3mm" holeDiameter="6.4mm" shape="circle" />
+        <platedhole portHints={["pin1"]} pcbX="0mm" pcbY="0mm" outerDiameter="9.37mm" holeDiameter="6.4mm" shape="circle" />
 <silkscreencircle pcbX="0mm" pcbY="0mm" radius="4.8999902mm" />
 <silkscreentext text="{NAME}" pcbX="0mm" pcbY="5.9022mm" anchorAlignment="center" fontSize="1mm" />
-        {/* Round like the nut, about 0.25 mm outside the pad: the EasyEDA square claimed corners the
+        {/* Round like the nut, about 0.2 mm outside the pad: the EasyEDA square claimed corners the
             nut doesn't fill. */}
         <courtyardoutline
           outline={Array.from({ length: 24 }, (_, i) => {

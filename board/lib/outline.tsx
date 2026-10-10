@@ -12,10 +12,10 @@ export const DEPTH = 25.5
 
 /** Output nut centres. */
 export const NUT_Y = 14
-const NUT_PAD_RADIUS = 4.65
+const NUT_PAD_RADIUS = 4.685
 
 /** Ear past each end way, along the panel's side: room for the ESP32's 11.2 mm on the board. */
-export const END = WAY_PITCH_PCB / 2 + NUT_PAD_RADIUS + 0.6
+export const END = WAY_PITCH_PCB / 2 + NUT_PAD_RADIUS + 0.565
 
 const HALF = LENGTH / 2
 /** X of the board's way 1 end; the way 6 end is at −BOARD_HALF. */
@@ -35,7 +35,7 @@ export const CLAMP_Y = -8.52
  * The ground nut, low in the way 6 ear, a pitch along from way 6. Its centre is about 16 from
  * way 6's nut, so the rings are further apart than two ways' rings.
  */
-export const GROUND_NUT = { x: wayX(6) - WAY_PITCH_PCB, y: NUT_PAD_RADIUS + 0.6 }
+export const GROUND_NUT = { x: wayX(6) - WAY_PITCH_PCB, y: NUT_PAD_RADIUS + 0.565 }
 
 // ESP32-C3-MINI-1 at the bottom of the way 1 ear, lying along the strip (rotated −90°), antenna
 // past the end of the board, its courtyard 1 mm clear of the panel edge. Its 11.2 mm pad area is
