@@ -6,11 +6,12 @@
 // PCB coordinates are seen from the parts face (tscircuit's top) with the chin at the top:
 // X = c mirrored, which the symmetric outline hides, and Y = A_MID − a.
 
-import { finger, NUT_Y, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
+import { finger, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
 
 const PANEL_HALF = 84.2 / 2
-/** Arm depth from the panel edge (#48). */
-export const ARM_DEPTH = 20
+/** Arm depth from the panel edge, and the output nut row's distance out from it (#48, revised). */
+export const ARM_DEPTH = 16.7
+const NUT_OUT = 10.7
 export const HALF_WIDTH = PANEL_HALF + ARM_DEPTH
 
 /** Ways 11–12 to ways 1–2, along. */
@@ -21,39 +22,39 @@ export const A_OPEN = WAYS_A[5] + WAY_PITCH_PCB / 2
 const A_EAR = WAYS_A[0] - END
 const DECK_CLEARANCE = 1
 
-// The chin wraps the panel's positive end, straight across. It lies in the feed lug's own height
-// band, so the lug and cable have to pass over the ring face.
-/** The chin's inner edge, this far past the panel's end: the allowance for a clone's longer end. */
+// The chin wraps the panel's positive end. It lies in the feed lug's own height band, so the lug
+// and cable have to pass over the ring face.
+/** The chin's inner edge on the centreline, this far past the panel's end: the allowance for a clone's longer end. */
 const A_CHIN_FLOOR = -2
+// The inner edge follows the panel's end as fuse_block_12 has it in plan: bowed 2 mm between the
+// centreline and 29 across, then rounded into the side by 7 along. These stay 1.2–2 mm off it.
+const INNER: Pt[] = [
+  { x: 10, y: A_CHIN_FLOOR },
+  { x: 40, y: 2 },
+  { x: PANEL_HALF + DECK_CLEARANCE, y: 6 },
+]
 export const CHIN_DEPTH = 20
 export const A_OUTER = A_CHIN_FLOOR - CHIN_DEPTH
-/** Each outer corner of the chin is cut at 45° by this much. The cut starts 2 mm past the chin's inner edge. */
-export const CHAMFER = 18
+/** Each outer corner of the chin is cut back this far across and along. */
+export const CHAMFER = { across: 35, along: 12 }
+/** The cut across each arm's outer corner at the open end. */
+const END_CHAMFER = 4
 
-const INSIDE_RADIUS = 1
-
-// The +c half of the outline, from the chin's inner edge on the centreline to its outer corner.
+// The +c half of the outline, from the chin's inner edge on the centreline to its outer edge.
 const half = (): Pt[] => {
-  const cArm = PANEL_HALF + DECK_CLEARANCE
-  const corner = Array.from({ length: 5 }, (_, i) => {
-    const t = (Math.PI / 2) * (i / 4)
-    return {
-      x: cArm - INSIDE_RADIUS + INSIDE_RADIUS * Math.sin(t),
-      y: A_CHIN_FLOOR + INSIDE_RADIUS - INSIDE_RADIUS * Math.cos(t),
-    }
-  })
   // Rev A's finger, walked the other way: its X is a, its Y is outboard of the panel edge.
   const fingers = WAYS_A.flatMap((a) => finger(a).reverse().map((p) => ({ x: PANEL_HALF + p.y, y: p.x })))
   return [
     { x: 0, y: A_CHIN_FLOOR },
-    ...corner,
-    { x: cArm, y: A_EAR },
+    ...INNER,
+    { x: PANEL_HALF + DECK_CLEARANCE, y: A_EAR },
     { x: PANEL_HALF, y: A_EAR + DECK_CLEARANCE },
     ...fingers,
     { x: PANEL_HALF, y: A_OPEN },
-    { x: HALF_WIDTH, y: A_OPEN },
-    { x: HALF_WIDTH, y: A_OUTER + CHAMFER },
-    { x: HALF_WIDTH - CHAMFER, y: A_OUTER },
+    { x: HALF_WIDTH - END_CHAMFER, y: A_OPEN },
+    { x: HALF_WIDTH, y: A_OPEN - END_CHAMFER },
+    { x: HALF_WIDTH, y: A_OUTER + CHAMFER.along },
+    { x: HALF_WIDTH - CHAMFER.across, y: A_OUTER },
   ]
 }
 
@@ -69,30 +70,38 @@ export const OUTLINE = [...right, ...right.slice(1).reverse().map((p) => ({ x: -
 const sides = [1, -1] as const
 /** Way screw holes, 8.52 into the panel. */
 export const CLAMPS = sides.flatMap((s) => WAYS_A.map((a) => pcb(s * (PANEL_HALF + CLAMP_Y), a)))
-/** Output nuts, 14.0 out from the panel edge. */
-export const NUTS = sides.flatMap((s) => WAYS_A.map((a) => pcb(s * (PANEL_HALF + NUT_Y), a)))
+/** Output nuts. */
+export const NUTS = sides.flatMap((s) => WAYS_A.map((a) => pcb(s * (PANEL_HALF + NUT_OUT), a)))
 
 /** A point on the chamfer at side `s`: `along` from its middle towards the side edge, `out` past it. */
 const onChamfer = (s: 1 | -1, along: number, out: number): Pt => {
-  const k = Math.SQRT1_2
-  return pcb(s * (HALF_WIDTH - CHAMFER / 2 + k * (along + out)), A_OUTER + CHAMFER / 2 + k * (along - out))
+  const len = Math.hypot(CHAMFER.across, CHAMFER.along)
+  const [uc, ua] = [CHAMFER.across / len, CHAMFER.along / len]
+  return pcb(
+    s * (HALF_WIDTH - CHAMFER.across / 2 + uc * along + ua * out),
+    A_OUTER + CHAMFER.along / 2 + ua * along - uc * out,
+  )
 }
-const box = (s: 1 | -1, half: number, inboard: number, out: number): Pt[] =>
-  [[-half, -inboard], [half, -inboard], [half, out], [-half, out], [-half, -inboard]].map(([u, n]) => onChamfer(s, u, n))
+const box = (s: 1 | -1, mid: number, half: number, inboard: number, out: number): Pt[] =>
+  [[-half, -inboard], [half, -inboard], [half, out], [-half, out], [-half, -inboard]].map(([u, n]) =>
+    onChamfer(s, mid + u, n),
+  )
 
 // ESP32-C3-MINI-1 square to the chamfer at −X, its 11.2 mm pad area on the board and its antenna
-// 5.4 past the chamfer, inside the bounding rectangle (#47).
+// 5.4 past the chamfer (#47). It sits 4 mm towards the side edge from the chamfer's middle, which
+// keeps the antenna inside the bounding rectangle.
 const MODULE_WIDTH = 13.2
 const ANTENNA = 5.4
 const KEEPOUT = 15
-export const MODULE = box(1, MODULE_WIDTH / 2, 11.2, ANTENNA)
+const MODULE_AT = 4
+export const MODULE = box(1, MODULE_AT, MODULE_WIDTH / 2, 11.2, ANTENNA)
 /** No nut, inductor, test pad or tall part within 15 mm of the antenna. */
-export const ANTENNA_KEEPOUT = box(1, MODULE_WIDTH / 2 + KEEPOUT, KEEPOUT, ANTENNA)
+export const ANTENNA_KEEPOUT = box(1, MODULE_AT, MODULE_WIDTH / 2 + KEEPOUT, KEEPOUT, ANTENNA)
 
 /** The one ground nut, 7 mm in from the middle of the other chamfer. */
 export const GROUND_NUT = onChamfer(-1, 0, -7)
 /** JLC tooling holes, Ø1.152: one on the chin near the ground nut, one at the far arm's open end, clear of every ring keepout. */
-export const TOOLING = [pcb(-(PANEL_HALF - 2), A_OUTER + 2.5), pcb(PANEL_HALF + 3, A_OPEN - 2.5)]
+export const TOOLING = [pcb(-18, A_OUTER + 2.5), pcb(PANEL_HALF + 3, A_OPEN - 2.5)]
 
 const Drill = ({ name, at, diameter }: { name: string; at: Pt; diameter: number }) => (
   <hole name={name} pcbX={at.x} pcbY={at.y} diameter={diameter} />
