@@ -24,15 +24,27 @@ const DECK_CLEARANCE = 1
 
 // The chin wraps the panel's positive end. It lies in the feed lug's own height band, so the lug
 // and cable have to pass over the ring face.
-/** The chin's inner edge on the centreline, this far past the panel's end: the allowance for a clone's longer end. */
-const A_CHIN_FLOOR = -2
-// The inner edge follows the panel's end as fuse_block_12 has it in plan: bowed 2 mm between the
-// centreline and 29 across, then rounded into the side by 7 along. These stay 1.2–2 mm off it.
-const INNER: Pt[] = [
-  { x: 10, y: A_CHIN_FLOOR },
-  { x: 40, y: 2 },
-  { x: PANEL_HALF + DECK_CLEARANCE, y: 6 },
-]
+// The panel's positive end in plan, as fuse_block_12 has it over its whole height: one half,
+// across then along. Flat for 4.5 either side of the centreline, bowed back 3.8 by 39 across,
+// then turned into the side within about 4.
+export const PANEL_END: Pt[] = [
+  [0, 0.05], [4.5, 0.05], [13, 0.41], [20, 1.0], [25, 1.56], [30, 2.21], [35, 3.04], [38, 3.56],
+  [39, 3.77], [39.5, 3.91], [40, 4.18], [40.5, 4.48], [41, 4.9], [41.5, 5.48], [42, 6.43], [PANEL_HALF, 8],
+].map(([x, y]) => ({ x, y }))
+/** The chin's inner edge: the panel's end, DECK_CLEARANCE off it all the way round. */
+const INNER: Pt[] = PANEL_END.map((p, i) => {
+  // Each point moves out along the mean of its two edges' normals; the ends' are the centreline's and the side's.
+  const normal = (a: Pt, b: Pt) => {
+    const len = Math.hypot(b.x - a.x, b.y - a.y)
+    return { x: (b.y - a.y) / len, y: -(b.x - a.x) / len }
+  }
+  const n0 = i === 0 ? { x: 0, y: -1 } : normal(PANEL_END[i - 1], p)
+  const n1 = i === PANEL_END.length - 1 ? { x: 1, y: 0 } : normal(p, PANEL_END[i + 1])
+  const k = DECK_CLEARANCE / (1 + n0.x * n1.x + n0.y * n1.y)
+  return { x: p.x + (n0.x + n1.x) * k, y: p.y + (n0.y + n1.y) * k }
+})
+/** The chin's inner edge on the centreline. */
+const A_CHIN_FLOOR = INNER[0].y
 export const CHIN_DEPTH = 20
 export const A_OUTER = A_CHIN_FLOOR - CHIN_DEPTH
 /** Each outer corner of the chin is cut back this far across and along. */
@@ -45,7 +57,6 @@ const half = (): Pt[] => {
   // Rev A's finger, walked the other way: its X is a, its Y is outboard of the panel edge.
   const fingers = WAYS_A.flatMap((a) => finger(a).reverse().map((p) => ({ x: PANEL_HALF + p.y, y: p.x })))
   return [
-    { x: 0, y: A_CHIN_FLOOR },
     ...INNER,
     { x: PANEL_HALF + DECK_CLEARANCE, y: A_EAR },
     { x: PANEL_HALF, y: A_EAR + DECK_CLEARANCE },

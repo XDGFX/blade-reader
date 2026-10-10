@@ -23,7 +23,7 @@ import {
   text,
   turn,
 } from "../lib/silkscreen"
-import { A_OPEN, A_OUTER, CHAMFER, CLAMPS, GROUND_NUT, HALF_WIDTH, NUTS, OUTLINE, TOOLING, WAYS_A, pcb } from "../yoke.circuit"
+import { A_OUTER, CHAMFER, CLAMPS, GROUND_NUT, HALF_WIDTH, NUTS, OUTLINE, PANEL_END, TOOLING, WAYS_A, pcb } from "../yoke.circuit"
 
 type Pt = { x: number; y: number }
 const P = (x: number, y: number): Pt => ({ x, y })
@@ -80,7 +80,9 @@ const sides = [1, -1] as const
 const panel = () => {
   const h = PANEL.half
   const L = PANEL.length
-  const body = `<path d="M${-h} 9Q${-h} 2 -29 2Q0 -2 29 2Q${h} 2 ${h} 9V${L - 9}Q${h} ${L - 2} 29 ${L - 2}Q0 ${L + 2} -29 ${L - 2}Q${-h} ${L - 2} ${-h} ${L - 9}Z" fill="${C.panel}" stroke="#000" stroke-width="0.3"/>`
+  // Both ends drawn as the positive end is measured.
+  const end = [...PANEL_END.slice(1).reverse().map((p) => P(-p.x, p.y)), ...PANEL_END]
+  const body = poly([...end, ...end.reverse().map((p) => P(p.x, L - p.y))], C.panel, 'stroke="#000" stroke-width="0.3"')
   const out: string[] = [body]
   // The raised fuse deck between the pockets.
   out.push(rect(-(h - 14.5), 20.2, 2 * (h - 14.5), 80, C.deck, 'rx="1"'))
@@ -322,14 +324,17 @@ const rightChamfer = turn(HALF_WIDTH - CHAMFER.across, A_OUTER, (Math.atan2(CHAM
 
 /** The chin: the wordmark either side of the feed, the spec plate above it, a sign on each shoulder. */
 const chin = (): Art =>
+  mapArt(chinArt(), (p) => P(p.x, p.y + A_OUTER + 22))
+// Laid out for a chin whose outer edge is 22 past the panel's end.
+const chinArt = (): Art =>
   join(
     // As wide as the ground nut's land leaves room for.
     wordmark(56, -9.2, 9.2),
     cells(CELLS.left, -10.5, -1, -16.5),
     cells(CELLS.right, 10.5, 1, -16.5),
     // The feed's corridor, and its polarity under the lug.
-    line([[-8, A_OUTER + 1.2], [-8, -3.2]]),
-    line([[8, A_OUTER + 1.2], [8, -3.2]]),
+    line([[-8, -20.8], [-8, -3.2]]),
+    line([[8, -20.8], [8, -3.2]]),
     ring(0, -11.5, 3.2, 0.3),
     line([[-1.7, -11.5], [1.7, -11.5]], 0.4),
     line([[0, -13.2], [0, -9.8]], 0.4),
@@ -338,8 +343,8 @@ const chin = (): Art =>
     kana(53.1, -7.2, 2.3, 2.55),
     frame(-56, -8.5, 5.8, 22.4, 1),
     mapArt(text(0, 0, 1.6, "12 WAY ST BLADE", { anchor: "middle", w: 0.2 }), turn(-53.1 - 0.56, 2.7, 90)),
-    earth(G.x - 7.6, G.y + 1.1),
-    text(G.x - 5.7, G.y - 0.2, 1.2, "GND", { anchor: "end" }),
+    earth(G.x - 7.6, G.y - A_OUTER - 22 + 1.1),
+    text(G.x - 5.7, G.y - A_OUTER - 22 - 0.2, 1.2, "GND", { anchor: "end" }),
     mapArt(
       join(
         text(22.5, 2.2, 0.8, "DESIGNED IN", { anchor: "end" }),
@@ -420,7 +425,8 @@ const chinParts = () => {
   const u1 = on(4, -7)
   out.push(`<text x="${f(u1.x)}" y="${f(u1.y + 0.6)}" ${SMALL}>WROOM-02</text>`)
   for (const b of BLOCKS) {
-    out.push(block([P(b.c - b.w / 2, b.a - b.h / 2), P(b.c + b.w / 2, b.a - b.h / 2), P(b.c + b.w / 2, b.a + b.h / 2), P(b.c - b.w / 2, b.a + b.h / 2)], b.kind))
+    const a = b.a + A_OUTER + 22
+    out.push(block([P(b.c - b.w / 2, a - b.h / 2), P(b.c + b.w / 2, b.a - b.h / 2), P(b.c + b.w / 2, b.a + b.h / 2), P(b.c - b.w / 2, b.a + b.h / 2)], b.kind))
     if (b.name) out.push(`<text x="${f(b.c)}" y="${f(b.a + 0.6)}" ${SMALL}>${b.name}</text>`)
   }
   return out.join("")
