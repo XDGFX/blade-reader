@@ -367,7 +367,7 @@ const Ear1Routes = () => {
         width={LANE_WIDTH}
         paths={[
           [esp("IO4"), ...down({ x: DROP_X, y: 7.85 }), { x: 41.825, y: 7.85 }, { x: 41.825, y: lane(3) }, ...laneEnd(3, -1), ".U4 > .X"],
-          [esp("IO4"), { x: 40.95, y: 7.85 }, { x: 40.64, y: 8.3 }, ".C41 > .pin1"],
+          [esp("IO4"), { x: 40.6, y: 7.85 }, { x: 40.6, y: 9.3 }, ".C41 > .pin1"],
         ]}
       />
       {/* UART, under the module's panel-edge pads, then the board end and the outboard edge. */}
@@ -481,17 +481,19 @@ const Ear1Routes = () => {
           ],
         ]}
       />
-      {/* The LED's line runs out between C41's pads. */}
+      {/* The LED's line, through its test pad. */}
       <Route
-        from={esp("IO10")}
+        from={esp("IO1")}
         to=".R7 > .pin1"
         width={LANE_WIDTH}
-        paths={[[esp("IO10"), { x: 39.335, y: 9.45 }, { x: 39.335, y: 14.7 }, ".R7 > .pin1"]]}
+        paths={[
+          [esp("IO1"), ".TP2 > .pin1"],
+          [".TP2 > .pin1", { x: 39.335, y: 11.95 }, { x: 39.335, y: 14.7 }, ".R7 > .pin1"],
+        ]}
       />
       <Route from=".R7 > .pin2" to=".LED1 > .anode" paths={[[".R7 > .pin2", ".LED1 > .anode"]]} />
       <Route from={esp("IO0")} to=".TP1 > .pin1" width={LANE_WIDTH} paths={[[esp("IO0"), ".TP1 > .pin1"]]} />
-      <Route from={esp("IO1")} to=".TP2 > .pin1" width={LANE_WIDTH} paths={[[esp("IO1"), ".TP2 > .pin1"]]} />
-      {gnd(".C41 > .pin2", [[".C41 > .pin2", { x: 40.64, y: 10.7 }, { x: 41.0, y: 11.05 }, esp("GND4")]])}
+      {gnd(".C41 > .pin2", [[".C41 > .pin2", { x: 40.8, y: 11.05 }, esp("GND4")]])}
 
       {/* ── Above the module ───────────────────────────────────────────────── */}
       <Route from={esp("IO2")} to=".R4 > .pin1" width={LANE_WIDTH} paths={[[esp("IO2"), ".R4 > .pin1"]]} />
@@ -500,8 +502,8 @@ const Ear1Routes = () => {
         to={mux("X")}
         width={LANE_WIDTH}
         paths={[
-          [esp("IO3"), { x: 46.41, y: 14.55 }, { x: 45.52, y: 14.55 }, ".C10 > .pin1"],
-          [".C10 > .pin1", { x: 45.52, y: 15.87 }, { x: muxX(2), y: 15.87 }, mux("X")],
+          [esp("IO3"), { x: 46.41, y: 14.55 }, { x: 46.01, y: 14.55 }, ".C10 > .pin1"],
+          [".C10 > .pin1", { x: 46.01, y: 15.87 }, { x: muxX(2), y: 15.87 }, mux("X")],
         ]}
       />
       {gnd(".C10 > .pin2", [[".C10 > .pin2", mux("X5")]])}
@@ -519,11 +521,16 @@ const Ear1Routes = () => {
         [mux("X5"), { x: muxX(4), y: 18.45 }, { x: 47.27, y: 18.75 }],
         [mux("VSS"), { x: muxX(7), y: 18.75 }, { x: muxX(6), y: 18.75 }],
       ])}
-      {/* GND for C9 and C6, up between the LED's pads and along mux 1's end. */}
-      {gnd(esp("GND3"), [
-        [esp("GND3"), { x: 42.225, y: 14.35 }, { x: 42.225, y: 15.87 }, { x: 41.0, y: 15.87 }, { x: 41.0, y: 21.9 }, ".C9 > .pin2"],
-        [".C6 > .pin2", { x: 41.0, y: 20.725 }],
-      ])}
+      {/* GND for C9 and C6, up between the LED's pads, between the LED and mux 1's pads, and
+          along mux 1's end. */}
+      {gnd(
+        esp("GND3"),
+        [
+          [esp("GND3"), { x: 42.335, y: 14.35 }, { x: 42.335, y: 15.905 }, { x: 41.0, y: 15.905 }, { x: 41.0, y: 21.9 }, ".C9 > .pin2"],
+          [".C6 > .pin2", { x: 41.0, y: 20.725 }],
+        ],
+        LANE_WIDTH,
+      )}
       {/* 3V3: up from the ring face at its via, to the pull-ups, C6 and mux 1, then under mux 1 and
           down between its GND pins to the module. */}
       <Route
@@ -534,7 +541,7 @@ const Ear1Routes = () => {
           [".R5 > .pin2", V3V3_VIA],
           [".R5 > .pin2", ".R6 > .pin2"],
           [".R6 > .pin2", ".C6 > .pin1"],
-          [".R6 > .pin2", { x: 39.4, y: 19.3 }, ".R3 > .pin2"],
+          [".R6 > .pin2", { x: 39.2, y: 18.4 }, { x: 39.2, y: 22.6 }, ".R3 > .pin2"],
           [".R3 > .pin2", ".C9 > .pin1"],
           [".C9 > .pin1", mux("VDD")],
           [mux("VDD"), { x: muxX(0), y: 19.9 }, { x: 48.54, y: 19.9 }, { x: 48.54, y: 15.95 }, ".R4 > .pin2"],
@@ -553,7 +560,7 @@ const Ear1Routes = () => {
             { x: 24.2, y: 24.4 },
             { x: 24.2, y: J1_ROWS.v3v3 + 0.3 },
             { x: 24.5, y: J1_ROWS.v3v3 },
-            { x: 39.4, y: J1_ROWS.v3v3 },
+            { x: 39.2, y: J1_ROWS.v3v3 },
           ],
         ]}
       />

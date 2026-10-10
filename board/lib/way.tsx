@@ -4,7 +4,7 @@ import { CC6905S8_3FB030 } from "../imports/CC6905S8_3FB030"
 import { SMTSO4040CTJ } from "../imports/SMTSO4040CTJ"
 import { SS210 } from "../imports/SS210"
 import { CLAMP_Y, NUT_Y, type Pt } from "./outline"
-import { Finger } from "./parts"
+import { Finger, FP_0402 } from "./parts"
 
 // Schematic spacing between ways.
 export const WAY_PITCH = 6
@@ -89,7 +89,7 @@ export const Way = ({
       pcbY={divider.y + DIVIDER_STACK}
       pcbRotation={90}
       resistance="100k"
-      footprint="0402"
+      footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C25741"] }}
       schX={schX + 3}
       schY={schY - 1}
@@ -103,7 +103,7 @@ export const Way = ({
       pcbY={divider.y}
       pcbRotation={90}
       resistance="6.8k"
-      footprint="0402"
+      footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C25917"] }}
       schX={schX + 3}
       schY={schY - 3}
@@ -120,7 +120,7 @@ export const Way = ({
       pcbY={CAP_Y}
       pcbRotation={90}
       capacitance="100nF"
-      footprint="0402"
+      footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C307331"] }}
       maxDecouplingTraceLength="3mm"
       schX={schX + 9}
@@ -135,7 +135,7 @@ export const Way = ({
       pcbY={CAP_Y}
       pcbRotation={90}
       capacitance="1nF"
-      footprint="0402"
+      footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C1523"] }}
       maxDecouplingTraceLength="5mm"
       schX={schX + 9}
@@ -150,7 +150,7 @@ export const Way = ({
       pcbY={CAP_Y}
       pcbRotation={90}
       capacitance="1nF"
-      footprint="0402"
+      footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C1523"] }}
       schX={schX + 10.5}
       schY={schY - 2}

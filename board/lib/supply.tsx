@@ -11,6 +11,7 @@ import { A_0466001_NRHF } from "../imports/A_0466001_NRHF"
 import { LMR51610XDBVR } from "../imports/LMR51610XDBVR"
 import { SMBJ33A } from "../imports/SMBJ33A"
 import { SWPA6045S220MT } from "../imports/SWPA6045S220MT"
+import { FP_0402 } from "./parts"
 
 export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
   <>
@@ -90,7 +91,7 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
       pcbY={22.5}
       pcbRotation={90}
       capacitance="100nF"
-      footprint="0402"
+      footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C307331"] }}
       maxDecouplingTraceLength="6mm"
       schX={schX + 12}
@@ -116,7 +117,7 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
       pcbY={19.85}
       pcbRotation={180}
       resistance="75k"
-      footprint="0402"
+      footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C25798"] }}
       schX={schX + 16}
       schY={schY - 2}
@@ -130,7 +131,7 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
       pcbY={20.3}
       pcbRotation={-90}
       resistance="24k"
-      footprint="0402"
+      footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C25769"] }}
       schX={schX + 16}
       schY={schY - 4.5}

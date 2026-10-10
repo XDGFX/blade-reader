@@ -340,7 +340,7 @@ const PIN1_DOTS: [number, number][] = [
   [41.83, 20.39], // U14
   [28.47, 20.39], // U15
   [15.11, 20.39], // U16
-  [49.66, 24.301], // Q1
+  [53.36, 16.56], // Q1
   [102.42, 12.65], // U1
   [82.743, 1.08], // J1, outboard of pin 1
   [12.755, 7.11], // U4, outboard of pin 1
@@ -351,11 +351,15 @@ const CATHODE_BARS: [number, number, number, number][] = [
   [68.4, 3.95, 68.4, 5.95], // D2
   // D11–D16
   ...[80.56, 67.2, 53.84, 39.48, 26.12, 12.76].map((x): [number, number, number, number] => [x, 17.05, x + 2, 17.05]),
-  [94.66, 9.75, 95.11, 9.75], // LED1, outboard of its cathode pad: C8 is at its end
+]
+/** LED1's cathode: a 0.15 tick outboard of the pad, the only mark that fits between mux 1's pins. */
+const LED1_CATHODE: [number, number][] = [
+  [95.47, 9.45],
+  [95.47, 8.55],
 ]
 /** Designators, 0.8 mm, only where polarity or pin 1 matters: start of the baseline. */
 const DESIGNATORS: [string, number, number][] = [
-  ["U1", 91.31, 9.5],
+  ["U1", 101.31, 13.35], // under the module: the ear has no clear spot beside it
   ["U2", 97.53, 1.36],
   ["U3", 23.3, 4.373],
   ["D1", 38.53, 6.494],
@@ -366,7 +370,7 @@ const DESIGNATORS: [string, number, number][] = [
   ["D14", 39.76, 24.994],
   ["D15", 26.4, 24.994],
   ["D16", 13.04, 24.994],
-  ["Q1", 50.8, 19.65],
+  ["Q1", 49.91, 20.65],
   ["U4", 13.45, 8.1],
 ]
 
@@ -397,6 +401,7 @@ const partsFace = (): Art =>
     ),
     ...PIN1_DOTS.map(([x, y]) => dot(x, y, 0.46)),
     ...CATHODE_BARS.map(([x0, y0, x1, y1]) => bar(x0, y0, x1, y1)),
+    line(LED1_CATHODE),
     ...DESIGNATORS.map(([name, x, y]) => text(x, y, 0.8, name)),
   )
 

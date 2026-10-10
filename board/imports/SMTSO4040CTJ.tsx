@@ -22,7 +22,15 @@ export const SMTSO4040CTJ = (props: ChipProps<typeof pinLabels>) => {
         <platedhole portHints={["pin1"]} pcbX="0mm" pcbY="0mm" outerDiameter="9.3mm" holeDiameter="6.4mm" shape="circle" />
 <silkscreencircle pcbX="0mm" pcbY="0mm" radius="4.8999902mm" />
 <silkscreentext text="{NAME}" pcbX="0mm" pcbY="5.9022mm" anchorAlignment="center" fontSize="1mm" />
-<courtyardoutline outline={[{"x":-4.899990699999989,"y":4.899990699999989},{"x":4.899990699999989,"y":4.899990699999989},{"x":4.899990699999989,"y":-4.899990699999989},{"x":-4.899990699999989,"y":-4.899990699999989},{"x":-4.899990699999989,"y":4.899990699999989}]} />
+        {/* Round like the nut, about 0.25 mm outside the pad: the EasyEDA square claimed corners the
+            nut doesn't fill. */}
+        <courtyardoutline
+          outline={Array.from({ length: 24 }, (_, i) => {
+            const a = (i * Math.PI) / 12
+            const r = 4.89
+            return { x: r * Math.cos(a), y: r * Math.sin(a) }
+          })}
+        />
       </footprint>}
       cadModel={{
         objUrl: "https://modelcdn.tscircuit.com/easyeda_models/assets/C2916378.obj?uuid=b66578675a504e9b9270b3e705c61a31",

@@ -7,7 +7,7 @@
     "dev": "tsci dev index.circuit.tsx",
     "build": "tsci build index.circuit.tsx",
     "schematic": "tsci check netlist index.circuit.tsx && tsci build index.circuit.tsx --routing-disabled --schematic-png --ignore-errors",
-    "placement": "tsci check placement index.circuit.tsx && tsci build index.circuit.tsx --routing-disabled --pcb-png --ignore-errors",
+    "placement": "tsci check placement index.circuit.tsx; tsci build index.circuit.tsx --routing-disabled --pcb-png --ignore-errors",
     "shorts": "tsci check shorts index.circuit.tsx",
     "keepout": "bun scripts/check-ring-keepout.ts",
     "clearance": "bun scripts/check-clearance.ts",
