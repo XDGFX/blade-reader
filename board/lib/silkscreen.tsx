@@ -352,10 +352,10 @@ const CATHODE_BARS: [number, number, number, number][] = [
   // D11–D16
   ...[80.56, 67.2, 53.84, 39.48, 26.12, 12.76].map((x): [number, number, number, number] => [x, 17.05, x + 2, 17.05]),
 ]
-/** LED1's cathode: a 0.15 tick outboard of the pad, the only mark that fits between mux 1's pins. */
+/** LED1's cathode: a 0.15 tick beside the pad on the side away from the anode, short of mux 1's body. */
 const LED1_CATHODE: [number, number][] = [
-  [95.47, 9.45],
-  [95.47, 8.55],
+  [92.88, 6.5],
+  [92.88, 5.7],
 ]
 /** Designators, 0.8 mm, only where polarity or pin 1 matters: start of the baseline. */
 const DESIGNATORS: [string, number, number][] = [

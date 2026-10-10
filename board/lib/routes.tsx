@@ -340,6 +340,14 @@ const Ear1Routes = () => {
     { io: "IO6", y: 6.25, lane: 1, x: 42.425, pin: "B", far: [{ x: muxX(6), y: 19.85 }, { x: 50.35, y: 19.85 }] },
     { io: "IO5", y: 7.05, lane: 2, x: 42.125, pin: "A", far: [{ x: muxX(5), y: 19.5 }, { x: 50.0, y: 19.5 }] },
   ]
+  // GPIO9's line past the pull-ups and the LED, clear of the LED's anode pad.
+  const IO9_X = 37.97
+  // 3V3 beside mux 1, between the pads of the LED and of C6.
+  const RISER_X = 39.375
+  // The gaps between mux 1's pads that GPIO2 and 3V3 go through, on both rows.
+  const IO2_X = (muxX(5) + muxX(6)) / 2
+  const V3V3_UP_X = (muxX(4) + muxX(5)) / 2
+  const V3V3_DOWN_X = (muxX(6) + muxX(7)) / 2
   const gnd = (from: string, steps: Steps[], width = 0.2) => <Route from={from} to="net.GND" width={width} paths={steps} />
   return (
     <>
@@ -439,9 +447,9 @@ const Ear1Routes = () => {
         [
           ".J1 > .GND",
           { x: 33.4, y: 19.1 },
-          { x: 37.75, y: 19.1 },
-          { x: 37.75, y: 16.6 },
-          { x: 38.35, y: 16.0 },
+          { x: 37.64, y: 19.1 },
+          { x: 37.64, y: 16.56 },
+          { x: 38.35, y: 15.85 },
           { x: 38.35, y: 8.5 },
           { x: 39.4, y: 8.5 },
           { x: 39.4, y: 8.21 },
@@ -458,11 +466,12 @@ const Ear1Routes = () => {
             { x: 39.775, y: 3.85 },
             { x: 39.775, y: 8.84 },
             { x: 38.725, y: 8.84 },
-            { x: 38.725, y: 16.15 },
-            { x: 38.3, y: 16.575 },
+            { x: 38.725, y: 15.95 },
+            { x: IO9_X, y: 16.705 },
+            { x: IO9_X, y: 18.3 },
             ".R6 > .pin1",
           ],
-          [".R6 > .pin1", { x: 38.3, y: 20.33 }, ".J1 > .IO0"],
+          [{ x: IO9_X, y: 18.3 }, { x: IO9_X, y: 19.9 }, { x: 37.54, y: 20.33 }, ".J1 > .IO0"],
         ]}
       />
       <Route
@@ -475,13 +484,14 @@ const Ear1Routes = () => {
             { x: 40.075, y: 4.65 },
             { x: 40.075, y: 9.14 },
             { x: 39.025, y: 9.14 },
-            { x: 39.025, y: 16.3 },
-            { x: 38.85, y: 16.475 },
+            { x: 39.025, y: 16.1 },
+            { x: 38.49, y: 16.635 },
             ".R5 > .pin1",
           ],
         ]}
       />
-      {/* The LED's line, through its test pad. */}
+      {/* The LED's line, through its test pad, to R7 at the top of the corridor; then on
+          between the pads of both pull-ups to the LED. */}
       <Route
         from={esp("IO1")}
         to=".R7 > .pin1"
@@ -491,48 +501,56 @@ const Ear1Routes = () => {
           [".TP2 > .pin1", { x: 39.335, y: 11.95 }, { x: 39.335, y: 14.7 }, ".R7 > .pin1"],
         ]}
       />
-      <Route from=".R7 > .pin2" to=".LED1 > .anode" paths={[[".R7 > .pin2", ".LED1 > .anode"]]} />
+      <Route
+        from=".R7 > .pin2"
+        to=".LED1 > .anode"
+        width={LANE_WIDTH}
+        paths={[[".R7 > .pin2", { x: 39.3, y: 16.26 }, { x: 39.0, y: 16.56 }, { x: 39.0, y: 18.9 }, ".LED1 > .anode"]]}
+      />
       <Route from={esp("IO0")} to=".TP1 > .pin1" width={LANE_WIDTH} paths={[[esp("IO0"), ".TP1 > .pin1"]]} />
       {gnd(".C41 > .pin2", [[".C41 > .pin2", { x: 40.8, y: 11.05 }, esp("GND4")]])}
 
       {/* ── Above the module ───────────────────────────────────────────────── */}
-      <Route from={esp("IO2")} to=".R4 > .pin1" width={LANE_WIDTH} paths={[[esp("IO2"), ".R4 > .pin1"]]} />
+      {/* GPIO2 to its pull-up outboard of mux 1: up between two of the mux's pads on each row. */}
+      <Route
+        from={esp("IO2")}
+        to=".R4 > .pin1"
+        width={LANE_WIDTH}
+        paths={[[esp("IO2"), { x: 48.01, y: 15.45 }, { x: IO2_X, y: 15.98 }, { x: IO2_X, y: 24.0 }, ".R4 > .pin1"]]}
+      />
       <Route
         from={esp("IO3")}
         to={mux("X")}
         width={LANE_WIDTH}
         paths={[
           [esp("IO3"), { x: 46.41, y: 14.55 }, { x: 46.01, y: 14.55 }, ".C10 > .pin1"],
-          [".C10 > .pin1", { x: 46.01, y: 15.87 }, { x: muxX(2), y: 15.87 }, mux("X")],
+          [".C10 > .pin1", { x: 46.01, y: 15.92 }, { x: muxX(2), y: 15.92 }, mux("X")],
         ]}
       />
       {gnd(".C10 > .pin2", [[".C10 > .pin2", mux("X5")]])}
-      {gnd(".C8 > .pin2", [
-        [".C8 > .pin2", ".LED1 > .cathode"],
-        [".LED1 > .cathode", { x: 42.75, y: 14.55 }, esp("GND3")],
-      ])}
+      {gnd(".C8 > .pin2", [[".C8 > .pin2", { x: 43.085, y: ESP_ROW_Y }, { x: 42.75, y: 14.55 }, esp("GND3")]])}
       {gnd(".C7 > .pin2", [
         [".C7 > .pin2", esp("GND1")],
         [".C7 > .pin2", mux("VSS")],
       ])}
-      {/* Mux 1's GND pins: 3V3 comes down between them, so they join under it on the ring face. */}
+      {/* Mux 1's GND pins: GPIO2 goes up between them, so they join under it on the ring face.
+          3V3 comes down between VEE and VSS, so VSS has only C7's GND. */}
       {gnd(mux("INH"), [
         [mux("INH"), { x: muxX(5), y: 18.45 }, ...down({ x: 47.27, y: 18.75 }), ...up({ x: muxX(6), y: 18.75 }), mux("VEE")],
         [mux("X5"), { x: muxX(4), y: 18.45 }, { x: 47.27, y: 18.75 }],
-        [mux("VSS"), { x: muxX(7), y: 18.75 }, { x: muxX(6), y: 18.75 }],
       ])}
-      {/* GND for C9 and C6, up between the LED's pads, between the LED and mux 1's pads, and
-          along mux 1's end. */}
+      {/* GND for C9, C6 and the LED, up beside the module's corner pin and along mux 1's end. */}
       {gnd(
         esp("GND3"),
         [
           [esp("GND3"), { x: 42.335, y: 14.35 }, { x: 42.335, y: 15.905 }, { x: 41.0, y: 15.905 }, { x: 41.0, y: 21.9 }, ".C9 > .pin2"],
-          [".C6 > .pin2", { x: 41.0, y: 20.725 }],
+          [".C6 > .pin2", { x: 41.0, y: 20.6 }],
+          [".LED1 > .cathode", { x: 41.0, y: 19.4 }],
         ],
         LANE_WIDTH,
       )}
-      {/* 3V3: up from the ring face at its via, to the pull-ups, C6 and mux 1, then under mux 1 and
-          down between its GND pins to the module. */}
+      {/* 3V3: up from the ring face at its via, to the pull-ups, then between the LED's pads and
+          C6's to R3 and mux 1, and under mux 1. */}
       <Route
         from=".R5 > .pin2"
         to="net.V3V3"
@@ -540,13 +558,31 @@ const Ear1Routes = () => {
         paths={[
           [".R5 > .pin2", V3V3_VIA],
           [".R5 > .pin2", ".R6 > .pin2"],
-          [".R6 > .pin2", ".C6 > .pin1"],
-          [".R6 > .pin2", { x: 39.2, y: 18.4 }, { x: 39.2, y: 22.6 }, ".R3 > .pin2"],
+          [".R6 > .pin2", { x: RISER_X, y: 18.75 }, { x: RISER_X, y: 22.6 }, ".R3 > .pin2"],
+          [".C6 > .pin1", { x: RISER_X, y: 20.6 }],
           [".R3 > .pin2", ".C9 > .pin1"],
           [".C9 > .pin1", mux("VDD")],
-          [mux("VDD"), { x: muxX(0), y: 19.9 }, { x: 48.54, y: 19.9 }, { x: 48.54, y: 15.95 }, ".R4 > .pin2"],
-          [".R4 > .pin2", ".C7 > .pin1"],
-          [esp("3V3"), { x: 48.81, y: ESP_ROW_Y }],
+          [mux("VDD"), { x: muxX(0), y: 19.9 }, { x: V3V3_UP_X, y: 19.9 }],
+          [esp("3V3"), { x: 48.81, y: ESP_ROW_Y }, ".C7 > .pin1"],
+        ]}
+      />
+      {/* On to the module. GPIO2's line cuts mux 1 in two, so 3V3 goes up between two of its
+          outboard pads, through R4, round R4's other pad and back down between VEE and VSS to
+          C7. */}
+      <Route
+        from=".R4 > .pin2"
+        to=".C7 > .pin1"
+        width={0.25}
+        paths={[
+          [
+            { x: V3V3_UP_X, y: 19.9 },
+            { x: V3V3_UP_X, y: 24.4 },
+            { x: V3V3_UP_X, y: 25.03 },
+            { x: V3V3_DOWN_X, y: 25.03 },
+            { x: V3V3_DOWN_X, y: 15.7 },
+            ".C7 > .pin1",
+          ],
+          [".R4 > .pin2", { x: V3V3_UP_X, y: 24.4 }],
         ]}
       />
       {/* TP4, from the 3V3 line beside mux 1, between J1's rows under EN. */}
@@ -560,7 +596,7 @@ const Ear1Routes = () => {
             { x: 24.2, y: 24.4 },
             { x: 24.2, y: J1_ROWS.v3v3 + 0.3 },
             { x: 24.5, y: J1_ROWS.v3v3 },
-            { x: 39.2, y: J1_ROWS.v3v3 },
+            { x: RISER_X, y: J1_ROWS.v3v3 },
           ],
         ]}
       />
