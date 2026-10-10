@@ -1,8 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1154 750" width="1154" height="750" font-family="Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1910 750" width="1910" height="750" font-family="Helvetica, Arial, sans-serif">
 <style>
 .board{fill:#1f3d2b;stroke:#0d1f15;stroke-width:1}
 .gone{fill:none;stroke:#c0392b;stroke-width:1;stroke-dasharray:5 4}
 .gnd{fill:#6b7f73}.chan{fill:#3f6b52}.band{fill:#7a5c1e}
+.root{fill:#3aa0ff;fill-opacity:.35}
 .pad{fill:#c9a227}.hole{fill:#fff}
 .part{fill:#e8e8e8;fill-opacity:.9;stroke:#333;stroke-width:.6}
 .keep{fill:none;stroke:#3aa0ff;stroke-width:1.2;stroke-dasharray:4 3}
@@ -14,7 +15,7 @@
 .l{font-size:11.5px;fill:#000}.tiny{font-size:10px;fill:#fff}
 .mid{text-anchor:middle}.end{text-anchor:end;fill:#000}.red{fill:#c0392b;font-weight:bold}
 </style>
-<rect width="1154" height="750" fill="#fff"/>
+<rect width="1910" height="750" fill="#fff"/>
 <text x="39.5" y="22.4" class="h">Fallback: rev A arm</text>
 <text x="39.5" y="43.4" class="s">25.5 deep, yoke 135.2 wide</text>
 <rect x="39.5" y="105.0" width="187.0" height="357.0" class="board"/>
@@ -157,5 +158,96 @@
 <text x="795.5" y="429.8" class="l tiny">channel</text>
 <text x="795.5" y="673.4" class="s">Nut pad 0.35 from the edge. VSUP takes</text>
 <text x="795.5" y="691.6" class="s">the channel's last lane. Not advised.</text>
+<text x="1173.5" y="22.4" class="h">Re-placed: finger root used</text>
+<text x="1173.5" y="43.4" class="s">17.7 deep, yoke 119.6 wide</text>
+<rect x="1173.5" y="214.2" width="187.0" height="247.8" class="board"/>
+<rect x="1200.5" y="462.0" width="133.0" height="182.0" class="board"/>
+<rect x="1173.5" y="105.0" width="187.0" height="109.2" class="gone"/>
+<text x="1267.0" y="164.5" class="l mid red">7.8 saved</text>
+<rect x="1173.5" y="448.0" width="187.0" height="9.8" class="gnd"/>
+<rect x="1173.5" y="373.8" width="187.0" height="74.2" class="chan"/>
+<rect x="1200.5" y="466.2" width="133.0" height="37.8" class="root"/>
+<path d="M 1197.0 74.2 L 1197.0 298.8 A 70.0 70.0 0 0 0 1337.0 298.8 L 1337.0 74.2" class="keep"/>
+<circle cx="1267.0" cy="581.3" r="56.9" class="pad"/>
+<circle cx="1267.0" cy="581.3" r="37.8" class="hole"/>
+<rect x="1235.5" y="367.2" width="105.0" height="77.6" class="part"/>
+<text x="1288.0" y="410.9" class="l mid">CC6905</text>
+<rect x="1174.6" y="346.5" width="43.4" height="96.6" class="part"/>
+<text x="1196.3" y="399.7" class="l mid">D</text>
+<rect x="1202.6" y="468.2" width="13.2" height="26.0" class="part"/>
+<rect x="1216.6" y="468.2" width="13.2" height="26.0" class="part"/>
+<rect x="1290.8" y="468.2" width="13.2" height="26.0" class="part"/>
+<rect x="1304.8" y="468.2" width="13.2" height="26.0" class="part"/>
+<rect x="1318.8" y="468.2" width="13.2" height="26.0" class="part"/>
+<circle cx="1267.0" cy="298.8" r="65.1" class="pad"/>
+<circle cx="1267.0" cy="298.8" r="44.8" class="hole"/>
+<text x="1267.0" y="303.7" class="l mid">M4 nut</text>
+<line x1="1173.5" x2="1360.5" y1="227.4" y2="227.4" class="trunk"/>
+<line x1="1173.5" x2="1173.5" y1="651.0" y2="74.2" class="pitch"/>
+<line x1="1360.5" x2="1360.5" y1="651.0" y2="74.2" class="pitch"/>
+<line x1="1152.5" x2="1486.5" y1="462.0" y2="462.0" class="edge"/>
+<text x="1377.3" y="478.8" class="l">panel edge</text>
+<line x1="1441.7" x2="1441.7" y1="462.0" y2="214.2" class="dim"/>
+<line x1="1436.1" x2="1447.3" y1="462.0" y2="462.0" class="dim"/>
+<line x1="1436.1" x2="1447.3" y1="214.2" y2="214.2" class="dim"/>
+<text x="1450.1" y="343.0" class="l">17.7 arm</text>
+<line x1="1377.3" x2="1377.3" y1="444.8" y2="367.2" class="dim"/>
+<line x1="1371.7" x2="1382.9" y1="444.8" y2="444.8" class="dim"/>
+<line x1="1371.7" x2="1382.9" y1="367.2" y2="367.2" class="dim"/>
+<text x="1385.7" y="410.9" class="l">5.5 sensor</text>
+<text x="1377.3" y="504.0" class="l">root: 1.7 over the lip</text>
+<line x1="1377.3" x2="1377.3" y1="363.9" y2="233.7" class="dim"/>
+<line x1="1371.7" x2="1382.9" y1="363.9" y2="363.9" class="dim"/>
+<line x1="1371.7" x2="1382.9" y1="233.7" y2="233.7" class="dim"/>
+<text x="1385.7" y="303.7" class="l">9.3 nut pad</text>
+<line x1="1377.3" x2="1377.3" y1="233.7" y2="214.2" class="dim"/>
+<line x1="1371.7" x2="1382.9" y1="233.7" y2="233.7" class="dim"/>
+<line x1="1371.7" x2="1382.9" y1="214.2" y2="214.2" class="dim"/>
+<text x="1385.7" y="228.8" class="l">1.39</text>
+<text x="1173.5" y="429.8" class="l tiny">channel</text>
+<text x="1169.3" y="231.6" class="l tiny end">VSUP</text>
+<text x="1173.5" y="673.4" class="s">Same parts, two layers. Caps and divider</text>
+<text x="1173.5" y="691.6" class="s">under the finger root; diode moved 1.2.</text>
+<text x="1551.5" y="22.4" class="h">Sketch: sensor on the finger</text>
+<text x="1551.5" y="43.4" class="s">about 11.4 deep, yoke 107 wide</text>
+<rect x="1551.5" y="302.4" width="187.0" height="159.6" class="board"/>
+<rect x="1578.5" y="462.0" width="133.0" height="182.0" class="board"/>
+<rect x="1551.5" y="105.0" width="187.0" height="197.4" class="gone"/>
+<text x="1645.0" y="208.6" class="l mid red">14.1 saved</text>
+<rect x="1551.5" y="448.0" width="187.0" height="9.8" class="gnd"/>
+<rect x="1578.5" y="466.2" width="133.0" height="37.8" class="root"/>
+<path d="M 1575.0 74.2 L 1575.0 378.0 A 70.0 70.0 0 0 0 1715.0 378.0 L 1715.0 74.2" class="keep"/>
+<circle cx="1645.0" cy="581.3" r="56.9" class="pad"/>
+<circle cx="1645.0" cy="581.3" r="37.8" class="hole"/>
+<rect x="1618.4" y="464.8" width="53.2" height="40.6" class="part"/>
+<text x="1645.0" y="490.0" class="l mid">sensor</text>
+<rect x="1529.8" y="347.2" width="43.4" height="96.6" class="part"/>
+<text x="1551.5" y="400.4" class="l mid">D</text>
+<rect x="1681.4" y="468.2" width="13.2" height="26.0" class="part"/>
+<rect x="1695.4" y="468.2" width="13.2" height="26.0" class="part"/>
+<rect x="1582.0" y="468.2" width="13.2" height="26.0" class="part"/>
+<rect x="1596.0" y="468.2" width="13.2" height="26.0" class="part"/>
+<circle cx="1645.0" cy="378.0" r="65.1" class="pad"/>
+<circle cx="1645.0" cy="378.0" r="44.8" class="hole"/>
+<text x="1645.0" y="382.9" class="l mid">M4 nut</text>
+<line x1="1551.5" x2="1551.5" y1="651.0" y2="74.2" class="pitch"/>
+<line x1="1738.5" x2="1738.5" y1="651.0" y2="74.2" class="pitch"/>
+<line x1="1530.5" x2="1864.5" y1="462.0" y2="462.0" class="edge"/>
+<text x="1755.3" y="478.8" class="l">panel edge</text>
+<line x1="1819.7" x2="1819.7" y1="462.0" y2="302.4" class="dim"/>
+<line x1="1814.1" x2="1825.3" y1="462.0" y2="462.0" class="dim"/>
+<line x1="1814.1" x2="1825.3" y1="302.4" y2="302.4" class="dim"/>
+<text x="1828.1" y="387.1" class="l">11.4 arm</text>
+<text x="1755.3" y="504.0" class="l">root: 1.7 over the lip</text>
+<line x1="1755.3" x2="1755.3" y1="443.1" y2="312.9" class="dim"/>
+<line x1="1749.7" x2="1760.9" y1="443.1" y2="443.1" class="dim"/>
+<line x1="1749.7" x2="1760.9" y1="312.9" y2="312.9" class="dim"/>
+<text x="1763.7" y="382.9" class="l">9.3 nut pad</text>
+<line x1="1755.3" x2="1755.3" y1="312.9" y2="302.4" class="dim"/>
+<line x1="1749.7" x2="1760.9" y1="312.9" y2="312.9" class="dim"/>
+<line x1="1749.7" x2="1760.9" y1="302.4" y2="302.4" class="dim"/>
+<text x="1763.7" y="312.5" class="l">0.75</text>
+<text x="1551.5" y="673.4" class="s">Needs a sensor under 1.5 tall and the</text>
+<text x="1551.5" y="691.6" class="s">lanes on inner layers. Nothing chosen.</text>
 <text x="14" y="736" class="s">One way's column at 14 px per mm, seen from the parts face, panel below. Blue dashes: ring keepout on the ring face. Orange: VSUP trunk. Red dashes: rev A's outboard edge.</text>
 </svg>

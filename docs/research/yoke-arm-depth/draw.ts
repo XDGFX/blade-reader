@@ -18,7 +18,50 @@ type Variant = {
   band?: [number, number, string]
   trunkY?: number
   notes: string[]
+  /** Courtyards as [x0, x1, y0, y1, label]; rev A's column when left out. */
+  parts?: Part[]
+  /** The dimensioned stack between the panel edge and the nut pad. */
+  stack?: [number, number, string]
+  /** Shade the finger's root, where the parts face is clear of the pocket's lip. */
+  root?: boolean
+  /** The lanes run on inner layers, so the ring face has no channel. */
+  noChannel?: boolean
 }
+
+type Part = [number, number, number, number, string?]
+
+const REV_A: Part[] = [
+  [-2.25, 5.25, 1.23, 6.77, "CC6905"],
+  [-5.4, -2.3, 1.35, 8.25, "D"],
+  [-6.67, -5.73, 1.27, 3.13],
+  [-6.67, -5.73, 3.17, 5.03],
+  [2.63, 3.57, 6.77, 8.63],
+  [3.63, 4.57, 6.77, 8.63],
+  [4.63, 5.57, 6.77, 8.63],
+]
+
+// The caps and the divider move under the finger's root and the diode moves 1.2 towards -X,
+// so the nut's round courtyard (r 4.89) comes down onto the sensor's.
+const RE_PLACED: Part[] = [
+  [-2.25, 5.25, 1.23, 6.77, "CC6905"],
+  [-6.6, -3.5, 1.35, 8.25, "D"],
+  [-4.6, -3.66, -2.3, -0.44],
+  [-3.6, -2.66, -2.3, -0.44],
+  [1.7, 2.64, -2.3, -0.44],
+  [2.7, 3.64, -2.3, -0.44],
+  [3.7, 4.64, -2.3, -0.44],
+]
+
+// A sensor no taller than about 1.5 sits under the finger's root; the diode stands between two
+// nuts. Sketch only: no such part is chosen.
+const ON_FINGER: Part[] = [
+  [-1.9, 1.9, -3.1, -0.2, "sensor"],
+  [-8.23, -5.13, 1.3, 8.2, "D"],
+  [2.6, 3.54, -2.3, -0.44],
+  [3.6, 4.54, -2.3, -0.44],
+  [-4.5, -3.56, -2.3, -0.44],
+  [-3.5, -2.56, -2.3, -0.44],
+]
 
 const variants: Variant[] = [
   {
@@ -44,6 +87,27 @@ const variants: Variant[] = [
     depth: 18.5,
     nutY: 13.5,
     notes: ["Nut pad 0.35 from the edge. VSUP takes", "the channel's last lane. Not advised."],
+  },
+  {
+    title: "Re-placed: finger root used",
+    sub: "17.7 deep, yoke 119.6 wide",
+    depth: 17.7,
+    nutY: 11.66,
+    trunkY: 16.76,
+    parts: RE_PLACED,
+    stack: [1.23, 6.77, "5.5 sensor"],
+    root: true,
+    notes: ["Same parts, two layers. Caps and divider", "under the finger root; diode moved 1.2."],
+  },
+  {
+    title: "Sketch: sensor on the finger",
+    sub: "about 11.4 deep, yoke 107 wide",
+    depth: 11.4,
+    nutY: 6,
+    parts: ON_FINGER,
+    root: true,
+    noChannel: true,
+    notes: ["Needs a sensor under 1.5 tall and the", "lanes on inner layers. Nothing chosen."],
   },
 ]
 
@@ -79,7 +143,8 @@ function column(v: Variant, i: number) {
   }
   // Ring-face bands.
   rect(-half, half, 0.3, 1.0, `class="gnd"`)
-  rect(-half, half, 1.0, 6.3, `class="chan"`)
+  if (!v.noChannel) rect(-half, half, 1.0, 6.3, `class="chan"`)
+  if (v.root) rect(-4.75, 4.75, -3.0, -0.3, `class="root"`)
   if (v.band) rect(-half, half, v.band[0], v.band[1], `class="band"`)
 
   // Ring keepout: 10 disc on the nut and a 10 tongue straight out.
@@ -91,13 +156,10 @@ function column(v: Variant, i: number) {
   circle(0, -8.52, 8.13, `class="pad"`)
   circle(0, -8.52, 5.4, `class="hole"`)
   // Per-way parts, courtyards.
-  rect(-2.25, 5.25, 1.23, 6.77, `class="part"`)
-  text(1.5, 3.65, "CC6905", `class="l mid"`)
-  rect(-5.4, -2.3, 1.35, 8.25, `class="part"`)
-  text(-3.85, 4.45, "D", `class="l mid"`)
-  rect(-6.67, -5.73, 1.27, 3.13, `class="part"`)
-  rect(-6.67, -5.73, 3.17, 5.03, `class="part"`)
-  for (const x of [2.63, 3.63, 4.63]) rect(x, x + 0.94, 6.77, 8.63, `class="part"`)
+  for (const [x0, x1, y0, y1, label] of v.parts ?? REV_A) {
+    rect(x0, x1, y0, y1, `class="part"`)
+    if (label) text((x0 + x1) / 2, (y0 + y1) / 2 - 0.35, label, `class="l mid"`)
+  }
   // Nut.
   circle(0, v.nutY, 9.3, `class="pad"`)
   circle(0, v.nutY, 6.4, `class="hole"`)
@@ -120,11 +182,13 @@ function column(v: Variant, i: number) {
     text(x + 0.6, (y0 + y1) / 2 - 0.35, label, `class="l"`)
   }
   dim(0, v.depth, `${v.depth.toFixed(1)} arm`, 1)
-  dim(1.5, 9, "7.5 sensor")
+  if (!v.parts) dim(1.5, 9, "7.5 sensor")
+  else if (v.stack) dim(...v.stack)
+  if (v.root) text(half + 1.2, -3.0, "root: 1.7 over the lip", `class="l"`)
   dim(v.nutY - 4.65, v.nutY + 4.65, "9.3 nut pad")
   if (v.depth - (v.nutY + 4.65) > 0.2)
     dim(v.nutY + 4.65, v.depth, (v.depth - v.nutY - 4.65).toFixed(2))
-  text(-half, 2.3, "channel", `class="l tiny"`)
+  if (!v.noChannel) text(-half, 2.3, "channel", `class="l tiny"`)
   if (v.band) text(-half + 0.3, 23.6, "band behind the nuts", `class="l tiny"`)
   if (v.trunkY) text(-half - 0.3, v.trunkY - 0.3, "VSUP", `class="l tiny end"`)
   v.notes.forEach((n, k) => text(-half, Y_MIN - 0.6 - k * 1.3, n, `class="s"`))
@@ -139,6 +203,7 @@ console.log(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
 .board{fill:#1f3d2b;stroke:#0d1f15;stroke-width:1}
 .gone{fill:none;stroke:#c0392b;stroke-width:1;stroke-dasharray:5 4}
 .gnd{fill:#6b7f73}.chan{fill:#3f6b52}.band{fill:#7a5c1e}
+.root{fill:#3aa0ff;fill-opacity:.35}
 .pad{fill:#c9a227}.hole{fill:#fff}
 .part{fill:#e8e8e8;fill-opacity:.9;stroke:#333;stroke-width:.6}
 .keep{fill:none;stroke:#3aa0ff;stroke-width:1.2;stroke-dasharray:4 3}

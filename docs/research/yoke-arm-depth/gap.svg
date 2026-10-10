@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1472 548" width="1472" height="548" font-family="Helvetica, Arial, sans-serif">
+<style>
+.board{fill:#1f3d2b}.root{fill:#3aa0ff;fill-opacity:.35}
+.pad{fill:#c9a227}.hole{fill:#fff}.court{fill:none;stroke:#c9a227;stroke-width:.8;stroke-dasharray:3 3}
+.part{fill:#e8e8e8;fill-opacity:.92;stroke:#333;stroke-width:.6}
+.green{fill:#6ff547;fill-opacity:.75}
+.bad{fill:#c0392b;fill-opacity:.35;stroke:#c0392b;stroke-width:1.2}
+.edge{stroke:#000;stroke-width:1.5}
+.h{font-size:17px;font-weight:bold}.s{font-size:12.5px;fill:#333}
+.l{font-size:11.5px;fill:#000}.mid{text-anchor:middle}.red{fill:#c0392b;font-weight:bold}
+.board ~ text.l.mid{fill:#fff}
+</style>
+<rect width="1472" height="548" fill="#fff"/>
+<text x="32.0" y="21.6" class="h">The strip as marked</text>
+<text x="32.0" y="42.4" class="s">nut row at 14.0, 20.0 arm</text>
+<rect x="21.1" y="92.0" width="641.3" height="320.0" class="board"/>
+<rect x="52.0" y="412.0" width="152.0" height="96.0" class="board"/>
+<rect x="52.0" y="416.8" width="152.0" height="43.2" class="root"/>
+<circle cx="128.0" cy="188.0" r="78.2" class="court"/>
+<circle cx="128.0" cy="188.0" r="74.4" class="pad"/>
+<circle cx="128.0" cy="188.0" r="51.2" class="hole"/>
+<rect x="265.8" y="412.0" width="152.0" height="96.0" class="board"/>
+<rect x="265.8" y="416.8" width="152.0" height="43.2" class="root"/>
+<circle cx="341.8" cy="188.0" r="78.2" class="court"/>
+<circle cx="341.8" cy="188.0" r="74.4" class="pad"/>
+<circle cx="341.8" cy="188.0" r="51.2" class="hole"/>
+<rect x="479.5" y="412.0" width="152.0" height="96.0" class="board"/>
+<rect x="479.5" y="416.8" width="152.0" height="43.2" class="root"/>
+<circle cx="555.5" cy="188.0" r="78.2" class="court"/>
+<circle cx="555.5" cy="188.0" r="74.4" class="pad"/>
+<circle cx="555.5" cy="188.0" r="51.2" class="hole"/>
+<line x1="0.0" x2="683.5" y1="412.0" y2="412.0" class="edge"/>
+<text x="670.7" y="407.2" class="l">panel edge</text>
+<text x="670.7" y="98.4" class="l">20.0 arm</text>
+<rect x="201.3" y="117.6" width="67.2" height="281.6" class="green"/>
+<rect x="190.6" y="128.0" width="88.6" height="120.0" class="bad"/>
+<text x="234.9" y="192.8" class="l mid">CC6905</text>
+<text x="234.9" y="108.0" class="l mid">4.06 between pads, 3.58 between courtyards</text>
+<text x="234.9" y="264.8" class="l mid red">sensor: 5.54 at its narrowest</text>
+<text x="768.0" y="21.6" class="h">Sensor in the gap, inboard of the nuts</text>
+<text x="768.0" y="42.4" class="s">nut row at 10.7, 16.7 arm</text>
+<rect x="757.1" y="144.8" width="641.3" height="267.2" class="board"/>
+<rect x="788.0" y="412.0" width="152.0" height="96.0" class="board"/>
+<rect x="788.0" y="416.8" width="152.0" height="43.2" class="root"/>
+<circle cx="864.0" cy="241.1" r="78.2" class="court"/>
+<circle cx="864.0" cy="241.1" r="74.4" class="pad"/>
+<circle cx="864.0" cy="241.1" r="51.2" class="hole"/>
+<rect x="1001.8" y="412.0" width="152.0" height="96.0" class="board"/>
+<rect x="1001.8" y="416.8" width="152.0" height="43.2" class="root"/>
+<circle cx="1077.8" cy="241.1" r="78.2" class="court"/>
+<circle cx="1077.8" cy="241.1" r="74.4" class="pad"/>
+<circle cx="1077.8" cy="241.1" r="51.2" class="hole"/>
+<rect x="1215.5" y="412.0" width="152.0" height="96.0" class="board"/>
+<rect x="1215.5" y="416.8" width="152.0" height="43.2" class="root"/>
+<circle cx="1291.5" cy="241.1" r="78.2" class="court"/>
+<circle cx="1291.5" cy="241.1" r="74.4" class="pad"/>
+<circle cx="1291.5" cy="241.1" r="51.2" class="hole"/>
+<line x1="736.0" x2="1419.5" y1="412.0" y2="412.0" class="edge"/>
+<text x="1406.7" y="407.2" class="l">panel edge</text>
+<text x="1406.7" y="151.2" class="l">16.7 arm</text>
+<rect x="910.9" y="303.7" width="120.0" height="88.6" class="part"/>
+<text x="970.9" y="352.8" class="l mid">CC6905</text>
+<rect x="946.1" y="192.0" width="49.6" height="110.4" class="part"/>
+<text x="970.9" y="252.0" class="l mid">D</text>
+<rect x="907.2" y="419.0" width="15.0" height="29.8" class="part"/>
+<rect x="923.2" y="419.0" width="15.0" height="29.8" class="part"/>
+<rect x="1003.5" y="419.0" width="15.0" height="29.8" class="part"/>
+<rect x="1019.5" y="419.0" width="15.0" height="29.8" class="part"/>
+<rect x="1035.5" y="419.0" width="15.0" height="29.8" class="part"/>
+<rect x="1124.6" y="303.7" width="120.0" height="88.6" class="part"/>
+<text x="1184.6" y="352.8" class="l mid">CC6905</text>
+<rect x="1159.8" y="192.0" width="49.6" height="110.4" class="part"/>
+<text x="1184.6" y="252.0" class="l mid">D</text>
+<rect x="1121.0" y="419.0" width="15.0" height="29.8" class="part"/>
+<rect x="1137.0" y="419.0" width="15.0" height="29.8" class="part"/>
+<rect x="1217.3" y="419.0" width="15.0" height="29.8" class="part"/>
+<rect x="1233.3" y="419.0" width="15.0" height="29.8" class="part"/>
+<rect x="1249.3" y="419.0" width="15.0" height="29.8" class="part"/>
+
+<text x="1184.6" y="157.6" class="l mid">VSUP trunk behind the nuts</text>
+<text x="14" y="534" class="s">Three ways at 16 px per mm, parts face. Gold: the nut's soldered pad (9.3) round its 6.4 hole; dashes: its courtyard. Blue: finger root, 1.7 over the pocket's lip.</text>
+</svg>
