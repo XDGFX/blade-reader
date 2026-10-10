@@ -13,6 +13,7 @@ import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
 import { SS210 } from "./imports/SS210"
 import { GroundCopper, WayCopper } from "./lib/copper"
 import { ProgPads } from "./lib/parts"
+import { Routes } from "./lib/routes"
 import { Silkscreen } from "./lib/silkscreen"
 import { Supply } from "./lib/supply"
 import {
@@ -31,13 +32,13 @@ const ESP_GND_PINS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
 ].map((i) => `GND${i}`)
 
-const Q1 = { x: -0.6, y: 3.5 }
+// Between ways 3 and 4, above the channel, so way 3's divider stands beside its diode like the
+// others and its line can drop into the channel.
+const Q1 = { x: -0.4, y: 7.8 }
 /** Centre of the second multiplexer, in the way 6 ear. */
 const MUX_2 = { x: -43.7, y: 14.17 }
 
-// Way 3's divider has no room beside its diode, where Q1 is, so it stands above Q1 with its
-// 6.8k's GND end on Q1's GND patch. The rest take a via down to the ring face's bus.
-const divider = (n: number) => (n === 3 ? { x: Q1.x + 0.95, y: 6.5 } : dividerAt(n, wayX(n)))
+const divider = (n: number) => dividerAt(n, wayX(n))
 
 const R_10K = { resistance: "10k", footprint: "0402", supplierPartNumbers: { jlcpcb: ["C25744"] } }
 
@@ -51,6 +52,8 @@ export default () => (
     minViaHoleDiameter="0.3mm"
     minViaPadDiameter="0.6mm"
     defaultViaTenting="top_and_bottom_tented"
+    pcbStyle={{ viaHoleDiameter: "0.3mm", viaPadDiameter: "0.6mm" }}
+    routeRemaining={false}
   >
     <schematicsection name="Ways" displayName="Ways 1–6" />
     <schematicsection name="Supply" displayName="Supply" />
@@ -71,14 +74,10 @@ export default () => (
         />
       ))}
       {WAYS.map((n) => (
-        <WayCopper
-          key={n}
-          n={n}
-          cx={wayX(n)}
-          dividerVia={n === 3 ? undefined : { x: divider(n).x, y: 0.8 }}
-        />
+        <WayCopper key={n} n={n} cx={wayX(n)} dividerVia={{ x: divider(n).x, y: 0.8 }} />
       ))}
-      <GroundCopper q1={Q1} />
+      <GroundCopper />
+      <Routes dividers={WAYS.map(divider)} />
 
       {/* Ground: a ring-terminated wire from this nut to the panel's negative bus. */}
       <SMTSO4040CTJ
@@ -176,9 +175,9 @@ export default () => (
           transistor names pin1 collector and pin3 emitter, so its pin labels would be wrong. */}
       <resistor
         name="R10"
-        pcbX={wayX(3) + 2.2}
-        pcbY={20.5}
-        pcbRotation={0}
+        pcbX={Q1.x + 0.4}
+        pcbY={Q1.y + 2.6}
+        pcbRotation={180}
         {...R_10K}
         schX={-5}
         schY={-6}
@@ -190,7 +189,7 @@ export default () => (
         name="Q1"
         pcbX={Q1.x}
         pcbY={Q1.y}
-        pcbRotation={90}
+        pcbRotation={-90}
         type="npn"
         footprint="sot23"
         manufacturerPartNumber="MMBT3904"

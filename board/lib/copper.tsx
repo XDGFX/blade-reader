@@ -47,8 +47,11 @@ const circle = (cx: number, cy: number, r: number, steps = 32): Pt[] =>
 const BARE_FROM = -3.0
 /** The ring face's line copper stops short of the panel edge, for the bus along it. */
 const BUS_TOP = 1.3
-/** The ring face's load copper starts above the bus, leaving room for 3V3 and TEMP. */
-const LOAD_BOTTOM = 2.3
+/**
+ * The ring face's load copper starts above the channel along the panel edge, where the signal
+ * lines run (lib/routes.tsx). No load current flows below the IP+ vias.
+ */
+export const LOAD_BOTTOM = 6.0
 /** Ring face load copper round each nut, for the ring's tongue to lie on. */
 const RING_R = 6.5
 /** The way 1 ear's GND, 0.5 mm clear of way 1's ring face copper. */
@@ -177,10 +180,9 @@ export const WayCopper = ({ n, cx, dividerVia }: { n: number; cx: number; divide
 
 /**
  * GND: on the ring face, a bus along the panel edge and both ears, cut back to the ring
- * keepouts, so the band behind the nuts has none; on the parts face, the way 1 ear and a patch
- * under the temperature transistor.
+ * keepouts, so the band behind the nuts has none; on the parts face, the way 1 ear.
  */
-export const GroundCopper = ({ q1 }: { q1: Pt }) => {
+export const GroundCopper = () => {
   const B = BOARD_HALF
   const ear6 = -(EAR_1 + 0.3) // way 6's ring copper is the mirror of way 1's
   // Where the end ways' swung ring keepouts cross into the ears.
@@ -220,16 +222,6 @@ export const GroundCopper = ({ q1 }: { q1: Pt }) => {
         connectsTo="net.GND"
         outline={toBoard(rect(EAR_1, 0, B, DEPTH))}
       />
-      <copperpour
-        {...pour}
-        name="GND_TOP_Q1"
-        layer="top"
-        connectsTo="net.GND"
-        outline={toBoard(rect(q1.x - 1.8, 0, q1.x + 1.2, 6.5))}
-      />
-      {[-0.8, 0.4].map((dx) => (
-        <Via key={dx} net="net.GND" x={q1.x + dx} y={0.65} />
-      ))}
     </>
   )
 }
