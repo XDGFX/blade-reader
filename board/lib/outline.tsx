@@ -14,10 +14,10 @@ export const DEPTH = 28.0
 
 /** Output nut centres. */
 export const NUT_Y = 14
-const NUT_PAD_RADIUS = 4.65
+const NUT_PAD_RADIUS = 4.685
 
 /** The way 6 ear past its end way, along the panel's side. */
-export const END = WAY_PITCH_PCB / 2 + NUT_PAD_RADIUS + 0.6
+export const END = WAY_PITCH_PCB / 2 + NUT_PAD_RADIUS + 0.565
 
 const HALF = LENGTH / 2
 /** The way 6 end is at −BOARD_HALF. */
@@ -44,7 +44,7 @@ export const CLAMP_Y = -8.52
  * The ground nut, low in the way 6 ear, a pitch along from way 6. Its centre is about 16 from
  * way 6's nut, so the rings are further apart than two ways' rings.
  */
-export const GROUND_NUT = { x: wayX(6) - WAY_PITCH_PCB, y: NUT_PAD_RADIUS + 0.6 }
+export const GROUND_NUT = { x: wayX(6) - WAY_PITCH_PCB, y: NUT_PAD_RADIUS + 0.565 }
 
 // ESP32-C3-WROOM-02 at the bottom of the way 1 ear, lying along the strip (rotated −90°). Its
 // antenna line sits on the board end, 7.1 mm from the footprint's origin, so the whole antenna
