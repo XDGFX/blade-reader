@@ -21,26 +21,18 @@ export const A_OPEN = WAYS_A[5] + END
 const A_EAR = WAYS_A[0] - END
 const DECK_CLEARANCE = 1
 
-/** The + stud, and the radius the chin's inner edge keeps to: a 40 mm lug's rigid length + 2 (#44, #53). */
-export const STUD_A = 11.33
-export const LUG_ARC_R = 42
-/** The chin is never nearer the panel's end than this. */
+// The chin wraps the panel's positive end, straight across. It lies in the feed lug's own height
+// band, so the lug and cable have to pass over the ring face.
+/** The chin's inner edge, this far past the panel's end: the allowance for a clone's longer end. */
 const A_CHIN_FLOOR = -2
-/** Board left between the arc's apex and the chin's outer edge. */
-export const CHIN_DEPTH = 12
-export const A_OUTER = STUD_A - LUG_ARC_R - CHIN_DEPTH
+export const CHIN_DEPTH = 10
+export const A_OUTER = A_CHIN_FLOOR - CHIN_DEPTH
 
 const INSIDE_RADIUS = 1
-const ARC_STEPS = 48
 
-// The +c half of the outline, from the arc's apex on the centreline to the chin's outer corner.
+// The +c half of the outline, from the chin's inner edge on the centreline to its outer corner.
 const half = (): Pt[] => {
   const cArm = PANEL_HALF + DECK_CLEARANCE
-  const end = Math.acos((STUD_A - A_CHIN_FLOOR) / LUG_ARC_R)
-  const lugArc = Array.from({ length: ARC_STEPS + 1 }, (_, i) => {
-    const t = (end * i) / ARC_STEPS
-    return { x: LUG_ARC_R * Math.sin(t), y: STUD_A - LUG_ARC_R * Math.cos(t) }
-  })
   const corner = Array.from({ length: 5 }, (_, i) => {
     const t = (Math.PI / 2) * (i / 4)
     return {
@@ -51,7 +43,7 @@ const half = (): Pt[] => {
   // Rev A's finger, walked the other way: its X is a, its Y is outboard of the panel edge.
   const fingers = WAYS_A.flatMap((a) => finger(a).reverse().map((p) => ({ x: PANEL_HALF + p.y, y: p.x })))
   return [
-    ...lugArc,
+    { x: 0, y: A_CHIN_FLOOR },
     ...corner,
     { x: cArm, y: A_EAR },
     { x: PANEL_HALF, y: A_EAR + DECK_CLEARANCE },
