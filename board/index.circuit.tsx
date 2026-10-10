@@ -12,7 +12,7 @@ import { ESP32_C3_MINI_1_H4X } from "./imports/ESP32_C3_MINI_1_H4X"
 import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
 import { SS210 } from "./imports/SS210"
 import { GroundCopper, WayCopper } from "./lib/copper"
-import { ProgPads } from "./lib/parts"
+import { FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
 import { Routes } from "./lib/routes"
 import { Silkscreen } from "./lib/silkscreen"
 import { Supply } from "./lib/supply"
@@ -39,7 +39,7 @@ const Q1 = { x: -0.4, y: 7.8 }
 
 const divider = (n: number) => dividerAt(n, wayX(n))
 
-const R_10K = { resistance: "10k", footprint: "0402", supplierPartNumbers: { jlcpcb: ["C25744"] } }
+const R_10K = { resistance: "10k", footprint: FP_0402, supplierPartNumbers: { jlcpcb: ["C25744"] } }
 
 export default () => (
   <board
@@ -124,11 +124,11 @@ export default () => (
       />
       <capacitor
         name="C9"
-        pcbX={40.6}
+        pcbX={40.2}
         pcbY={22.41}
         pcbRotation={-90}
         capacitance="100nF"
-        footprint="0402"
+        footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C307331"] }}
         schX={0}
         schY={5}
@@ -140,11 +140,11 @@ export default () => (
           or more. The mux's on-resistance isolates it from the CC6905's 2.2 nF load limit. */}
       <capacitor
         name="C10"
-        pcbX={ESP.x - 0.38}
+        pcbX={ESP.x + 0.11}
         pcbY={ESP_ROW_Y}
         pcbRotation={0}
         capacitance="10nF"
-        footprint="0402"
+        footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C15195"] }}
         schX={5}
         schY={-5}
@@ -153,15 +153,15 @@ export default () => (
         connections={{ pin1: "net.ADC", pin2: "net.GND" }}
       />
       {/* The same at GPIO4, on the module's side facing way 1, for mux 2's common. It stands
-          at GPIO10, whose line runs out between its pads, so its GND pad reaches the module's
-          GND pin above. */}
+          above the corridor's narrow end, where there is room to keep it off the module, with
+          its GND pad at the module's GND pin. */}
       <capacitor
         name="C41"
-        pcbX={40.64}
-        pcbY={ESP.y + 1.6}
+        pcbX={40.05}
+        pcbY={ESP.y + 2.35}
         pcbRotation={90}
         capacitance="10nF"
-        footprint="0402"
+        footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C15195"] }}
         schX={5}
         schY={-20}
@@ -192,7 +192,7 @@ export default () => (
         pcbY={Q1.y}
         pcbRotation={-90}
         type="npn"
-        footprint="sot23"
+        footprint={FP_SOT23}
         manufacturerPartNumber="MMBT3904"
         supplierPartNumbers={{ jlcpcb: ["C20526"] }}
         schX={-5}
@@ -238,7 +238,7 @@ export default () => (
         pcbY={9.3}
         pcbRotation={180}
         capacitance="100nF"
-        footprint="0402"
+        footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C307331"] }}
         schX={0}
         schY={-11}
@@ -263,12 +263,11 @@ export default () => (
           IO5: "net.MUX_S0",
           IO6: "net.MUX_S1",
           IO7: "net.MUX_S2",
-          IO10: "net.LED",
+          IO1: "net.LED",
           IO2: "net.IO2",
           IO8: "net.IO8",
           IO9: "net.IO9",
           IO0: "net.IO0",
-          IO1: "net.IO1",
           IO4: "net.ADC2",
           RXD0: "net.U0RXD",
           TXD0: "net.U0TXD",
@@ -277,11 +276,11 @@ export default () => (
       />
       <capacitor
         name="C6"
-        pcbX={40.2}
+        pcbX={40.05}
         pcbY={19.9}
         pcbRotation={90}
         capacitance="10uF"
-        footprint="0603"
+        footprint={FP_0603}
         supplierPartNumbers={{ jlcpcb: ["C19702"] }}
         schX={14}
         schY={10}
@@ -291,11 +290,11 @@ export default () => (
       />
       <capacitor
         name="C7"
-        pcbX={ESP.x + 3.6}
+        pcbX={ESP.x + 3.87}
         pcbY={ESP_ROW_Y}
         pcbRotation={0}
         capacitance="100nF"
-        footprint="0402"
+        footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C307331"] }}
         schX={15.5}
         schY={10}
@@ -306,7 +305,7 @@ export default () => (
       {/* EN: the module has no RC of its own. Also gives esptool's auto-reset a clean edge. */}
       <resistor
         name="R3"
-        pcbX={39.4}
+        pcbX={39.2}
         pcbY={23.54}
         pcbRotation={-90}
         {...R_10K}
@@ -318,11 +317,11 @@ export default () => (
       />
       <capacitor
         name="C8"
-        pcbX={ESP.x - 2.16}
+        pcbX={ESP.x - 1.77}
         pcbY={ESP_ROW_Y}
         pcbRotation={180}
         capacitance="1uF"
-        footprint="0402"
+        footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C52923"] }}
         schX={14}
         schY={-9}
@@ -333,9 +332,9 @@ export default () => (
       {/* Strapping pins: normal boot needs GPIO2 and GPIO9 high. */}
       {(
         [
-          ["R4", "net.IO2", ESP.x + 1.5, ESP_ROW_Y, 0],
-          ["R5", "net.IO8", 39.36, 17.75, 0],
-          ["R6", "net.IO9", 38.81, 19.4, 0],
+          ["R4", "net.IO2", ESP.x + 1.99, ESP_ROW_Y, 0],
+          ["R5", "net.IO8", 39.36, 16.95, 0],
+          ["R6", "net.IO9", 38.86, 18.0, 0],
         ] as const
       ).map(([name, net, pcbX, pcbY, pcbRotation], i) => (
         <resistor
@@ -356,10 +355,10 @@ export default () => (
       <resistor
         name="R7"
         pcbX={40.03}
-        pcbY={15.1}
+        pcbY={ESP_ROW_Y}
         pcbRotation={0}
         resistance="1k"
-        footprint="0402"
+        footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C11702"] }}
         schX={30}
         schY={-6}
@@ -368,11 +367,11 @@ export default () => (
       />
       <led
         name="LED1"
-        pcbX={42.225}
-        pcbY={14.9}
+        pcbX={42.335}
+        pcbY={15.26}
         pcbRotation={0}
         color="red"
-        footprint="0603"
+        footprint={FP_LED_0603}
         supplierPartNumbers={{ jlcpcb: ["C2286"] }}
         schX={33}
         schY={-8}
@@ -420,7 +419,7 @@ export default () => (
       {(
         [
           ["TP1", "net.IO0", 40.3, 13.15, 1.0],
-          ["TP2", "net.IO1", 40.3, 11.95, 1.0],
+          ["TP2", "net.LED", 40.3, 11.95, 1.0],
           ["TP4", "net.V3V3", wayX(2) + 2.5, 24.4, 1.5],
           ["TP5", "net.VSUP", wayX(2), 24.4, 1.5],
           ["TP6", "net.GND", wayX(2) - 2.5, 24.4, 1.5],
