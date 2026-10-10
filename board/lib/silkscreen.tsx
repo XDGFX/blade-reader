@@ -451,3 +451,7 @@ export const Silkscreen = () => (
     <Face a={mapArt(partsFace(), PARTS)} layer="top" />
   </>
 )
+
+// The drawing primitives, for scripts/yoke-view.ts, which lays out a first take of the yoke's silk.
+export { art, chevron, crux, earth, frame, join, kana, line, logo, mapArt, ring, text, turn }
+export type { Art }
