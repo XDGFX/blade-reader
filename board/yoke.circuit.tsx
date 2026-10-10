@@ -15,8 +15,8 @@ export const HALF_WIDTH = PANEL_HALF + ARM_DEPTH
 
 /** Ways 11–12 to ways 1–2, along. */
 export const WAYS_A = [0, 1, 2, 3, 4, 5].map((k) => 27.83 + k * WAY_PITCH_PCB)
-/** The arms' open end: rev A's ear past the last way, which holds a multiplexer. */
-export const A_OPEN = WAYS_A[5] + END
+/** The arms' open end: where the last way's column ends. No ear, so every multiplexer is on the chin. */
+export const A_OPEN = WAYS_A[5] + WAY_PITCH_PCB / 2
 /** Where the ear past ways 11–12 ends and the arm steps 1 mm clear of the panel's side. */
 const A_EAR = WAYS_A[0] - END
 const DECK_CLEARANCE = 1
@@ -25,8 +25,10 @@ const DECK_CLEARANCE = 1
 // band, so the lug and cable have to pass over the ring face.
 /** The chin's inner edge, this far past the panel's end: the allowance for a clone's longer end. */
 const A_CHIN_FLOOR = -2
-export const CHIN_DEPTH = 10
+export const CHIN_DEPTH = 20
 export const A_OUTER = A_CHIN_FLOOR - CHIN_DEPTH
+/** Each outer corner of the chin is cut at 45° by this much. The cut starts 2 mm past the chin's inner edge. */
+export const CHAMFER = 18
 
 const INSIDE_RADIUS = 1
 
@@ -50,7 +52,8 @@ const half = (): Pt[] => {
     ...fingers,
     { x: PANEL_HALF, y: A_OPEN },
     { x: HALF_WIDTH, y: A_OPEN },
-    { x: HALF_WIDTH, y: A_OUTER },
+    { x: HALF_WIDTH, y: A_OUTER + CHAMFER },
+    { x: HALF_WIDTH - CHAMFER, y: A_OUTER },
   ]
 }
 
@@ -69,25 +72,27 @@ export const CLAMPS = sides.flatMap((s) => WAYS_A.map((a) => pcb(s * (PANEL_HALF
 /** Output nuts, 14.0 out from the panel edge. */
 export const NUTS = sides.flatMap((s) => WAYS_A.map((a) => pcb(s * (PANEL_HALF + NUT_Y), a)))
 
-// ESP32-C3-MINI-1 in the chin's outer corner at −X, 1 mm in from the side edge, its 11.2 mm pad
-// area on the board and its antenna 5.4 past the outer edge (#47). The antenna's feed is at the
-// footprint's −X end as read from the datasheet drawing, which puts it at this corner.
+/** A point on the chamfer at side `s`: `along` from its middle towards the side edge, `out` past it. */
+const onChamfer = (s: 1 | -1, along: number, out: number): Pt => {
+  const k = Math.SQRT1_2
+  return pcb(s * (HALF_WIDTH - CHAMFER / 2 + k * (along + out)), A_OUTER + CHAMFER / 2 + k * (along - out))
+}
+const box = (s: 1 | -1, half: number, inboard: number, out: number): Pt[] =>
+  [[-half, -inboard], [half, -inboard], [half, out], [-half, out], [-half, -inboard]].map(([u, n]) => onChamfer(s, u, n))
+
+// ESP32-C3-MINI-1 square to the chamfer at −X, its 11.2 mm pad area on the board and its antenna
+// 5.4 past the chamfer, inside the bounding rectangle (#47).
 const MODULE_WIDTH = 13.2
 const ANTENNA = 5.4
 const KEEPOUT = 15
-const moduleInner = HALF_WIDTH - 1 - MODULE_WIDTH
-export const MODULE = { center: pcb(HALF_WIDTH - 1 - MODULE_WIDTH / 2, A_OUTER + 5.6 - ANTENNA / 2), width: MODULE_WIDTH, height: 16.6 }
-/** No nut, inductor, test pad or tall part, and no outward step in the edge, within 15 mm of the antenna. */
-export const ANTENNA_KEEPOUT = {
-  center: pcb((HALF_WIDTH + moduleInner - KEEPOUT) / 2, A_OUTER + (KEEPOUT - ANTENNA) / 2),
-  width: HALF_WIDTH - moduleInner + KEEPOUT,
-  height: KEEPOUT + ANTENNA,
-}
+export const MODULE = box(1, MODULE_WIDTH / 2, 11.2, ANTENNA)
+/** No nut, inductor, test pad or tall part within 15 mm of the antenna. */
+export const ANTENNA_KEEPOUT = box(1, MODULE_WIDTH / 2 + KEEPOUT, KEEPOUT, ANTENNA)
 
-/** The one ground nut, in the chin's other outer corner. */
-export const GROUND_NUT = pcb(-(HALF_WIDTH - 7), A_OUTER + 7)
-/** JLC tooling holes, Ø1.152: one beside the ground nut, one in the far arm's ear, clear of every ring keepout. */
-export const TOOLING = [pcb(-(PANEL_HALF + 4), A_OUTER + 2.5), pcb(PANEL_HALF + 3, A_OPEN - 2.5)]
+/** The one ground nut, 7 mm in from the middle of the other chamfer. */
+export const GROUND_NUT = onChamfer(-1, 0, -7)
+/** JLC tooling holes, Ø1.152: one on the chin near the ground nut, one at the far arm's open end, clear of every ring keepout. */
+export const TOOLING = [pcb(-(PANEL_HALF - 2), A_OUTER + 2.5), pcb(PANEL_HALF + 3, A_OPEN - 2.5)]
 
 const Drill = ({ name, at, diameter }: { name: string; at: Pt; diameter: number }) => (
   <hole name={name} pcbX={at.x} pcbY={at.y} diameter={diameter} />
@@ -104,12 +109,7 @@ export default () => (
     {TOOLING.map((at, i) => (
       <Drill key={`tool${i}`} name={`TOOL${i + 1}`} at={at} diameter={1.152} />
     ))}
-    <silkscreenrect pcbX={MODULE.center.x} pcbY={MODULE.center.y} width={MODULE.width} height={MODULE.height} />
-    <silkscreenrect
-      pcbX={ANTENNA_KEEPOUT.center.x}
-      pcbY={ANTENNA_KEEPOUT.center.y}
-      width={ANTENNA_KEEPOUT.width}
-      height={ANTENNA_KEEPOUT.height}
-    />
+    <silkscreenpath route={MODULE} />
+    <silkscreenpath route={ANTENNA_KEEPOUT} />
   </board>
 )
