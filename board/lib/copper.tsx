@@ -56,6 +56,16 @@ export const LOAD_BOTTOM = 6.0
 const RING_R = 6.5
 /** The way 1 ear's GND, 0.5 mm clear of way 1's ring face copper. */
 const EAR_1 = 40.0
+/** Where way 1's ring face copper stops for the 3V3 line at the edge of the bundle. */
+const BUNDLE_EDGE = 39.2
+/** GND vias under the module, joining the way 1 ear's two faces. */
+const EAR_VIAS: Pt[] = [
+  { x: 43.6, y: 3.6 },
+  { x: 44.5, y: 3.6 },
+  { x: 45.4, y: 3.6 },
+  { x: 47.4, y: 11.95 },
+  { x: 48.6, y: 11.95 },
+]
 
 const Via = ({ net, x, y }: { net: string; x: number; y: number }) => (
   <via
@@ -156,7 +166,14 @@ export const WayCopper = ({ n, cx, dividerVia }: { n: number; cx: number; divide
             ...circle(cx, NUT_Y, RING_R).filter((p) => p.y > NUT_Y),
             { x: cx - RING_R, y: NUT_Y },
             { x: cx - RING_R, y: LOAD_BOTTOM },
-            { x: cx + RING_R, y: LOAD_BOTTOM },
+            // Way 1's corner gives way to the bundle from the channel to mux 1.
+            ...(n === 1
+              ? [
+                  { x: BUNDLE_EDGE, y: LOAD_BOTTOM },
+                  { x: BUNDLE_EDGE, y: 11.6 },
+                  { x: cx + RING_R, y: 11.6 },
+                ]
+              : [{ x: cx + RING_R, y: LOAD_BOTTOM }]),
             { x: cx + RING_R, y: NUT_Y },
           ].map((p) => clipToNeighbours(n, p)),
         )}
@@ -222,6 +239,11 @@ export const GroundCopper = () => {
         connectsTo="net.GND"
         outline={toBoard(rect(EAR_1, 0, B, DEPTH))}
       />
+      {/* The ear's two faces, joined under the module: beside its panel-edge pads, where the
+          ring face is still the bus, and above its ground pad, inside the lines round it. */}
+      {EAR_VIAS.map(({ x, y }) => (
+        <Via key={`e${x}${y}`} net="net.GND" x={x} y={y} />
+      ))}
     </>
   )
 }

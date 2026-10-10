@@ -42,7 +42,7 @@ export const GROUND_NUT = { x: wayX(6) - WAY_PITCH_PCB, y: NUT_PAD_RADIUS + 0.6 
 // on the board. 3V3, EN, IO2 and IO3 face up, with their small parts in a row above the module.
 // The footprint's origin is 5.6 mm from that area's ends.
 export const ESP = { x: BOARD_HALF - 5.6, y: 1.0 + 6.85 }
-/** Centre Y of the row of 0402s just above the module. */
+/** Centre Y of the row of small parts just above the module. */
 export const ESP_ROW_Y = ESP.y + 7.42
 
 // The way 6 ear holds the ground nut low down and the second multiplexer above it. Its outboard
