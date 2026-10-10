@@ -8,7 +8,9 @@
 
 export const WAY_PITCH_PCB = 13.36
 export const LENGTH = 6 * WAY_PITCH_PCB // 80.16, the ways' span
-export const DEPTH = 25.5
+/** Trial (#54): mux 1 as a TSSOP-16 standing across the strip, in place of the SOIC. */
+export const MUX_1_TSSOP = process.env.MUX_1_TSSOP === "1"
+export const DEPTH = MUX_1_TSSOP ? 26.0 : 28.5
 
 /** Output nut centres. */
 export const NUT_Y = 14
@@ -20,6 +22,13 @@ export const END = WAY_PITCH_PCB / 2 + NUT_PAD_RADIUS + 0.6
 const HALF = LENGTH / 2
 /** X of the board's way 1 end; the way 6 end is at −BOARD_HALF. */
 export const BOARD_HALF = HALF + END
+/**
+ * Trial (#54): the way 1 ear is longer, for the WROOM-02's 14.0 mm on the board, 1.0 mm from
+ * way 1's sense cap (pad edge at X 38.82).
+ */
+export const BOARD_END_1 = 53.8
+/** Keeps the outline's bounding box centred in X now the ears differ. */
+export const X_SHIFT = -(BOARD_END_1 - BOARD_HALF) / 2
 const FINGER_WIDTH = 9.5
 const FINGER_LENGTH = 13.0
 const TIP_RADIUS = 0.5
@@ -41,7 +50,10 @@ export const GROUND_NUT = { x: wayX(6) - WAY_PITCH_PCB, y: NUT_PAD_RADIUS + 0.6 
 // past the end of the board, its courtyard 1 mm clear of the panel edge. Its 11.2 mm pad area is
 // on the board. 3V3, EN, IO2 and IO3 face up, with the caps for 3V3, EN and IO3 in a row above the
 // module. The footprint's origin is 5.6 mm from that area's ends.
-export const ESP = { x: BOARD_HALF - 5.6, y: 1.0 + 6.85 }
+// Trial (#54): ESP32-C3-WROOM-02 in its place. JLC's footprint has its origin 7.1 mm from the
+// antenna line, which sits on the board end, and pads reaching 9.75 mm each side; the
+// panel-edge pads stop 0.5 mm from the edge.
+export const ESP = { x: BOARD_END_1 - 7.1, y: 0.5 + 9.75 }
 /**
  * Centre Y of the row of caps just above the module: as far out as leaves room for the ADC line
  * between the row and mux 1's pads.
@@ -83,14 +95,14 @@ export const Y_SHIFT = -(DEPTH - FINGER_LENGTH) / 2
 
 const COMB: Pt[] = [
   { x: -BOARD_HALF + CHAMFER, y: DEPTH },
-  { x: BOARD_HALF, y: DEPTH },
-  { x: BOARD_HALF, y: 0 },
+  { x: BOARD_END_1, y: DEPTH },
+  { x: BOARD_END_1, y: 0 },
   ...[1, 2, 3, 4, 5, 6].flatMap((n) => finger(wayX(n))),
   { x: -BOARD_HALF, y: 0 },
   { x: -BOARD_HALF, y: DEPTH - CHAMFER },
 ]
 
-export const OUTLINE = COMB.map(({ x, y }) => ({ x, y: y + Y_SHIFT }))
+export const OUTLINE = COMB.map(({ x, y }) => ({ x: x + X_SHIFT, y: y + Y_SHIFT }))
 
 // Ring keepout (GLOSSARY.md): a Ø10 ring on the nut with a 10 mm tongue running outboard, swung
 // up to ±20°, the goal; straight out is the minimum. Inside it the ring face carries only that

@@ -20,6 +20,8 @@ import {
   type Pt,
   wayX,
   Y_SHIFT,
+  X_SHIFT,
+  BOARD_END_1,
 } from "./outline"
 import { bandX } from "./way"
 
@@ -30,7 +32,7 @@ const pour = {
   coveredWithSolderMask: true,
 } as const
 
-const toBoard = (pts: Pt[]) => pts.map(({ x, y }) => ({ x, y: y + Y_SHIFT }))
+const toBoard = (pts: Pt[]) => pts.map(({ x, y }) => ({ x: x + X_SHIFT, y: y + Y_SHIFT }))
 const rect = (x0: number, y0: number, x1: number, y1: number): Pt[] => [
   { x: x0, y: y0 },
   { x: x1, y: y0 },
@@ -59,13 +61,7 @@ const EAR_1 = 40.0
 /** Where way 1's ring face copper stops for the 3V3 line at the edge of the bundle. */
 const BUNDLE_EDGE = 39.2
 /** GND vias under the module, joining the way 1 ear's two faces. */
-const EAR_VIAS: Pt[] = [
-  { x: 43.6, y: 3.6 },
-  { x: 44.5, y: 3.6 },
-  { x: 45.4, y: 3.6 },
-  { x: 47.4, y: 11.95 },
-  { x: 48.6, y: 11.95 },
-]
+const EAR_VIAS: Pt[] = []
 /** The parts face's GND in the band behind the nuts starts above the VSUP trunk. */
 const BAND_BOTTOM = 19.3
 
@@ -216,6 +212,7 @@ export const WayCopper = ({ n, cx, dividerVia }: { n: number; cx: number; divide
  */
 export const GroundCopper = () => {
   const B = BOARD_HALF
+  const B1 = BOARD_END_1
   const ear6 = -(EAR_1 + 0.3) // way 6's ring copper is the mirror of way 1's
   // Where the end ways' swung ring keepouts cross into the ears.
   const k1 = (y: number) => keepoutEdgeX(wayX(1), 1, y)
@@ -236,8 +233,8 @@ export const GroundCopper = () => {
         connectsTo="net.GND"
         outline={toBoard([
           { x: -B, y: 0 },
-          { x: B, y: 0 },
-          { x: B, y: DEPTH },
+          { x: B1, y: 0 },
+          { x: B1, y: DEPTH },
           { x: k1(DEPTH), y: DEPTH },
           { x: EAR_1, y: yAt(k1, EAR_1) },
           { x: EAR_1, y: BUS_TOP },
@@ -252,7 +249,7 @@ export const GroundCopper = () => {
         name="GND_TOP_EAR"
         layer="top"
         connectsTo="net.GND"
-        outline={toBoard(rect(EAR_1, 0, B, DEPTH))}
+        outline={toBoard(rect(EAR_1, 0, B1, DEPTH))}
       />
       {/* The ear's two faces, joined under the module: beside its panel-edge pads, where the
           ring face is still the bus, and above its ground pad, inside the lines round it. */}
