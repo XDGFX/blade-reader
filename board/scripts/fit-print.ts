@@ -3,7 +3,7 @@
 // Print at 100 % (no "fit to page"). To 3D print the plate, use fit-plate.ts's STL instead.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs"
-import { wayX, Y_SHIFT } from "../lib/outline"
+import { wayX, X_SHIFT, Y_SHIFT } from "../lib/outline"
 
 const circuit: any[] = JSON.parse(readFileSync("dist/index/circuit.json", "utf8"))
 const of = (type: string) => circuit.filter((e) => e.type === type)
@@ -39,7 +39,7 @@ const left = vx(board.width / 2) - 8
 out.push(`<line x1="${f(left)}" y1="${f(edge)}" x2="${f(-left)}" y2="${f(edge)}" class="edge"/>`)
 out.push(`<text x="${f(-left)}" y="${f(edge - 1)}" text-anchor="end">panel edge</text>`)
 for (let n = 1; n <= 6; n++) {
-  out.push(`<text x="${f(vx(wayX(n)))}" y="${f(vy(Y_SHIFT - 13) + 5)}" text-anchor="middle">${n}</text>`)
+  out.push(`<text x="${f(vx(wayX(n) + X_SHIFT))}" y="${f(vy(Y_SHIFT - 13) + 5)}" text-anchor="middle">${n}</text>`)
 }
 
 // Scale check: a 50 mm bar and a 20 mm square, measured with a rule after printing.

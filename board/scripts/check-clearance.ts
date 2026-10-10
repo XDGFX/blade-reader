@@ -7,7 +7,7 @@
 // Run after a routed build: `bun run clearance`.
 
 import { readFileSync } from "node:fs"
-import { Y_SHIFT } from "../lib/outline"
+import { X_SHIFT, Y_SHIFT } from "../lib/outline"
 
 const MIN = 0.15
 
@@ -18,7 +18,7 @@ type P = { x: number; y: number }
 /** A point, a segment or a polygon, grown by `r`. Coordinates are the strip's (lib/outline.tsx). */
 type Shape = { net: string; layer: string; what: string; pts: P[]; r: number }
 
-const strip = ({ x, y }: P): P => ({ x, y: y - Y_SHIFT })
+const strip = ({ x, y }: P): P => ({ x: x - X_SHIFT, y: y - Y_SHIFT })
 const sourcePort = new Map(of("source_port").map((p) => [p.source_port_id, p]))
 const sourceComponent = new Map(of("source_component").map((p) => [p.source_component_id, p]))
 const pcbPort = new Map(of("pcb_port").map((p) => [p.pcb_port_id, p]))

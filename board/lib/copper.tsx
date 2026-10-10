@@ -11,14 +11,18 @@
 // on the way's screw pad. The ring face carries the rings, on the bare nut pads.
 
 import {
+  BOARD_END_1,
   BOARD_HALF,
   CHAMFER,
   DEPTH,
+  ESP,
+  espPinX,
   finger,
   keepoutEdgeX,
   NUT_Y,
   type Pt,
   wayX,
+  X_SHIFT,
   Y_SHIFT,
 } from "./outline"
 import { bandX } from "./way"
@@ -30,7 +34,7 @@ const pour = {
   coveredWithSolderMask: true,
 } as const
 
-const toBoard = (pts: Pt[]) => pts.map(({ x, y }) => ({ x, y: y + Y_SHIFT }))
+const toBoard = (pts: Pt[]) => pts.map(({ x, y }) => ({ x: x + X_SHIFT, y: y + Y_SHIFT }))
 const rect = (x0: number, y0: number, x1: number, y1: number): Pt[] => [
   { x: x0, y: y0 },
   { x: x1, y: y0 },
@@ -58,13 +62,17 @@ const RING_R = 6.5
 const EAR_1 = 40.0
 /** Where way 1's ring face copper stops for the 3V3 line at the edge of the bundle. */
 const BUNDLE_EDGE = 39.2
-/** GND vias under the module, joining the way 1 ear's two faces. */
+/** The centre of the module's ground pad, 0.96 mm off its centre line. */
+const EPAD_Y = ESP.y - 0.96
+/**
+ * GND vias under the module, joining the way 1 ear's two faces. Each stands midway between two
+ * of the module's lands, so a line can drop straight from a land past it: two beside the
+ * panel-edge row at the board end, and two each side of the ground pad.
+ */
 const EAR_VIAS: Pt[] = [
-  { x: 43.6, y: 3.6 },
-  { x: 44.5, y: 3.6 },
-  { x: 45.4, y: 3.6 },
-  { x: 47.4, y: 11.95 },
-  { x: 48.6, y: 11.95 },
+  { x: espPinX(0.5), y: 3.0 },
+  { x: espPinX(1.5), y: 3.0 },
+  ...[-2.25, 2.25].flatMap((dy) => [3.5, 4.5].map((i) => ({ x: espPinX(i), y: EPAD_Y + dy }))),
 ]
 /** The parts face's GND in the band behind the nuts starts above the VSUP trunk. */
 const BAND_BOTTOM = 19.3
@@ -216,6 +224,7 @@ export const WayCopper = ({ n, cx, dividerVia }: { n: number; cx: number; divide
  */
 export const GroundCopper = () => {
   const B = BOARD_HALF
+  const B1 = BOARD_END_1
   const ear6 = -(EAR_1 + 0.3) // way 6's ring copper is the mirror of way 1's
   // Where the end ways' swung ring keepouts cross into the ears.
   const k1 = (y: number) => keepoutEdgeX(wayX(1), 1, y)
@@ -236,8 +245,8 @@ export const GroundCopper = () => {
         connectsTo="net.GND"
         outline={toBoard([
           { x: -B, y: 0 },
-          { x: B, y: 0 },
-          { x: B, y: DEPTH },
+          { x: B1, y: 0 },
+          { x: B1, y: DEPTH },
           { x: k1(DEPTH), y: DEPTH },
           { x: EAR_1, y: yAt(k1, EAR_1) },
           { x: EAR_1, y: BUS_TOP },
@@ -252,10 +261,9 @@ export const GroundCopper = () => {
         name="GND_TOP_EAR"
         layer="top"
         connectsTo="net.GND"
-        outline={toBoard(rect(EAR_1, 0, B, DEPTH))}
+        outline={toBoard(rect(EAR_1, 0, B1, DEPTH))}
       />
-      {/* The ear's two faces, joined under the module: beside its panel-edge pads, where the
-          ring face is still the bus, and above its ground pad, inside the lines round it. */}
+      {/* The ear's two faces, joined under the module. */}
       {EAR_VIAS.map(({ x, y }) => (
         <Via key={`e${x}${y}`} net="net.GND" x={x} y={y} />
       ))}
