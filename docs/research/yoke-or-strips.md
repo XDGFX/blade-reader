@@ -1,5 +1,5 @@
 ---
-date: 2026-10-10
+date: 2026-10-11
 issue: 52
 map: 40
 ---
@@ -7,7 +7,7 @@ map: 40
 # Yoke or strips
 
 Gathers every answer from the map XDGFX/blade-reader#40 so Cal can choose the first order: one
-yoke per 12-way fuse panel, or two rev A strips. It decides nothing.
+yoke per 12-way fuse panel, or two rev A strips. The choice Cal made is at the end of the summary.
 
 *Yoke*, *arm* and *chin* are the map's working words and are not in the glossary. Prices are USD,
 read from JLCPCB on **2026-10-10**, before shipping and tax. Nothing is a quote. The yoke has an
@@ -24,7 +24,7 @@ worked on paper in this session.
 | Each further panel on the order | $19.48 before the multiplexer change | $24.81 |
 | Assembly | Economic PCBA, 6 or 7 extended part types | Economic PCBA, 6 extended part types |
 | Width on the panel | 117.6 mm (arms 16.7 from the panel edge) | 140.2 mm (bodies 28.0) |
-| Length | 123.3 mm, 22 of it chin past the positive end | 105.8 mm, nothing past either end |
+| Length | 122.3 mm, 21 of it chin past the positive end | 105.8 mm, nothing past either end |
 | Output nuts | 10.7 mm from the panel edge | 14.0 mm |
 | Home Assistant | One device, 12 ways on one clock | Two devices |
 | Standby at 12 V | 0.09–0.33 W less (datasheets, not measured) | Reference |
@@ -50,7 +50,16 @@ worked on paper in this session.
 - **Renders** (`explore/yoke`, drawn by `board/scripts/yoke-view.ts`; the yoke's silk is a first
   take): [both options on the panel, bare and wired][r1], [detail][r2], [the chin's parts][r3].
 
-**Recommendation and decision:** pending, see #52.
+**Recommendation:** go on the yoke. Cost is close to even, and the yoke is narrower, one device,
+numbers its ways and keeps its silkscreen in view once wired. What it risks is the feed lug
+passing over the chin and the handling of an assembled board, and a printed plate checks the
+first before any money is spent.
+
+**Decision (Cal, 2026-10-11): go.** The first order is the yoke. Neither open ticket held the
+decision up: the plate is printed and fitted before the fab order, not before the choice, and
+the arms get no stiffening bar. The outline was then refined so the chin's inner edge follows
+the panel's end 1 mm off all the way round, which makes the yoke 117.6 × 122.3 mm. The strip
+stays order-ready on `main` and is not ordered; whether it is kept for 6-way panels is open.
 
 ## What each option is
 
@@ -60,10 +69,11 @@ its body is 28.0 mm deep, since the WROOM-02 ear. Older tickets quote 25.5.
 
 **Yoke**, as the map now has it (later rulings applied):
 
-- 117.6 × 123.3 mm bounding box, 69.7 cm² of board (62.8 after holes) (#67).
+- 117.6 × 122.3 mm bounding box, 69.2 cm² of board before holes, since the refinement after the
+  decision; #67 drew it at 117.6 × 123.3 and 69.7 cm².
 - Arms 16.7 mm deep, ending 6.68 mm past ways 1–2. The band behind the nuts is gone; each sensor
   sits in the gap beside its finger; the VSUP trunk stays behind the nuts (#48).
-- Chin 20 mm deep on the centreline, its inner edge 1.2–2 mm off the panel's end, each outer
+- Chin 20 mm deep on the centreline, its inner edge 1 mm off the panel's end as `fuse_block_12` has it in plan (1.2–2 mm in #67), each outer
   corner cut back 35 across and 12 along (#67).
 - ESP32-C3-WROOM-02-N4 (C2934560, $3.29, extended) on Economic PCBA, square to one chamfer with
   the antenna pointing away from the panel (#66, #47).
@@ -101,7 +111,7 @@ From #51 and [`yoke-cost.md`][cost]. Economic PCBA, 5 bare boards.
 - The floor on two layers is 15.5–16.5 mm: about 1 at the panel edge, 4.6 for the lines to the
   chin and the 9.3 nut pad. 16.7 is a paper figure, drawn from courtyards
   ([`gap.svg`][gap] on `prototype/yoke-arm-depth`).
-- The yoke adds about 22 mm past the positive end, where Cal's install has free bulkhead.
+- The yoke adds about 21 mm past the positive end, where Cal's install has free bulkhead.
 
 ## Signals and the mirrored arm
 
@@ -230,7 +240,7 @@ map's ruling of 2026-10-10 applied. Notes, each on its own branch:
 - [`yoke-arm-depth/`](https://github.com/XDGFX/blade-reader/tree/prototype/yoke-arm-depth/docs/research/yoke-arm-depth) (`prototype/yoke-arm-depth`)
 - [`yoke-arm-lanes.md`][lanes] (`research/yoke-arm-lanes`)
 - [`yoke-cost.md`][cost] (`research/yoke-cost`)
-- [`board/yoke.circuit.tsx`](https://github.com/XDGFX/blade-reader/blob/explore/yoke/board/yoke.circuit.tsx) and [`board/fab/yoke-plate.step`](https://github.com/XDGFX/blade-reader/blob/explore/yoke/board/fab/yoke-plate.step) (`explore/yoke`)
+- [`board/yoke.circuit.tsx`](https://github.com/XDGFX/blade-reader/blob/explore/yoke/board/yoke.circuit.tsx) and [`board/fab/yoke-plate.stl`](https://github.com/XDGFX/blade-reader/blob/explore/yoke/board/fab/yoke-plate.stl) (`explore/yoke`)
 
 [r1]: https://github.com/XDGFX/blade-reader/blob/explore/yoke/docs/assets/yoke-installed.svg
 [r2]: https://github.com/XDGFX/blade-reader/blob/explore/yoke/docs/assets/yoke-installed-detail.svg
