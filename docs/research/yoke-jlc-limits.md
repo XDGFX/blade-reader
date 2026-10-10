@@ -16,6 +16,25 @@ are marked "Last updated on Sep 09, 2026" unless noted. Prices are USD. This not
 [`jlc-panelised-assembly.md`](jlc-panelised-assembly.md) and to the fab rules note for
 XDGFX/blade-reader#3 (on the `research/jlc-fab-rules` branch), and does not repeat their tables.
 
+## Size correction
+
+The note was written for a 135 × 125 mm yoke. The chin research has since put the bounding
+rectangle at about **135 × 160–170 mm**. At 135 × 165 mm:
+
+- **Every limit still holds.** It is inside 470 × 500 mm for a single board and 250 × 250 mm
+  for a panel, and at 223 cm² it is far below the 650 cm² fees. No rule in the table changes.
+- **Price:** 5 bare yokes are **$16.40** (4.00 + 10.80 + 1.60); $15.40 at 135 × 150 and $16.70
+  at 135 × 170.[^calc] That is **$9.20 more** per order than 5 strips, and $3.28 a board, which
+  is $3.28 a fuse panel against $2.88 for two strips: $0.40 dearer, not level. At 135 × 150 it
+  is $3.08, $0.20 dearer. No price step lies between 103 and 170 mm: the board fee stays at
+  about $0.049 per cm² for 5 boards.
+- **Warp:** the diagonal is 213 mm, so 0.75 % is 1.6 mm and 0.5 % is 1.1 mm.
+- **Weight:** the calculator puts 5 bare boards at 504 g on the full rectangle. The real U is
+  lighter, but with parts the order may leave the 0.5 kg shipping band.
+
+Where the text below says 135 × 125, $13.70, $2.74, 169 cm², 184 mm or 420 g, read these
+figures instead. The routing-fee estimate was not redone; it needs the real outline.
+
 ## Answer
 
 **Yes, on paper, with conditions.** Nothing JLC publishes rules the yoke out of Economic PCBA as
@@ -129,8 +148,11 @@ lead-free HASL, single board, one design. USD, before shipping, tax and assembly
 | 102 × 102 | special | special | 1.30 | **5.30** | Special price, the last size that gets it |
 | 103 × 103 | 4.00 | 5.20 | 1.30 | **10.50** | |
 | 135 × 100 | 4.00 | 6.50 | 1.40 | **11.90** | |
-| 135 × 125 | 4.00 | 8.20 | 1.50 | **13.70** | The yoke |
+| 135 × 125 | 4.00 | 8.20 | 1.50 | **13.70** | The yoke as first briefed |
 | 150 × 125 | 4.00 | 9.10 | 1.50 | **14.60** | |
+| 135 × 150 | 4.00 | 9.80 | 1.60 | **15.40** | The yoke, lower bound |
+| 135 × 165 | 4.00 | 10.80 | 1.60 | **16.40** | The yoke, corrected size |
+| 135 × 170 | 4.00 | 11.10 | 1.60 | **16.70** | |
 | 135 × 125, 10 boards | 4.00 | 16.30 | 1.90 | **22.20** | |
 
 - **The price follows length × width.** Outside the special price, the board fee is about
