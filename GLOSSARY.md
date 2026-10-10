@@ -16,6 +16,20 @@ _Avoid_: Channel, slot
 **Pocket**:
 The space between two barriers of the fuse panel where a way's output screw sits on its pad.
 
+## The yoke
+
+**Yoke**:
+One 12-way Blade Reader board, fitted round the positive end of a 12-way fuse panel: two arms
+joined by the chin.
+_Avoid_: U board, frame
+
+**Arm**:
+One side of a yoke, along one long side of the fuse panel, with six fingers.
+
+**Chin**:
+The part of a yoke that joins the two arms past the fuse panel's positive end, and carries the
+ESP32, the supply and the ground nut.
+
 ## The strip
 
 **Strip**:
