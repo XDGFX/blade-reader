@@ -12,6 +12,7 @@ design basis says so; the notes themselves are not rewritten.
 | [`way-monitor-power-supply.md`](way-monitor-power-supply.md) | Current budget, regulator and input protection. Its 65 V sizing and its 3.3 V-over-cable sections are superseded |
 | [`jlc-panelised-assembly.md`](jlc-panelised-assembly.md) | JLC fees and panel rules, and shipping to Australia |
 | [`fuse-panel-dimensions.md`](fuse-panel-dimensions.md) | Blue Sea ST Blade 12-way, measured from CAD |
+| [`other-panel-dimensions.md`](other-panel-dimensions.md) | Narva 54450BL and the generic LED panel against the Blue Sea's fit figures. Neither fits as drawn |
 | [`silkscreen-design.md`](silkscreen-design.md) | Silkscreen exemplars, JLC mask colours and fees, tscircuit silk authoring, torque on the finger |
 | [`cable-aperture-sensing.md`](cable-aperture-sensing.md) | Sensing current around each output cable instead of through the board. Not pursued |
 | [`economic-pcba-wifi-mcu.md`](economic-pcba-wifi-mcu.md) | Which Wi-Fi modules and chips JLC places under Economic PCBA, and what each costs the way 1 ear |
