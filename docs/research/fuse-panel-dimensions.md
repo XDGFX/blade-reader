@@ -27,7 +27,7 @@ Axes used below:
 | Width | 84.20 mm | CAD (DS 84.20) |
 | Base height, no cover | 26.21 mm | CAD |
 | Height with cover | 38.57 mm, so the cover adds about 12.4 mm above the base | DS |
-| Mounting holes | Two sets at the corners: Ø3.15 on a 75.6 × 148.6 mm rectangle, and Ø2.84 (Ø5.56 counterbore) on a 53.84 × 125.96 mm rectangle. Neither matches the DS 63.50 mm figure, which was not reconciled | CAD |
+| Mounting holes | Four Ø4.4 through holes on a 63.6 × 138.8 mm rectangle (DS 63.50 × 138.66): along 12.8 and 151.6 mm, 31.8 mm either side of the centreline. Each sits in a Ø9 recess with its floor at 8.0 mm height. The Ø3.15 features on 75.6 × 148.6 and the Ø2.84 ones on 53.84 × 125.96 are posts and blind counterbores on the underside, not mounting holes | CAD, 2026-10-10 |
 
 ## Positive output screws (the ways)
 
@@ -75,7 +75,8 @@ Measured on 2026-10-09 with the same read-only method, for the strip's body leng
 | Negative bus screws | Three per side, along 113.54, 124.62, 135.69 mm (11.07 pitch), inset 8.45 mm, pad top 14.32 mm | CAD |
 | Negative bus pocket | One shared pocket, along 108.2–141.2 mm, no barriers between the three screws. Open to the long side like a way pocket | CAD |
 | Wall between way 1–2 and the negative bus | Along 100.2–108.2 mm, solid up to about 19.4–21 mm height | CAD |
-| + stud | On the centreline, along 11.45 mm, about Ø4.8, top at 26.2 mm height | CAD |
+| + stud | On the centreline, along 11.33 mm, Ø4.83 (#10), top at 26.2 mm height | CAD, 2026-10-10 |
+| + stud lug seat | 14.33 mm height, the same plane as the way pads. Flat out to Ø10.5, sloping to the 12.7 mm deck at Ø18. The nut (9.14 across corners, 2.9 thick) is modelled 1.6 mm above it | CAD, 2026-10-10 |
 | − stud | On the centreline, along 153.0 mm, about Ø4.8, top at 26.2 mm height | CAD |
 | Ends | Along 0–20.2 and 144.5–158 mm: a solid side up to about 12.7 mm, with a flat deck at that height, open above apart from the stud boss. The last 8 mm at each end is rounded over | CAD |
 | Long sides | Solid up to about 12.6–12.7 mm height along the whole length. They lean in slightly: inset 0.1 at 1 mm height and 0.8 at 12 mm. Nothing protrudes beyond the side edges anywhere | CAD |
