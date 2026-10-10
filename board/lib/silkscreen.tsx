@@ -351,11 +351,11 @@ const CATHODE_BARS: [number, number, number, number][] = [
   [68.4, 3.95, 68.4, 5.95], // D2
   // D11–D16
   ...[80.56, 67.2, 53.84, 39.48, 26.12, 12.76].map((x): [number, number, number, number] => [x, 17.05, x + 2, 17.05]),
-  [92.285, 1.825, 92.285, 2.775], // LED1
+  [94.66, 9.75, 95.11, 9.75], // LED1, outboard of its cathode pad: C8 is at its end
 ]
 /** Designators, 0.8 mm, only where polarity or pin 1 matters: start of the baseline. */
 const DESIGNATORS: [string, number, number][] = [
-  ["U1", 91.325, 16.3],
+  ["U1", 91.31, 9.5],
   ["U2", 97.53, 1.36],
   ["U3", 23.3, 4.373],
   ["D1", 38.53, 6.494],
@@ -366,7 +366,6 @@ const DESIGNATORS: [string, number, number][] = [
   ["D14", 39.76, 24.994],
   ["D15", 26.4, 24.994],
   ["D16", 13.04, 24.994],
-  ["LED1", 87.25, 1.472],
   ["Q1", 50.8, 19.65],
   ["U4", 13.45, 8.1],
 ]

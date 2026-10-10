@@ -4,8 +4,8 @@
 // PCB coordinates are explained in lib/outline.tsx. The body is 25.5 mm deep, with an ear past
 // each end way. The way 1 ear (+X) has the ESP32 low down, antenna past the board end, with its
 // small parts and mux 1 above it. The way 6 ear (−X) has the ground nut low down and mux 2
-// above it. Everything else sits in the band behind the nuts: the programming footprint, LED and
-// straps over way 1, test pads over way 2, then the supply over ways 4–6.
+// above it. Everything else sits in the band behind the nuts: the programming footprint over
+// way 1, test pads over way 2, then the supply over ways 4–6.
 
 import { CD4051BM96 } from "./imports/CD4051BM96"
 import { ESP32_C3_MINI_1_H4X } from "./imports/ESP32_C3_MINI_1_H4X"
@@ -93,8 +93,8 @@ export default () => (
       <Supply schX={-8} schY={22} />
 
       {/* ── Multiplexers and ADC ─────────────────────────────────────────────── */}
-      {/* Mux 1, for ways 1–3 and the temperature. Layout may reorder the channels; firmware
-          follows this schematic. */}
+      {/* Mux 1, for ways 1–3 and the temperature. Its inputs are in the order the lines arrive,
+          so none cross; firmware follows this schematic. X5 is the spare. */}
       <CD4051BM96
         name="U2"
         pcbX={46.0}
@@ -104,14 +104,14 @@ export default () => (
         schY={0}
         schSectionName="Adc"
         connections={{
-          X0: "net.S1_SENSE",
+          X2: "net.S1_SENSE",
+          X4: "net.S1_VOLTS",
           X1: "net.S2_SENSE",
-          X2: "net.S3_SENSE",
-          X3: "net.S1_VOLTS",
-          X4: "net.S2_VOLTS",
-          X5: "net.S3_VOLTS",
-          X6: "net.TEMP",
-          X7: "net.GND",
+          X6: "net.S2_VOLTS",
+          X7: "net.S3_SENSE",
+          X0: "net.S3_VOLTS",
+          X3: "net.TEMP",
+          X5: "net.GND",
           X: "net.ADC",
           A: "net.MUX_S0",
           B: "net.MUX_S1",
@@ -124,9 +124,9 @@ export default () => (
       />
       <capacitor
         name="C9"
-        pcbX={43.0}
-        pcbY={24.6}
-        pcbRotation={0}
+        pcbX={40.6}
+        pcbY={22.41}
+        pcbRotation={-90}
         capacitance="100nF"
         footprint="0402"
         supplierPartNumbers={{ jlcpcb: ["C307331"] }}
@@ -140,9 +140,9 @@ export default () => (
           or more. The mux's on-resistance isolates it from the CC6905's 2.2 nF load limit. */}
       <capacitor
         name="C10"
-        pcbX={ESP.x - 0.6}
+        pcbX={ESP.x - 0.38}
         pcbY={ESP_ROW_Y}
-        pcbRotation={180}
+        pcbRotation={0}
         capacitance="10nF"
         footprint="0402"
         supplierPartNumbers={{ jlcpcb: ["C15195"] }}
@@ -152,11 +152,13 @@ export default () => (
         schSectionName="Adc"
         connections={{ pin1: "net.ADC", pin2: "net.GND" }}
       />
-      {/* The same at GPIO4, on the module's side facing way 1, for mux 2's common. */}
+      {/* The same at GPIO4, on the module's side facing way 1, for mux 2's common. It stands
+          at GPIO10, whose line runs out between its pads, so its GND pad reaches the module's
+          GND pin above. */}
       <capacitor
         name="C41"
-        pcbX={39.9}
-        pcbY={ESP.y}
+        pcbX={40.64}
+        pcbY={ESP.y + 1.6}
         pcbRotation={90}
         capacitance="10nF"
         footprint="0402"
@@ -275,9 +277,9 @@ export default () => (
       />
       <capacitor
         name="C6"
-        pcbX={38.9}
-        pcbY={24.75}
-        pcbRotation={0}
+        pcbX={40.2}
+        pcbY={19.9}
+        pcbRotation={90}
         capacitance="10uF"
         footprint="0603"
         supplierPartNumbers={{ jlcpcb: ["C19702"] }}
@@ -304,9 +306,9 @@ export default () => (
       {/* EN: the module has no RC of its own. Also gives esptool's auto-reset a clean edge. */}
       <resistor
         name="R3"
-        pcbX={ESP.x - 2.7}
-        pcbY={ESP_ROW_Y}
-        pcbRotation={0}
+        pcbX={39.4}
+        pcbY={23.54}
+        pcbRotation={-90}
         {...R_10K}
         schX={14}
         schY={-6}
@@ -316,9 +318,9 @@ export default () => (
       />
       <capacitor
         name="C8"
-        pcbX={ESP.x - 4.8}
+        pcbX={ESP.x - 2.16}
         pcbY={ESP_ROW_Y}
-        pcbRotation={0}
+        pcbRotation={180}
         capacitance="1uF"
         footprint="0402"
         supplierPartNumbers={{ jlcpcb: ["C52923"] }}
@@ -332,8 +334,8 @@ export default () => (
       {(
         [
           ["R4", "net.IO2", ESP.x + 1.5, ESP_ROW_Y, 0],
-          ["R5", "net.IO8", 38.6, 20.75, 0],
-          ["R6", "net.IO9", 38.6, 21.9, 0],
+          ["R5", "net.IO8", 39.36, 17.75, 0],
+          ["R6", "net.IO9", 38.81, 19.4, 0],
         ] as const
       ).map(([name, net, pcbX, pcbY, pcbRotation], i) => (
         <resistor
@@ -353,9 +355,9 @@ export default () => (
       {/* Status LED, ESPHome status_led. */}
       <resistor
         name="R7"
-        pcbX={38.6}
-        pcbY={19.6}
-        pcbRotation={180}
+        pcbX={40.03}
+        pcbY={15.1}
+        pcbRotation={0}
         resistance="1k"
         footprint="0402"
         supplierPartNumbers={{ jlcpcb: ["C11702"] }}
@@ -366,8 +368,8 @@ export default () => (
       />
       <led
         name="LED1"
-        pcbX={38.6}
-        pcbY={23.2}
+        pcbX={42.225}
+        pcbY={14.9}
         pcbRotation={0}
         color="red"
         footprint="0603"
@@ -413,22 +415,23 @@ export default () => (
       />
 
       {/* ── Test pads ────────────────────────────────────────────────────────── */}
-      {/* Behind way 2's nut. 3V3 is on the way 1 side, where its trace arrives from the ear. */}
+      {/* GPIO0 and 1 beside their module pins, Ø1.0 to fit there; the rest behind way 2's nut,
+          3V3 on the way 1 side, where its trace arrives from the ear. */}
       {(
         [
-          ["TP1", "net.IO0", wayX(2) - 2.5, 22.6],
-          ["TP2", "net.IO1", wayX(2), 22.6],
-          ["TP4", "net.V3V3", wayX(2) + 2.5, 24.4],
-          ["TP5", "net.VSUP", wayX(2), 24.4],
-          ["TP6", "net.GND", wayX(2) - 2.5, 24.4],
+          ["TP1", "net.IO0", 40.3, 13.15, 1.0],
+          ["TP2", "net.IO1", 40.3, 11.95, 1.0],
+          ["TP4", "net.V3V3", wayX(2) + 2.5, 24.4, 1.5],
+          ["TP5", "net.VSUP", wayX(2), 24.4, 1.5],
+          ["TP6", "net.GND", wayX(2) - 2.5, 24.4, 1.5],
         ] as const
-      ).map(([name, net, pcbX, pcbY], i) => (
+      ).map(([name, net, pcbX, pcbY, diameter], i) => (
         <testpoint
           key={name}
           name={name}
           footprintVariant="pad"
           padShape="circle"
-          padDiameter="1.5mm"
+          padDiameter={`${diameter}mm`}
           pcbX={pcbX}
           pcbY={pcbY}
           schX={30 + i * 2}
