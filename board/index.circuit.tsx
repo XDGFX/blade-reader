@@ -98,7 +98,7 @@ export default () => (
       <CD4051BM96
         name="U2"
         pcbX={46.0}
-        pcbY={ESP_ROW_Y + 4.6}
+        pcbY={19.87}
         pcbRotation={0}
         schX={0}
         schY={0}
@@ -276,9 +276,9 @@ export default () => (
       />
       <capacitor
         name="C6"
-        pcbX={40.05}
-        pcbY={19.9}
-        pcbRotation={90}
+        pcbX={39.3}
+        pcbY={20.6}
+        pcbRotation={0}
         capacitance="10uF"
         footprint={FP_0603}
         supplierPartNumbers={{ jlcpcb: ["C19702"] }}
@@ -329,12 +329,14 @@ export default () => (
         schSectionName="Mcu"
         connections={{ pin1: "net.EN", pin2: "net.GND" }}
       />
-      {/* Strapping pins: normal boot needs GPIO2 and GPIO9 high. */}
+      {/* Strapping pins: normal boot needs GPIO2 and GPIO9 high. R4 stands outboard of mux 1,
+          the only spot GPIO2 reaches that is clear of the module; R5 and R6 straddle the LED's
+          line beside the mux. */}
       {(
         [
-          ["R4", "net.IO2", ESP.x + 1.99, ESP_ROW_Y, 0],
-          ["R5", "net.IO8", 39.36, 16.95, 0],
-          ["R6", "net.IO9", 38.86, 18.0, 0],
+          ["R4", "net.IO2", 48.0, 24.4, 180],
+          ["R5", "net.IO8", 39.0, 17.25, 0],
+          ["R6", "net.IO9", 39.0, 18.3, 0],
         ] as const
       ).map(([name, net, pcbX, pcbY, pcbRotation], i) => (
         <resistor
@@ -351,12 +353,13 @@ export default () => (
           connections={{ pin2: "net.V3V3", pin1: net }}
         />
       ))}
-      {/* Status LED, ESPHome status_led. */}
+      {/* Status LED, ESPHome status_led. R7 stands at the top of the corridor, and the LED
+          beside mux 1, straddling the 3V3 line, with its cathode at the GND line there. */}
       <resistor
         name="R7"
-        pcbX={40.03}
-        pcbY={ESP_ROW_Y}
-        pcbRotation={0}
+        pcbX={39.6}
+        pcbY={15.75}
+        pcbRotation={90}
         resistance="1k"
         footprint={FP_0402}
         supplierPartNumbers={{ jlcpcb: ["C11702"] }}
@@ -367,8 +370,8 @@ export default () => (
       />
       <led
         name="LED1"
-        pcbX={42.335}
-        pcbY={15.26}
+        pcbX={39.375}
+        pcbY={19.4}
         pcbRotation={0}
         color="red"
         footprint={FP_LED_0603}
