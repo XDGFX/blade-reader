@@ -20,6 +20,7 @@ import {
   ESP,
   ESP_ROW_Y,
   GROUND_NUT,
+  MUX_2,
   OUTLINE,
   wayX,
   Y_SHIFT,
@@ -35,8 +36,6 @@ const ESP_GND_PINS = [
 // Between ways 3 and 4, above the channel, so way 3's divider stands beside its diode like the
 // others and its line can drop into the channel.
 const Q1 = { x: -0.4, y: 7.8 }
-/** Centre of the second multiplexer, in the way 6 ear. */
-const MUX_2 = { x: -43.7, y: 14.17 }
 
 const divider = (n: number) => dividerAt(n, wayX(n))
 
@@ -200,9 +199,10 @@ export default () => (
         connections={{ pin1: "net.TEMP", pin3: "net.TEMP", pin2: "net.GND" }}
       />
       {/* Mux 2, for ways 4–6, in the way 6 ear above the ground nut. VDD and the selects face
-          the panel edge. X5 and X7 are the spares: with INH, VEE and VSS they make an all-GND
-          run at the row's −X end, so nothing escapes into the corner kept clear for the
-          parts-face silk. */}
+          the panel edge. Its inputs are in the order the lines leave the channel
+          (lib/routes.tsx), so none cross. X5 and X7 are the spares: with INH, VEE and VSS they
+          make an all-GND run at the row's −X end, so nothing escapes into the corner kept
+          clear for the parts-face silk. */}
       <CD4051BM96
         name="U4"
         pcbX={MUX_2.x}
@@ -212,12 +212,12 @@ export default () => (
         schY={-16}
         schSectionName="Adc"
         connections={{
-          X0: "net.S4_SENSE",
+          X3: "net.S4_SENSE",
+          X0: "net.S4_VOLTS",
           X1: "net.S5_SENSE",
-          X2: "net.S6_SENSE",
-          X3: "net.S4_VOLTS",
-          X4: "net.S5_VOLTS",
-          X6: "net.S6_VOLTS",
+          X6: "net.S5_VOLTS",
+          X4: "net.S6_SENSE",
+          X2: "net.S6_VOLTS",
           X5: "net.GND",
           X7: "net.GND",
           X: "net.ADC2",
@@ -413,14 +413,14 @@ export default () => (
       />
 
       {/* ── Test pads ────────────────────────────────────────────────────────── */}
-      {/* One behind each nut, clear of the copper paths beside it. */}
+      {/* Behind way 2's nut. 3V3 is on the way 1 side, where its trace arrives from the ear. */}
       {(
         [
           ["TP1", "net.IO0", wayX(2) - 2.5, 22.6],
           ["TP2", "net.IO1", wayX(2), 22.6],
-          ["TP4", "net.V3V3", wayX(2) - 2.5, 24.4],
+          ["TP4", "net.V3V3", wayX(2) + 2.5, 24.4],
           ["TP5", "net.VSUP", wayX(2), 24.4],
-          ["TP6", "net.GND", wayX(2) + 2.5, 24.4],
+          ["TP6", "net.GND", wayX(2) - 2.5, 24.4],
         ] as const
       ).map(([name, net, pcbX, pcbY], i) => (
         <testpoint

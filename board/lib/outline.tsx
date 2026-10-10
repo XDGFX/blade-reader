@@ -49,6 +49,8 @@ export const ESP_ROW_Y = ESP.y + 7.42
 // corner is chamfered at 45° back to the body's corner, starting 2 mm above the ear's top, which
 // leaves the multiplexer 0.3 mm clear of the chamfer.
 export const CHAMFER = END - 2
+/** Centre of the second multiplexer, lying along the strip above the ground nut. */
+export const MUX_2 = { x: -43.7, y: 14.17 }
 
 export type Pt = { x: number; y: number }
 

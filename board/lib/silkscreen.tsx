@@ -333,7 +333,7 @@ const unicorn = (ox: number, oy: number, k: number) =>
 /** Pin-1 dots, Ø0.46, so a dot placed 0.5 off its pad keeps 0.25 clear. */
 const PIN1_DOTS: [number, number][] = [
   [92.765, 8.365], // U2
-  [29.96, 5.85], // U3
+  [27.96, 5.4], // U3
   [82.91, 20.39], // U11
   [69.55, 20.39], // U12
   [56.19, 20.39], // U13
@@ -357,7 +357,7 @@ const CATHODE_BARS: [number, number, number, number][] = [
 const DESIGNATORS: [string, number, number][] = [
   ["U1", 91.325, 16.3],
   ["U2", 97.53, 1.36],
-  ["U3", 25.2, 4.373],
+  ["U3", 23.3, 4.373],
   ["D1", 38.53, 6.494],
   ["D2", 75.8, 5.222],
   ["D11", 80.84, 24.994],
