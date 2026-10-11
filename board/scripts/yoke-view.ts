@@ -1,7 +1,8 @@
 // Draws the yoke and two rev A strips fitted to a 12-way ST Blade, seen from the ring face as
 // installed, for issue #52. The strips' outline, holes and silk are read from a built
-// circuit.json of the strip; the yoke's outline is yoke.circuit.tsx and its silk is a first take
-// laid out here, not a design. Run in board/: bun scripts/yoke-view.ts [strip circuit.json]
+// circuit.json of the strip, which is the tag rev-a-strip: check it out as a worktree and run
+// `bun run silk` in its board/. The yoke's outline is index.circuit.tsx and its silk is a first
+// take laid out here, not a design. Run in board/: bun scripts/yoke-view.ts <strip circuit.json>
 //
 // Everything is drawn in panel coordinates, in mm: c across from the centreline and a along
 // from the positive end. The sheets are drawn as the panel is fitted, positive end down.
@@ -23,7 +24,7 @@ import {
   text,
   turn,
 } from "../lib/silkscreen"
-import { A_OUTER, CHAMFER, CLAMPS, GROUND_NUT, HALF_WIDTH, NUTS, OUTLINE, PANEL_END, TOOLING, WAYS_A, pcb } from "../yoke.circuit"
+import { A_OUTER, CHAMFER, CLAMPS, GROUND_NUT, HALF_WIDTH, NUTS, OUTLINE, PANEL_END, TOOLING, WAYS_A, pcb } from "../index.circuit"
 
 type Pt = { x: number; y: number }
 const P = (x: number, y: number): Pt => ({ x, y })
@@ -169,7 +170,8 @@ const feed = (a: number, dir: 1 | -1, to: number, colour: string) => {
 // ── Two strips, from the strip's built circuit.json ────────────────────────────────────────
 
 type El = Pt & Record<string, any>
-const stripJson = process.argv[2] ?? "../../../../board/dist/index/circuit.json"
+const stripJson = process.argv[2]
+if (!stripJson) throw new Error("usage: bun scripts/yoke-view.ts <the strip's circuit.json, built from rev-a-strip>")
 const strip: El[] = JSON.parse(readFileSync(stripJson, "utf8"))
 const stripHoles = strip.filter((e) => e.type === "pcb_plated_hole")
 const stripClamps = stripHoles.filter((e) => e.hole_diameter < 6)

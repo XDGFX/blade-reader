@@ -3,9 +3,23 @@
 // ring face (tscircuit's bottom) may carry only that way's load copper. Vias count on both faces.
 // Reports the swung keepout, the goal, and fails on the straight-out keepout, the minimum.
 // Run after a routed build: `bun run keepout`.
+//
+// Waiting for the yoke's pours and routing: it still measures the strip's six nuts, with their
+// tongues running out in +Y, so it refuses to run until it is given the yoke's twelve.
 
 import { readFileSync } from "node:fs"
-import { NUT_Y, wayX, X_SHIFT, Y_SHIFT } from "../lib/outline"
+
+const WAITING = true as boolean
+if (WAITING) {
+  console.error("keepout: not yet written for the yoke; waits for its pours and routing")
+  process.exit(2)
+}
+
+// The strip's nuts, in its own coordinates.
+const NUT_Y = 14
+const wayX = (n: number) => 33.4 - (n - 1) * 13.36
+const X_SHIFT = -0.895
+const Y_SHIFT = -7.5
 
 const circuit: any[] = JSON.parse(readFileSync("dist/index/circuit.json", "utf8"))
 const of = (type: string) => circuit.filter((e) => e.type === type)

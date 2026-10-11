@@ -1,10 +1,16 @@
 // One way: finger → CC6905 → output nut, plus the way's diode into the supply node.
+//
+// The circuit is the yoke's. The placement is still the strip's, for a body 28 mm deep with its
+// nut 14 out: it waits for the arm, 16.7 deep with its nut 10.7 out, to be placed.
 
 import { CC6905S8_3FB030 } from "../imports/CC6905S8_3FB030"
 import { SMTSO4040CTJ } from "../imports/SMTSO4040CTJ"
 import { SS210 } from "../imports/SS210"
-import { CLAMP_Y, NUT_Y, type Pt } from "./outline"
+import { CLAMP_Y, type Pt } from "./outline"
 import { Finger, FP_0402 } from "./parts"
+
+/** The output nut's centre, out from the panel edge. */
+const NUT_Y = 14
 
 // Schematic spacing between ways.
 export const WAY_PITCH = 6

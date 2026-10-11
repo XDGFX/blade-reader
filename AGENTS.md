@@ -6,8 +6,9 @@ reopen a decision there without saying so explicitly.
 
 ## Vocabulary
 
-Use the terms in `GLOSSARY.md` (fuse panel, way, strip, finger, body, parts face, ring face),
-and none of the words it says to avoid.
+Use the terms in `GLOSSARY.md` (fuse panel, way, yoke, arm, chin, finger, body, parts face, ring
+face), and none of the words it says to avoid. The board is the yoke, rev B. The strip is rev A,
+shelved at the tag `rev-a-strip`: read it there, don't bring it back into `board/`.
 
 ## Conventions
 

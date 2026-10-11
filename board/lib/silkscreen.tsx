@@ -1,9 +1,8 @@
-// Silkscreen for both faces: white on black mask. The designs are issue #24 (ring face) and
-// issue #28 (parts face), drawn on the real outline on the prototype branches they link.
+// Silkscreen drawing primitives: white on black mask. The yoke's two faces are not laid out yet;
+// scripts/yoke-view.ts holds a first take of the ring face.
 //
-// Each face is laid out in its own coordinates, as seen from that face, in mm with y running
-// down from the body's outboard edge: the ring face has way 1 on the left, the parts face on
-// the right. RING and PARTS map them to the board's (lib/outline.tsx).
+// Art is drawn in a face's own coordinates, in mm with y running down, then mapped to the
+// board's with mapArt and placed with <Face>.
 //
 // tscircuit's own text strokes at 0.09 × its size, too thin to print below about 1.7 mm, and it
 // can't fill a path or a circle. So text is drawn here from its stroke alphabet at 0.15 mm,
@@ -15,8 +14,7 @@ import { lineAlphabet } from "@tscircuit/alphabet"
 import { Fragment } from "react"
 import kanaJson from "./art/kana.json"
 import logoJson from "./art/logo.json"
-import { BOARD_HALF, CHAMFER, DEPTH, type Pt, wayX, X_SHIFT, Y_SHIFT } from "./outline"
-import { bandX, SENSOR } from "./way"
+import type { Pt } from "./outline"
 
 /** JLC's minimum silk line. */
 const SW = 0.15
@@ -26,16 +24,6 @@ const SPACE = 0.4
 const DEGREE = 0.2
 /** The alphabet's baseline, in em. */
 const BASELINE = 0.051
-
-/**
- * The datum both faces measure from: y from 25.5 out, and x from 18.6 past an end way's centre.
- * What sits against the parts stays put when the body grows; what belongs to the outboard edge
- * is placed OUT beyond the datum.
- */
-const TOP = 25.5 + Y_SHIFT
-const OUT = DEPTH - 25.5
-const RING = ({ x, y }: Pt): Pt => ({ x: BOARD_HALF + X_SHIFT - x, y: TOP - y })
-const PARTS = ({ x, y }: Pt): Pt => ({ x: x - BOARD_HALF + X_SHIFT, y: TOP - y })
 
 type Stroke = { pts: Pt[]; w: number }
 /** Strokes and filled polygons; a fill is a set of rings, nested rings cut holes. */
@@ -218,33 +206,7 @@ const chevron = (x: number, y: number, solid: boolean) => {
   return solid ? art([], [[pts]]) : art([{ pts: [...pts, pts[0]], w: SW }])
 }
 
-// ── Ring face ──────────────────────────────────────────────────────────────────────────────
-
-const PITCH = 13.36
-/** Way centres and the gaps between them, x from the ring face's way 1 end. */
-const RING_WAYS = [0, 1, 2, 3, 4, 5].map((i) => BOARD_HALF - 33.4 + i * PITCH)
-const RING_GAPS = [0, 1, 2, 3, 4].map((i) => RING_WAYS[i] + PITCH / 2)
-
-/** The spec plate, one fact per gap between chevron columns: label, then two value lines. */
-const CELLS = [
-  ["REVISION", "A", "2026-10"],
-  ["DERATE", "20 A PER WAY", "ABOVE 40 °C"],
-  ["OUTPUT NUT", "M4", "1.0-1.2 Nm"],
-  ["LICENCE", "CERN-OHL-S-2.0", ""],
-  ["SOURCE", "XDGFX", "/BLADE-READER"],
-]
-const plate = () =>
-  join(
-    ...CELLS.map(([label, a, b], i) => {
-      const x = RING_GAPS[i]
-      return join(
-        text(x, 18.4, 0.8, label, { anchor: "middle", ls: 0.06 }),
-        line([[x - 3, 18.95], [x + 3, 18.95]]),
-        text(x, 20.6, 1, a, { anchor: "middle" }),
-        text(x, 22.3, 1, b, { anchor: "middle" }),
-      )
-    }),
-  )
+// ── Art ────────────────────────────────────────────────────────────────────────────────────
 
 const earth = (x: number, y: number) =>
   join(
@@ -253,16 +215,6 @@ const earth = (x: number, y: number) =>
     line([[x - 0.65, y + 1.45], [x + 0.65, y + 1.45]], 0.2),
     line([[x - 0.3, y + 1.9], [x + 0.3, y + 1.9]], 0.2),
   )
-
-/** The banner's quote, two lines a finger: the first sentence on ways 1–3, the second on 4–6. */
-const FINGER_LINES = [
-  ["I'VE SEEN", "THINGS"],
-  ["YOU", "PEOPLE"],
-  ["WOULDN'T", "BELIEVE."],
-  ["FRIDGES", "DRAWING"],
-  ["AMPS OFF", "THE SHOULDER"],
-  ["OF", "ORION."],
-]
 
 // The Southern Cross at its stars' real positions: RA and Dec in degrees, relative size. RA is
 // foreshortened by cos(Dec) so the cross keeps its tall shape, Gacrux at the top.
@@ -281,43 +233,7 @@ const crux = (ox: number, oy: number, h: number) => {
   )
 }
 
-/** The chamfer, in ring-face coordinates: y = x − CHAMFER_AT. */
-const CHAMFER_AT = 2 * BOARD_HALF - CHAMFER + OUT
-/** A block laid along the chamfer, 0.9 mm in: local x runs down the chamfer, y into the board. */
-const alongChamfer = (x0: number, a: Art) =>
-  mapArt(a, turn(x0, x0 - CHAMFER_AT + 0.9 * Math.SQRT2, 45))
-
-const ringFace = (): Art =>
-  join(
-    logo(28.5, 1.1 - OUT, 58),
-    frame(1.9, 1.2 - OUT, 6.4, 24.9, 1.1),
-    kana(5.1, 2.63 - OUT, 2.55, 2.83),
-    text(23.2, 4.6 - OUT, 1.0, "PROG"),
-    ...RING_WAYS.flatMap((x, i) => [17.3, 19.4, 21.5].map((y) => chevron(x, y, i === 0))),
-    plate(),
-    earth(96.6, 12.2),
-    text(98.2, 14.2, 1.2, "GND"),
-    ...RING_WAYS.map((x, i) =>
-      join(
-        text(x, 27.25, 1, FINGER_LINES[i][0], { anchor: "middle" }),
-        text(x, 28.85, 1, FINGER_LINES[i][1], { anchor: "middle" }),
-      ),
-    ),
-    alongChamfer(
-      95.4,
-      join(
-        text(5.1, 1.3, 0.8, "DESIGNED IN", { anchor: "end" }),
-        text(5.1, 2.5, 0.8, "AUSTRALIA", { anchor: "end" }),
-        crux(6.5, 0.6, 2.0),
-      ),
-    ),
-  )
-
-// ── Parts face ─────────────────────────────────────────────────────────────────────────────
-
-const PARTS_WAYS = RING_WAYS.map((x) => 2 * BOARD_HALF - x)
-
-// Gaff's origami unicorn, about 4 mm tall, in the triangle between the chamfer, U4 and C4/C5.
+// Gaff's origami unicorn, 10.8 × 12 at k = 1.
 const UNICORN: [number, number][][] = [
   [[1.6, 6], [7.2, 4.8], [7.8, 7.3], [2.2, 7.6], [1.6, 6]], // body
   [[1.6, 6], [7.8, 7.3]], // fold
@@ -333,53 +249,8 @@ const UNICORN: [number, number][][] = [
 const unicorn = (ox: number, oy: number, k: number) =>
   join(...UNICORN.map((p) => line(p.map(([x, y]) => [ox + x * k, oy + y * k]))))
 
-// Marks placed beside the current pads by the prototype's rules, 0.25 mm clear of copper. If a
-// part moves, scripts/silk.ts fails until they follow it.
-/** Pin-1 dots, Ø0.46, so a dot placed 0.5 off its pad keeps 0.25 clear. */
-const PIN1_DOTS: [number, number][] = [
-  [101.06, -1.6], // U2, beside pin 1's pad
-  [27.96, 5.4], // U3
-  [82.91, 20.39], // U11
-  [69.55, 20.39], // U12
-  [56.19, 20.39], // U13
-  [41.83, 20.39], // U14
-  [28.47, 20.39], // U15
-  [15.11, 20.39], // U16
-  [53.36, 16.56], // Q1
-  [105.21, 8.1], // U1, under the module's corner at pin 1
-  [82.743, -1.42], // J1, outboard of pin 1
-  [12.755, 7.11], // U4, outboard of pin 1
-]
-/** Cathode bars, 0.25 wide, beside the cathode pad on the side away from the anode. */
-const CATHODE_BARS: [number, number, number, number][] = [
-  [35.226, 2.13, 35.226, 5.07], // D1
-  [68.4, 3.95, 68.4, 5.95], // D2
-  // D11–D16
-  ...[80.56, 67.2, 53.84, 39.48, 26.12, 12.76].map((x): [number, number, number, number] => [x, 17.05, x + 2, 17.05]),
-]
-/** LED1's cathode: a 0.15 tick along the outboard side of its pad, at the end away from the anode. */
-const LED1_CATHODE: [number, number][] = [
-  [102.66, 0.67],
-  [103.11, 0.67],
-]
-/** Designators, 0.8 mm, only where polarity or pin 1 matters: start of the baseline. */
-const DESIGNATORS: [string, number, number][] = [
-  ["U1", 101.31, 13.35], // under the module: the ear has no clear spot beside it
-  ["U2", 97.53, 1.36],
-  ["U3", 23.3, 4.373],
-  ["D1", 38.53, 6.494],
-  ["D2", 75.8, 5.222],
-  ["D11", 80.84, 24.994],
-  ["D12", 67.48, 24.994],
-  ["D13", 54.12, 24.994],
-  ["D14", 39.76, 24.994],
-  ["D15", 26.4, 24.994],
-  ["D16", 13.04, 24.994],
-  ["Q1", 49.91, 20.65],
-  ["U4", 13.45, 8.1],
-]
-
-const bar = (x0: number, y0: number, x1: number, y1: number) => {
+/** A cathode bar, 0.25 wide. */
+const bar =(x0: number, y0: number, x1: number, y1: number) => {
   // A round-capped stroke: pull the ends in by half its width to keep the bar's length.
   const len = Math.hypot(x1 - x0, y1 - y0)
   const t = 0.125 / len
@@ -391,24 +262,6 @@ const bar = (x0: number, y0: number, x1: number, y1: number) => {
     0.25,
   )
 }
-
-const partsFace = (): Art =>
-  join(
-    unicorn(5.69, 3.06, 0.36),
-    logo(50.6, 0.9, 17),
-    // JLC replaces this with the order number.
-    roundRect(35.4, 0.45, 13.4, 1.3, 0.5, SW),
-    text(42.1, 1.4, 0.8, "JLCJLCJLCJLC", { anchor: "middle" }),
-    // Above the bare copper, which starts 3.0 into the panel.
-    ...PARTS_WAYS.flatMap((x, i) => [24.55, 26.25].map((y) => chevron(x, y, i === 0))),
-    ...[1, 2, 3, 4, 5, 6].map((n) =>
-      text(bandX(n, wayX(n)) + SENSOR.dx + BOARD_HALF, 17.2, 0.8, `S${n}`, { anchor: "middle", w: 0.2 }),
-    ),
-    ...PIN1_DOTS.map(([x, y]) => dot(x, y, 0.46)),
-    ...CATHODE_BARS.map(([x0, y0, x1, y1]) => bar(x0, y0, x1, y1)),
-    line(LED1_CATHODE),
-    ...DESIGNATORS.map(([name, x, y]) => text(x, y, 0.8, name)),
-  )
 
 // ── Output ─────────────────────────────────────────────────────────────────────────────────
 
@@ -424,6 +277,7 @@ const svgUrl = (rings: Pt[][]) => {
   return { url: `data:image/svg+xml;base64,${btoa(svg)}`, x: (x0 + x1) / 2, y: (y0 + y1) / 2, w: x1 - x0, h: y1 - y0 }
 }
 
+/** One face's silk. Place it at board level, its art already in the board's coordinates. */
 const Face = ({ a, layer }: { a: Art; layer: "top" | "bottom" }) => (
   <>
     {a.strokes.map((s, i) => (
@@ -449,14 +303,5 @@ const Face = ({ a, layer }: { a: Art; layer: "top" | "bottom" }) => (
   </>
 )
 
-/** Both faces' silk. Place it at board level: its coordinates are the board's. */
-export const Silkscreen = () => (
-  <>
-    <Face a={mapArt(ringFace(), RING)} layer="bottom" />
-    <Face a={mapArt(partsFace(), PARTS)} layer="top" />
-  </>
-)
-
-// The drawing primitives, for scripts/yoke-view.ts, which lays out a first take of the yoke's silk.
-export { art, chevron, crux, earth, frame, join, kana, line, logo, mapArt, ring, text, turn }
+export { art, bar, chevron, crux, dot, earth, Face, frame, join, kana, line, logo, mapArt, ring, roundRect, text, turn, unicorn }
 export type { Art }

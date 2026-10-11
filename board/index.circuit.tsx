@@ -1,453 +1,135 @@
-// Blade Reader rev A: one 6-way strip.
-// Decisions behind every part are in docs/design.md. Part codes are LCSC/JLCPCB.
+// The yoke: one board for all 12 ways of a 12-way ST Blade. So far outline and holes only: no
+// schematic, placement or routing.
 //
-// PCB coordinates are explained in lib/outline.tsx. The body is 28.0 mm deep, with an ear past
-// each end way. The way 1 ear (+X) has the ESP32 low down, antenna past the board end, with
-// mux 1 and its small parts above it. The way 6 ear (−X) has the ground nut low down and mux 2
-// above it. Everything else sits in the band behind the nuts: the programming footprint over
-// way 1, test pads over way 2, then the supply over ways 4–6.
+// Panel coordinates, in mm, as the research notes give them: `a` runs along the fuse panel from
+// its positive end, so the chin is at negative a, and `c` runs across from the centreline.
+// PCB coordinates are seen from the parts face (tscircuit's top) with the chin at the top:
+// X = c mirrored, which the symmetric outline hides, and Y = A_MID − a.
 
-import { CD4051BM96 } from "./imports/CD4051BM96"
-import { ESP32_C3_WROOM_02_N4 } from "./imports/ESP32_C3_WROOM_02_N4"
-import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
-import { SS210 } from "./imports/SS210"
-import { GroundCopper, WayCopper } from "./lib/copper"
-import { FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
-import { Routes } from "./lib/routes"
-import { Silkscreen } from "./lib/silkscreen"
-import { Supply } from "./lib/supply"
-import {
-  DEPTH,
-  ESP,
-  ESP_ROW_Y,
-  espPinX,
-  GROUND_NUT,
-  MUX_2,
-  OUTLINE,
-  wayX,
-  X_SHIFT,
-  Y_SHIFT,
-} from "./lib/outline"
-import { dividerAt, Way, WAY_PITCH } from "./lib/way"
+import { finger, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
 
-const WAYS = [1, 2, 3, 4, 5, 6]
+const PANEL_HALF = 84.2 / 2
+/** Arm depth from the panel edge, and the output nut row's distance out from it (#48, revised). */
+export const ARM_DEPTH = 16.7
+const NUT_OUT = 10.7
+export const HALF_WIDTH = PANEL_HALF + ARM_DEPTH
 
-// The way 1 ear's small parts: [X, Y above the module's lands, rotation].
-// The caps for 3V3, EN and IO4 stand above their lands, courtyards against the module's, with
-// mux 1 beside them. The pocket past mux 1 at the board end takes the parts whose lines come up
-// between the module's outboard lands: IO3's cap, the LED and its resistor and the IO2 pull-up,
-// then the module's bulk cap and mux 1's cap on the 3V3 line round the outboard edge. The EN,
-// IO8 and IO9 pull-ups stand beside the module's blind end, on the lines to J1.
-const CAP_ROW = 1.21
-const EAR: Record<string, readonly [number, number, number]> = {
-  C7: [espPinX(0), CAP_ROW, 90],
-  C8: [espPinX(1), CAP_ROW, 90],
-  C10: [espPinX(2), CAP_ROW, 90],
-  U2: [43.8, 4.24, 180],
-  C41: [espPinX(2), 3.9, -90],
-  R7: [52.2, 3.3, 0],
-  LED1: [51.8, 4.6, 180],
-  R4: [52.2, 5.9, 0],
-  C6: [51.5, 7.1, 180],
-  C9: [49.6, 5.81, 90],
-  R3: [38.14, -0.4, 180],
-  R6: [38.7, -7.93, -90],
-  R5: [38.7, -9.89, 90],
+/** Ways 11–12 to ways 1–2, along. */
+export const WAYS_A = [0, 1, 2, 3, 4, 5].map((k) => 27.83 + k * WAY_PITCH_PCB)
+/** The arms' open end: where the last way's column ends. No ear, so every multiplexer is on the chin. */
+export const A_OPEN = WAYS_A[5] + WAY_PITCH_PCB / 2
+/** Where the ear past ways 11–12 ends and the arm steps 1 mm clear of the panel's side. */
+const A_EAR = WAYS_A[0] - END
+const DECK_CLEARANCE = 1
+
+// The chin wraps the panel's positive end. It lies in the feed lug's own height band, so the lug
+// and cable have to pass over the ring face.
+// The panel's positive end in plan, as fuse_block_12 has it over its whole height: one half,
+// across then along. Flat for 4.5 either side of the centreline, bowed back 3.8 by 39 across,
+// then turned into the side within about 4.
+export const PANEL_END: Pt[] = [
+  [0, 0.05], [4.5, 0.05], [13, 0.41], [20, 1.0], [25, 1.56], [30, 2.21], [35, 3.04], [38, 3.56],
+  [39, 3.77], [39.5, 3.91], [40, 4.18], [40.5, 4.48], [41, 4.9], [41.5, 5.48], [42, 6.43], [PANEL_HALF, 8],
+].map(([x, y]) => ({ x, y }))
+/** The chin's inner edge: the panel's end, DECK_CLEARANCE off it all the way round. */
+const INNER: Pt[] = PANEL_END.map((p, i) => {
+  // Each point moves out along the mean of its two edges' normals; the ends' are the centreline's and the side's.
+  const normal = (a: Pt, b: Pt) => {
+    const len = Math.hypot(b.x - a.x, b.y - a.y)
+    return { x: (b.y - a.y) / len, y: -(b.x - a.x) / len }
+  }
+  const n0 = i === 0 ? { x: 0, y: -1 } : normal(PANEL_END[i - 1], p)
+  const n1 = i === PANEL_END.length - 1 ? { x: 1, y: 0 } : normal(p, PANEL_END[i + 1])
+  const k = DECK_CLEARANCE / (1 + n0.x * n1.x + n0.y * n1.y)
+  return { x: p.x + (n0.x + n1.x) * k, y: p.y + (n0.y + n1.y) * k }
+})
+/** The chin's inner edge on the centreline. */
+const A_CHIN_FLOOR = INNER[0].y
+export const CHIN_DEPTH = 20
+export const A_OUTER = A_CHIN_FLOOR - CHIN_DEPTH
+/** Each outer corner of the chin is cut back this far across and along. */
+export const CHAMFER = { across: 35, along: 12 }
+/** The cut across each arm's outer corner at the open end. */
+const END_CHAMFER = 4
+
+// The +c half of the outline, from the chin's inner edge on the centreline to its outer edge.
+const half = (): Pt[] => {
+  // Rev A's finger, walked the other way: its X is a, its Y is outboard of the panel edge.
+  const fingers = WAYS_A.flatMap((a) => finger(a).reverse().map((p) => ({ x: PANEL_HALF + p.y, y: p.x })))
+  return [
+    ...INNER,
+    { x: PANEL_HALF + DECK_CLEARANCE, y: A_EAR },
+    { x: PANEL_HALF, y: A_EAR + DECK_CLEARANCE },
+    ...fingers,
+    { x: PANEL_HALF, y: A_OPEN },
+    { x: HALF_WIDTH - END_CHAMFER, y: A_OPEN },
+    { x: HALF_WIDTH, y: A_OPEN - END_CHAMFER },
+    { x: HALF_WIDTH, y: A_OUTER + CHAMFER.along },
+    { x: HALF_WIDTH - CHAMFER.across, y: A_OUTER },
+  ]
 }
-const ear = (name: string) => {
-  const [pcbX, dy, pcbRotation] = EAR[name]
-  return { pcbX, pcbY: ESP_ROW_Y + dy, pcbRotation }
+
+const A_MID = (A_OUTER + A_OPEN) / 2
+/** Panel coordinates to PCB coordinates. */
+export const pcb = (c: number, a: number): Pt => ({ x: -c, y: A_MID - a })
+
+const right = half()
+export const OUTLINE = [...right, ...right.slice(1).reverse().map((p) => ({ x: -p.x, y: p.y }))].map((p) =>
+  pcb(p.x, p.y),
+)
+
+const sides = [1, -1] as const
+/** Way screw holes, 8.52 into the panel. */
+export const CLAMPS = sides.flatMap((s) => WAYS_A.map((a) => pcb(s * (PANEL_HALF + CLAMP_Y), a)))
+/** Output nuts. */
+export const NUTS = sides.flatMap((s) => WAYS_A.map((a) => pcb(s * (PANEL_HALF + NUT_OUT), a)))
+
+/** A point on the chamfer at side `s`: `along` from its middle towards the side edge, `out` past it. */
+const onChamfer = (s: 1 | -1, along: number, out: number): Pt => {
+  const len = Math.hypot(CHAMFER.across, CHAMFER.along)
+  const [uc, ua] = [CHAMFER.across / len, CHAMFER.along / len]
+  return pcb(
+    s * (HALF_WIDTH - CHAMFER.across / 2 + uc * along + ua * out),
+    A_OUTER + CHAMFER.along / 2 + ua * along - uc * out,
+  )
 }
-/** J1 keeps its distance from the outboard edge, which is the pogo clamp's reach. */
-const J1_Y = DEPTH - 3.9
+const box = (s: 1 | -1, mid: number, half: number, inboard: number, out: number): Pt[] =>
+  [[-half, -inboard], [half, -inboard], [half, out], [-half, out], [-half, -inboard]].map(([u, n]) =>
+    onChamfer(s, mid + u, n),
+  )
 
-// Between ways 3 and 4, above the channel, so way 3's divider stands beside its diode like the
-// others and its line can drop into the channel.
-const Q1 = { x: -0.4, y: 7.8 }
+// ESP32-C3-MINI-1 square to the chamfer at −X, its 11.2 mm pad area on the board and its antenna
+// 5.4 past the chamfer (#47). It sits 4 mm towards the side edge from the chamfer's middle, which
+// keeps the antenna inside the bounding rectangle.
+const MODULE_WIDTH = 13.2
+const ANTENNA = 5.4
+const KEEPOUT = 15
+const MODULE_AT = 4
+export const MODULE = box(1, MODULE_AT, MODULE_WIDTH / 2, 11.2, ANTENNA)
+/** No nut, inductor, test pad or tall part within 15 mm of the antenna. */
+export const ANTENNA_KEEPOUT = box(1, MODULE_AT, MODULE_WIDTH / 2 + KEEPOUT, KEEPOUT, ANTENNA)
 
-const divider = (n: number) => dividerAt(n, wayX(n))
+/** The one ground nut, 7 mm in from the middle of the other chamfer. */
+export const GROUND_NUT = onChamfer(-1, 0, -7)
+/** JLC tooling holes, Ø1.152: one on the chin near the ground nut, one at the far arm's open end, clear of every ring keepout. */
+export const TOOLING = [pcb(-18, A_OUTER + 2.5), pcb(PANEL_HALF + 3, A_OPEN - 2.5)]
 
-const R_10K = { resistance: "10k", footprint: FP_0402, supplierPartNumbers: { jlcpcb: ["C25744"] } }
+const Drill = ({ name, at, diameter }: { name: string; at: Pt; diameter: number }) => (
+  <hole name={name} pcbX={at.x} pcbY={at.y} diameter={diameter} />
+)
 
 export default () => (
-  <board
-    outline={OUTLINE}
-    thickness="1.6mm"
-    solderMaskColor="black"
-    silkscreenColor="white"
-    nominalTraceWidth="0.25mm"
-    minViaHoleDiameter="0.3mm"
-    minViaPadDiameter="0.6mm"
-    defaultViaTenting="top_and_bottom_tented"
-    pcbStyle={{ viaHoleDiameter: "0.3mm", viaPadDiameter: "0.6mm" }}
-    routeRemaining={false}
-  >
-    <schematicsection name="Ways" displayName="Ways 1–6" />
-    <schematicsection name="Supply" displayName="Supply" />
-    <schematicsection name="Mcu" displayName="ESP32-C3 and programming" />
-    <schematicsection name="Adc" displayName="Multiplexers and ADC" />
-
-    <group name="strip" pcbX={X_SHIFT} pcbY={Y_SHIFT}>
-
-      {/* ── Ways ─────────────────────────────────────────────────────────────── */}
-      {WAYS.map((n) => (
-        <Way
-          key={n}
-          n={n}
-          x={wayX(n)}
-          divider={divider(n)}
-          schX={-30}
-          schY={15 - (n - 1) * WAY_PITCH}
-        />
-      ))}
-      {WAYS.map((n) => (
-        <WayCopper key={n} n={n} cx={wayX(n)} dividerVia={{ x: divider(n).x, y: 0.8 }} />
-      ))}
-      <GroundCopper />
-      <Routes dividers={WAYS.map(divider)} />
-
-      {/* Ground: a ring-terminated wire from this nut to the panel's negative bus. */}
-      <SMTSO4040CTJ
-        name="N7"
-        pcbX={GROUND_NUT.x}
-        pcbY={GROUND_NUT.y}
-        schX={-18}
-        schY={-24}
-        schSectionName="Ways"
-        connections={{ pin1: "net.GND" }}
-      />
-
-      {/* ── Supply ───────────────────────────────────────────────────────────── */}
-      <Supply schX={-8} schY={22} />
-
-      {/* ── Multiplexers and ADC ─────────────────────────────────────────────── */}
-      {/* Mux 1, for ways 1–3 and the temperature, above the module. Its inputs are in the order
-          the lines come up under the module (lib/routes.tsx), so none cross. Firmware follows
-          this schematic. X5 is the spare. */}
-      <CD4051BM96
-        name="U2"
-        {...ear("U2")}
-        schX={0}
-        schY={0}
-        schSectionName="Adc"
-        connections={{
-          X3: "net.S1_SENSE",
-          X7: "net.S1_VOLTS",
-          X0: "net.S2_SENSE",
-          X1: "net.S2_VOLTS",
-          X6: "net.S3_SENSE",
-          X2: "net.S3_VOLTS",
-          X4: "net.TEMP",
-          X5: "net.GND",
-          X: "net.ADC",
-          A: "net.MUX_S0",
-          B: "net.MUX_S1",
-          C: "net.MUX_S2",
-          INH: "net.GND",
-          VEE: "net.GND",
-          VSS: "net.GND",
-          VDD: "net.V3V3",
-        }}
-      />
-      <capacitor
-        name="C9"
-        {...ear("C9")}
-        capacitance="100nF"
-        footprint={FP_0402}
-        supplierPartNumbers={{ jlcpcb: ["C307331"] }}
-        schX={0}
-        schY={5}
-        schRotation={-90}
-        schSectionName="Adc"
-        connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
-      />
-      {/* At the ADC pin. Settles in under 5 ms per mux step: set ESPHome's mux delay to 5 ms
-          or more. The mux's on-resistance isolates it from the CC6905's 2.2 nF load limit. */}
-      <capacitor
-        name="C10"
-        {...ear("C10")}
-        capacitance="10nF"
-        footprint={FP_0402}
-        supplierPartNumbers={{ jlcpcb: ["C15195"] }}
-        schX={5}
-        schY={-5}
-        schRotation={90}
-        schSectionName="Adc"
-        connections={{ pin1: "net.ADC", pin2: "net.GND" }}
-      />
-      {/* The same for mux 2's common, on GPIO3. GPIO3 is on the module's panel-edge row, with no
-          room beside it, so its line crosses under the module on the ring face to the cap in
-          the pocket. */}
-      <capacitor
-        name="C41"
-        {...ear("C41")}
-        capacitance="10nF"
-        footprint={FP_0402}
-        supplierPartNumbers={{ jlcpcb: ["C15195"] }}
-        schX={5}
-        schY={-20}
-        schRotation={90}
-        schSectionName="Adc"
-        connections={{ pin1: "net.ADC2", pin2: "net.GND" }}
-      />
-      {/* Diode-connected transistor as the temperature sensor: about 265 µA through R10 gives
-          a Vbe near 0.65 V, falling about 2 mV/°C. Only the change since each way was zeroed
-          is used, so its part-to-part spread doesn't matter. A basic part, unlike any NTC.
-          Wired by pad number: the MMBT3904's SOT-23 is 1 = B, 2 = E, 3 = C, but tscircuit's
-          transistor names pin1 collector and pin3 emitter, so its pin labels would be wrong. */}
-      <resistor
-        name="R10"
-        pcbX={Q1.x + 0.4}
-        pcbY={Q1.y + 2.6}
-        pcbRotation={180}
-        {...R_10K}
-        schX={-5}
-        schY={-6}
-        schRotation={90}
-        schSectionName="Adc"
-        connections={{ pin2: "net.V3V3", pin1: "net.TEMP" }}
-      />
-      <transistor
-        name="Q1"
-        pcbX={Q1.x}
-        pcbY={Q1.y}
-        pcbRotation={-90}
-        type="npn"
-        footprint={FP_SOT23}
-        manufacturerPartNumber="MMBT3904"
-        supplierPartNumbers={{ jlcpcb: ["C20526"] }}
-        schX={-5}
-        schY={-9}
-        schSectionName="Adc"
-        connections={{ pin1: "net.TEMP", pin3: "net.TEMP", pin2: "net.GND" }}
-      />
-      {/* Mux 2, for ways 4–6, in the way 6 ear above the ground nut. VDD and the selects face
-          the panel edge. Its inputs are in the order the lines leave the channel
-          (lib/routes.tsx), so none cross. X5 and X7 are the spares: with INH, VEE and VSS they
-          make an all-GND run at the row's −X end, so nothing escapes into the corner kept
-          clear for the parts-face silk. */}
-      <CD4051BM96
-        name="U4"
-        pcbX={MUX_2.x}
-        pcbY={MUX_2.y}
-        pcbRotation={180}
-        schX={0}
-        schY={-16}
-        schSectionName="Adc"
-        connections={{
-          X3: "net.S4_SENSE",
-          X0: "net.S4_VOLTS",
-          X1: "net.S5_SENSE",
-          X6: "net.S5_VOLTS",
-          X4: "net.S6_SENSE",
-          X2: "net.S6_VOLTS",
-          X5: "net.GND",
-          X7: "net.GND",
-          X: "net.ADC2",
-          A: "net.MUX_S0",
-          B: "net.MUX_S1",
-          C: "net.MUX_S2",
-          INH: "net.GND",
-          VEE: "net.GND",
-          VSS: "net.GND",
-          VDD: "net.V3V3",
-        }}
-      />
-      <capacitor
-        name="C40"
-        pcbX={MUX_2.x + 3.7}
-        pcbY={9.3}
-        pcbRotation={180}
-        capacitance="100nF"
-        footprint={FP_0402}
-        supplierPartNumbers={{ jlcpcb: ["C307331"] }}
-        schX={0}
-        schY={-11}
-        schRotation={-90}
-        schSectionName="Adc"
-        connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
-      />
-
-      {/* ── ESP32-C3 ─────────────────────────────────────────────────────────── */}
-      {/* GPIO4 is the only ADC1 pin on the module's outboard row, so it reads mux 1 and GPIO3
-          reads mux 2. The selects run GPIO7, 6, 5 for A, B, C, so their lines nest on the way to
-          both muxes. GPIO0, GPIO10, GPIO18 and GPIO19 are unused. */}
-      <ESP32_C3_WROOM_02_N4
-        name="U1"
-        pcbX={ESP.x}
-        pcbY={ESP.y}
-        pcbRotation={-90}
-        schX={22}
-        schY={0}
-        schSectionName="Mcu"
-        connections={{
-          "3V3": "net.V3V3",
-          EN: "net.EN",
-          IO4: "net.ADC",
-          IO7: "net.MUX_S0",
-          IO6: "net.MUX_S1",
-          IO5: "net.MUX_S2",
-          IO1: "net.LED",
-          IO2: "net.IO2",
-          IO8: "net.IO8",
-          IO9: "net.IO9",
-          IO3: "net.ADC2",
-          RXD: "net.U0RXD",
-          TXD: "net.U0TXD",
-          GND: "net.GND",
-          EP: "net.GND",
-        }}
-      />
-      <capacitor
-        name="C6"
-        {...ear("C6")}
-        capacitance="10uF"
-        footprint={FP_0603}
-        supplierPartNumbers={{ jlcpcb: ["C19702"] }}
-        schX={14}
-        schY={10}
-        schRotation={-90}
-        schSectionName="Mcu"
-        connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
-      />
-      <capacitor
-        name="C7"
-        {...ear("C7")}
-        capacitance="100nF"
-        footprint={FP_0402}
-        supplierPartNumbers={{ jlcpcb: ["C307331"] }}
-        schX={15.5}
-        schY={10}
-        schRotation={-90}
-        schSectionName="Mcu"
-        connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
-      />
-      {/* EN: the module has no RC of its own. Also gives esptool's auto-reset a clean edge. */}
-      <resistor
-        name="R3"
-        {...ear("R3")}
-        {...R_10K}
-        schX={14}
-        schY={-6}
-        schRotation={90}
-        schSectionName="Mcu"
-        connections={{ pin2: "net.V3V3", pin1: "net.EN" }}
-      />
-      <capacitor
-        name="C8"
-        {...ear("C8")}
-        capacitance="1uF"
-        footprint={FP_0402}
-        supplierPartNumbers={{ jlcpcb: ["C52923"] }}
-        schX={14}
-        schY={-9}
-        schRotation={90}
-        schSectionName="Mcu"
-        connections={{ pin1: "net.EN", pin2: "net.GND" }}
-      />
-      {/* Strapping pins: normal boot needs GPIO2 and GPIO9 high. */}
-      {(
-        [
-          ["R4", "net.IO2"],
-          ["R5", "net.IO8"],
-          ["R6", "net.IO9"],
-        ] as const
-      ).map(([name, net], i) => (
-        <resistor
-          key={name}
-          name={name}
-          {...R_10K}
-          {...ear(name)}
-          schX={30 + i * 1.5}
-          schY={8}
-          schRotation={90}
-          schSectionName="Mcu"
-          connections={{ pin2: "net.V3V3", pin1: net }}
-        />
-      ))}
-      {/* Status LED, ESPHome status_led, on GPIO1. */}
-      <resistor
-        name="R7"
-        {...ear("R7")}
-        resistance="1k"
-        footprint={FP_0402}
-        supplierPartNumbers={{ jlcpcb: ["C11702"] }}
-        schX={30}
-        schY={-6}
-        schSectionName="Mcu"
-        connections={{ pin1: "net.LED", pin2: "net.LED_A" }}
-      />
-      <led
-        name="LED1"
-        {...ear("LED1")}
-        color="red"
-        footprint={FP_LED_0603}
-        supplierPartNumbers={{ jlcpcb: ["C2286"] }}
-        schX={33}
-        schY={-8}
-        schRotation={-90}
-        schSectionName="Mcu"
-        connections={{ anode: "net.LED_A", cathode: "net.GND" }}
-      />
-
-      {/* ── Programming ──────────────────────────────────────────────────────── */}
-      {/* ESP-PROG through a pogo clamp on J1's pads, power jumper at 5 V. The clamp slides on
-          from the board edge, so J1's column stays clear to the edge. Flash off the panel, or
-          with the ground wire fitted. */}
-      <ProgPads
-        name="J1"
-        pcbX={wayX(1)}
-        pcbY={J1_Y}
-        pcbRotation={0}
-        schX={38}
-        schY={0}
-        schSectionName="Mcu"
-        connections={{
-          EN: "net.EN",
-          VDD: "net.PROG_VDD",
-          TXD: "net.U0RXD",
-          GND: "net.GND",
-          RXD: "net.U0TXD",
-          IO0: "net.IO9",
-        }}
-      />
-      {/* Stops a live strip back-feeding 12–24 V into the ESP-PROG. */}
-      <SS210
-        name="D2"
-        pcbX={wayX(2)}
-        pcbY={20.55}
-        pcbRotation={0}
-        schX={38}
-        schY={5}
-        schSectionName="Mcu"
-        connections={{ anode: "net.PROG_VDD", cathode: "net.VSUP" }}
-      />
-
-      {/* ── Test pads ────────────────────────────────────────────────────────── */}
-      {/* Behind way 2's nut, 3V3 on the way 1 side, where its trace arrives from the ear. */}
-      {(
-        [
-          ["TP4", "net.V3V3", wayX(2) + 2.5, 24.4, 1.5],
-          ["TP5", "net.VSUP", wayX(2), 24.4, 1.5],
-          ["TP6", "net.GND", wayX(2) - 2.5, 24.4, 1.5],
-        ] as const
-      ).map(([name, net, pcbX, pcbY, diameter], i) => (
-        <testpoint
-          key={name}
-          name={name}
-          footprintVariant="pad"
-          padShape="circle"
-          padDiameter={`${diameter}mm`}
-          pcbX={pcbX}
-          pcbY={pcbY}
-          schX={30 + i * 2}
-          schY={-14}
-          schSectionName="Mcu"
-          connections={{ pin1: net }}
-        />
-      ))}
-    </group>
-
-    <Silkscreen />
+  <board outline={OUTLINE} thickness="1.6mm" routingDisabled>
+    {CLAMPS.map((at, i) => (
+      <Drill key={`clamp${i}`} name={`CLAMP${i + 1}`} at={at} diameter={5.4} />
+    ))}
+    {[...NUTS, GROUND_NUT].map((at, i) => (
+      <Drill key={`nut${i}`} name={`NUT${i + 1}`} at={at} diameter={6.4} />
+    ))}
+    {TOOLING.map((at, i) => (
+      <Drill key={`tool${i}`} name={`TOOL${i + 1}`} at={at} diameter={1.152} />
+    ))}
+    <pcbnotepath route={MODULE} />
+    <pcbnotepath route={ANTENNA_KEEPOUT} />
   </board>
 )

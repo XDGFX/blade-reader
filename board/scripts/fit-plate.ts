@@ -11,7 +11,7 @@ const THICKNESS = 1.6
 const SEGMENTS = 64
 
 // bun scripts/fit-plate.ts [circuit.json] [out.stl]
-const [src = "dist/index/circuit.json", out = "fab/blade-reader-fit-plate.stl"] = process.argv.slice(2)
+const [src = "dist/index/circuit.json", out = "fab/yoke-plate.stl"] = process.argv.slice(2)
 const circuit: any[] = JSON.parse(readFileSync(src, "utf8"))
 const of = (type: string) => circuit.filter((e) => e.type === type)
 

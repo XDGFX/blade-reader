@@ -1,7 +1,8 @@
 // Supply: way diodes (in way.tsx) → VSUP → 1 A fuse → VIN → SMBJ33A → LMR51610X → 3V3.
 // Circuit and values from docs/research/way-monitor-power-supply.md, "Recommended circuit
-// and BOM", with its D1 replaced by the six way diodes and its F1 by the fuse (issue #6).
+// and BOM", with its D1 replaced by the way diodes and its F1 by the fuse (issue #6).
 //
+// The circuit is the yoke's. The placement is still the strip's and waits for the chin's.
 // PCB: a line along the band behind ways 4–6, in the order the current flows towards the way 6
 // end: fuse, TVS diode, input caps and buck, then the inductor and output caps. U3 lies with
 // VIN and EN towards the input caps and SW towards L1: C2 stands across its VIN end, C3 across

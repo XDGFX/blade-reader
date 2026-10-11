@@ -7,7 +7,6 @@
 // Run after a routed build: `bun run clearance`.
 
 import { readFileSync } from "node:fs"
-import { X_SHIFT, Y_SHIFT } from "../lib/outline"
 
 const MIN = 0.15
 
@@ -15,10 +14,10 @@ const circuit: any[] = JSON.parse(readFileSync("dist/index/circuit.json", "utf8"
 const of = (type: string) => circuit.filter((e) => e.type === type)
 
 type P = { x: number; y: number }
-/** A point, a segment or a polygon, grown by `r`. Coordinates are the strip's (lib/outline.tsx). */
+/** A point, a segment or a polygon, grown by `r`, in the board's coordinates. */
 type Shape = { net: string; layer: string; what: string; pts: P[]; r: number }
 
-const strip = ({ x, y }: P): P => ({ x: x - X_SHIFT, y: y - Y_SHIFT })
+const pt = ({ x, y }: P): P => ({ x, y })
 const sourcePort = new Map(of("source_port").map((p) => [p.source_port_id, p]))
 const sourceComponent = new Map(of("source_component").map((p) => [p.source_component_id, p]))
 const pcbPort = new Map(of("pcb_port").map((p) => [p.pcb_port_id, p]))
@@ -35,12 +34,12 @@ for (const p of of("pcb_smtpad")) {
   // An unconnected pad is a net of its own, except against its own part's pads.
   const net = netName(port?.subcircuit_connectivity_map_key) ?? `unconnected:${component}`
   const pad = { net, layer: p.layer, what }
-  if (p.shape === "polygon") shapes.push({ ...pad, pts: p.points.map(strip), r: 0 })
-  else if (p.shape === "circle") shapes.push({ ...pad, pts: [strip(p)], r: p.radius })
+  if (p.shape === "polygon") shapes.push({ ...pad, pts: p.points.map(pt), r: 0 })
+  else if (p.shape === "circle") shapes.push({ ...pad, pts: [pt(p)], r: p.radius })
   else {
     const turned = Math.abs((p.ccw_rotation ?? 0) % 180) === 90
     const [w, h] = turned ? [p.height, p.width] : [p.width, p.height]
-    const c = strip(p)
+    const c = pt(p)
     if (p.shape.includes("pill")) {
       const r = Math.min(w, h) / 2
       const [dx, dy] = w > h ? [w / 2 - r, 0] : [0, h / 2 - r]
@@ -55,10 +54,10 @@ for (const layer of ["top", "bottom"]) {
   for (const h of of("pcb_plated_hole")) {
     const port = sourcePort.get(pcbPort.get(h.pcb_port_id)?.source_port_id)
     const net = netName(port?.subcircuit_connectivity_map_key) ?? "?"
-    shapes.push({ net, layer, what: "hole", pts: [strip(h)], r: (h.outer_diameter ?? h.outer_width) / 2 })
+    shapes.push({ net, layer, what: "hole", pts: [pt(h)], r: (h.outer_diameter ?? h.outer_width) / 2 })
   }
   for (const v of of("pcb_via")) {
-    shapes.push({ net: netName(v.subcircuit_connectivity_map_key) ?? "?", layer, what: "via", pts: [strip(v)], r: v.outer_diameter / 2 })
+    shapes.push({ net: netName(v.subcircuit_connectivity_map_key) ?? "?", layer, what: "via", pts: [pt(v)], r: v.outer_diameter / 2 })
   }
 }
 for (const t of of("pcb_trace")) {
@@ -67,7 +66,7 @@ for (const t of of("pcb_trace")) {
   for (let i = 1; i < t.route.length; i++) {
     const [a, b] = [t.route[i - 1], t.route[i]]
     if (a.route_type !== "wire" || b.route_type !== "wire" || a.layer !== b.layer) continue
-    shapes.push({ net, layer: a.layer, what: `trace ${source?.display_name ?? t.pcb_trace_id}`, pts: [strip(a), strip(b)], r: a.width / 2 })
+    shapes.push({ net, layer: a.layer, what: `trace ${source?.display_name ?? t.pcb_trace_id}`, pts: [pt(a), pt(b)], r: a.width / 2 })
   }
 }
 
@@ -123,8 +122,8 @@ const pours = of("pcb_copper_pour").map((p, i) => ({
   id: `pour ${i}`,
   net: netById.get(p.source_net_id),
   layer: p.layer,
-  outer: p.brep_shape.outer_ring.vertices.map(strip) as P[],
-  holes: (p.brep_shape.inner_rings ?? []).map((r: any) => r.vertices.map(strip)) as P[][],
+  outer: p.brep_shape.outer_ring.vertices.map(pt) as P[],
+  holes: (p.brep_shape.inner_rings ?? []).map((r: any) => r.vertices.map(pt)) as P[][],
 }))
 const parent = new Map<string, string>()
 const find = (a: string): string => {
