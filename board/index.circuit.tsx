@@ -1,5 +1,5 @@
 // The yoke: one board for all 12 ways of a 12-way ST Blade. The outline, the holes and the
-// schematic: only the fingers and the nuts are placed, and nothing is routed. Decisions behind
+// schematic: the arms are placed, the chin is not, and nothing is routed. Decisions behind
 // every part are in docs/design.md. Part codes are LCSC/JLCPCB.
 //
 // Panel coordinates, in mm, as the research notes give them: `a` runs along the fuse panel from
@@ -279,6 +279,7 @@ export default () => (
         finger={CLAMPS[hole(n)]}
         nut={NUTS[hole(n)]}
         mirrored={mirrored(n)}
+        chinmost={n > 10}
         schX={n % 2 ? -68 : -46}
         schY={20 - Math.floor((n - 1) / 2) * WAY_PITCH}
         section={n % 2 ? "WaysOdd" : "WaysEven"}
