@@ -1,6 +1,6 @@
 // The yoke: one board for all 12 ways of a 12-way ST Blade. The outline, the holes and the
 // schematic: the arms and the chin are placed, each way's current path is poured, and the arms
-// and the odd arm's root are routed. Decisions behind every part are in docs/design.md. Part
+// and their roots are routed. Decisions behind every part are in docs/design.md. Part
 // codes are LCSC/JLCPCB.
 //
 // Panel coordinates, in mm, as the research notes give them: `a` runs along the fuse panel from
@@ -20,6 +20,7 @@ import { ExpansionPads, FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from
 import { partsFace } from "./lib/parts-face"
 import { ringFace, type Yoke } from "./lib/ring-face"
 import { ODD_CHANNELS, OddRoot } from "./lib/root"
+import { EVEN_CHANNELS, EVEN_MUX, EVEN_R9, EVEN_V3V3, EvenRoot, evenDivider } from "./lib/root-even"
 import { Routes } from "./lib/routes"
 import { Face } from "./lib/silkscreen"
 import { Supply } from "./lib/supply"
@@ -170,6 +171,8 @@ const hole = (n: number) => (n % 2 ? 0 : 6) + 5 - Math.floor((n - 1) / 2)
 // the ground nut's, takes the mirror (#65), so its current runs the other way through its sensors.
 const mirrored = (n: number) => n % 2 === 0
 
+/** A place in way 12's column coordinates (lib/root-even.tsx): along the arm towards the chin, and outboard. */
+const byWay12 = (u: number, v: number, pcbRotation = 0) => at(-(PANEL_HALF + v), WAYS_A[0] - u, pcbRotation)
 /** Mux 1, on the chin beside the odd arm's root. */
 const U2_AT = at(38.5, -3.6, 90)
 
@@ -224,9 +227,8 @@ const Temperature = ({
   </>
 )
 
-// One arm's 16:1 multiplexer; `channels` is the net on each of Y0 to Y15. Mux 1's are in the
-// order its lines arrive (lib/root.tsx). Mux 2's are provisional until its lines are routed:
-// firmware follows this schematic.
+// One arm's 16:1 multiplexer; `channels` is the net on each of Y0 to Y15, in the order its lines
+// arrive (lib/root.tsx, lib/root-even.tsx). Firmware follows this schematic.
 const Mux = ({
   name,
   channels,
@@ -298,8 +300,9 @@ export default () => (
     {WAYS.map((n) => (
       <WayCopper key={n} n={n} finger={CLAMPS[hole(n)]} nut={NUTS[hole(n)]} open={n < 3} />
     ))}
-    <Routes ways={WAYS.map((n) => ({ n, finger: CLAMPS[hole(n)], nut: NUTS[hole(n)] }))} />
+    <Routes ways={WAYS.map((n) => ({ n, finger: CLAMPS[hole(n)], nut: NUTS[hole(n)] }))} evenV3v3={EVEN_V3V3} />
     <OddRoot finger={CLAMPS[hole(11)]} mux={{ x: U2_AT.pcbX, y: U2_AT.pcbY }} />
+    <EvenRoot />
 
 
     {/* Ground: a ring-terminated wire from this nut to the panel's negative bus. */}
@@ -356,15 +359,8 @@ export default () => (
     {/* Mux 2 reads the even arm, on GPIO3. */}
     <Mux
       name="U4"
-      place={at(-51, 8.5, 90)}
-      channels={[
-        ...EVEN.map((n) => `net.S${n}_MUX`),
-        "net.TEMP_EVEN",
-        "net.GND",
-        ...EVEN.map((n) => `net.S${n}_VOLTS`),
-        "net.GND",
-        "net.GND",
-      ]}
+      place={byWay12(...EVEN_MUX, 90)}
+      channels={EVEN_CHANNELS}
       common="net.ADC2"
       schX={0}
       schY={-18}
@@ -395,7 +391,7 @@ export default () => (
       <Fragment key={n}>
         <resistor
           name={`R3${n}`}
-          {...at(-51.1 - k, 16.6, 90)}
+          {...byWay12(...evenDivider(n).r3, 90)}
           resistance="22k"
           footprint={FP_0402}
           supplierPartNumbers={{ jlcpcb: ["C25768"] }}
@@ -407,7 +403,7 @@ export default () => (
         />
         <resistor
           name={`R4${n}`}
-          {...at(-51.1 - k, 14.2, 90)}
+          {...byWay12(...evenDivider(n).r4, 90)}
           resistance="100k"
           footprint={FP_0402}
           supplierPartNumbers={{ jlcpcb: ["C25741"] }}
@@ -441,7 +437,7 @@ export default () => (
       q="Q3"
       r="R9"
       net="net.TEMP_EVEN"
-      place={{ q: at(-48.8, 15, 90), r: at(-52, 18.4) }}
+      place={{ q: at(-48.8, 15, 90), r: byWay12(...EVEN_R9, 180) }}
       schX={-14}
       schY={4}
     />

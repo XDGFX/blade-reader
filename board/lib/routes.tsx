@@ -20,8 +20,8 @@ type Uv = [number, number]
 type Step = Uv | string | { via: Uv; to: "top" | "bottom" }
 
 /** The GND bus on the ring face, 0.5 from the panel edge between the fingers. */
-const BUS_V = 0.65
-const BUS_WIDTH = 0.3
+export const BUS_V = 0.65
+export const BUS_WIDTH = 0.3
 // Channel lanes from the bus out, 0.16 wide and 0.16 apart, so 2 oz copper stays open (#87).
 // The pitch keeps the last sense via inboard of the even arm's VREF line.
 export const lane = (i: number) => 1.2 + 0.32 * i
@@ -29,12 +29,17 @@ export const LANE_WIDTH = 0.16
 /** A line's via stands 0.16 clear of the lane below its own. */
 const entry = (i: number) => lane(i) + 0.22
 // 3V3 has the top of the channel, with its vias 0.3 short of the load copper. Lanes 0–9 are the
-// ways'; an eleventh fits below 3V3's vias, and on the odd arm it is way 11's voltage line's.
-const V3V3_V = 5.34
-const V3V3_WIDTH = 0.2
+// ways'; an eleventh fits below 3V3's vias, and is the chinmost way's voltage line's.
+export const V3V3_V = 5.34
+export const V3V3_WIDTH = 0.2
 const V3V3_VIA_V = 5.2
 /** Where the lines stop, past the last way of an arm: short of the step in the inner edge. */
 export const ROOT_U = 10.5
+/**
+ * Where the even arm's line at `v` stops instead. Its channel turns 45° outboard beside the step
+ * (lib/root-even.tsx), so the ends lie on the turn's bisector and the lines keep their pitch.
+ */
+export const evenRootU = (v: number) => 10.85 - Math.tan(Math.PI / 8) * (v - BUS_V)
 
 /** The sensor's signal pins: their centres along the arm, and their pads' ends. */
 const PIN_U = GAP + 2.6
@@ -69,12 +74,12 @@ const isSteps = (s: Step | Step[]): s is Step[] => Array.isArray(s) && typeof s[
  * into their lanes and on to the root, and VSUP's trunk on to the next diode. `k` counts ways
  * along the arm from the open end, so way `k` has lanes 2k and 2k+1.
  */
-const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
+const WayRoutes = ({ n, finger, nut, evenV3v3 }: { n: number; finger: Pt; nut: Pt; evenV3v3: Uv[] }) => {
   const out = Math.sign(nut.x - finger.x)
   const odd = out < 0
   const k = Math.floor((n - 1) / 2)
   const chinmost = k === 5
-  const root = (5 - k) * WAY_PITCH_PCB + ROOT_U
+  const root = (v: number): Uv => [(5 - k) * WAY_PITCH_PCB + (odd ? ROOT_U : evenRootU(v)), v]
   const NEXT = WAY_PITCH_PCB
 
   const point = ([u, v]: Uv) => ({ x: out * (v - CLAMP_Y), y: u })
@@ -141,7 +146,7 @@ const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
         [VOLTS_U, EDGE_V + 0.4],
         down(voltsVia),
         [VOLTS_U + 0.4, lane(2 * k)],
-        [root, lane(2 * k)],
+        root(lane(2 * k)),
       ]}
     />
   )
@@ -166,7 +171,7 @@ const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
           down([DIVIDER_U[1], ROOT_VIA_V]),
           [DIVIDER_U[1], BUS_V],
           // The odd arm's bus ends at way 11's GND via: the edge steps out past it (lib/root.tsx).
-          chinmost ? [odd ? BUS_VIA_U : root, BUS_V] : [NEXT + DIVIDER_U[1], BUS_V],
+          chinmost ? (odd ? [BUS_VIA_U, BUS_V] : root(BUS_V)) : [NEXT + DIVIDER_U[1], BUS_V],
         ]}
       />
 
@@ -209,41 +214,30 @@ const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
           ...(chinmost
             ? odd
               ? []
-              : [[v3v3Via[0] + 0.2, V3V3_V] as Uv, [root, V3V3_V] as Uv]
+              : [[v3v3Via[0] + 0.2, V3V3_V] as Uv, root(V3V3_V), ...evenV3v3]
             : [[v3v3Via[0] + 0.2, V3V3_V] as Uv, [nextV3v3U - 0.2, V3V3_V] as Uv, [nextV3v3U, V3V3_VIA_V] as Uv]),
         ]}
       />
 
       {chinmost ? (
         <>
-          {/* The last way's caps lie beside their pins. Their GND pads are joined in a row, which
-              reaches the sensor's GND pin along the panel side on the odd arm, and round Q3 by
-              its GND pad on the even arm. Way 11's voltage line takes the eleventh lane; its
-              sense line and both of way 12's start at the root. */}
-          {odd && voltsLine}
+          {/* The last way's caps lie beside their pins. On the odd arm their GND pads are joined
+              in a row, which reaches the sensor's GND pin along the panel side; the even arm's
+              are joined at its root (lib/root-even.tsx), where way 12's sense line passes
+              between them. The voltage line takes the eleventh lane; the sense line starts at
+              the root. */}
+          {voltsLine}
           <Route from={pin(nearPin)} to={cap(near, 1)} maxLength={CAP_RUN} path={[pin(nearPin), cap(near, 1)]} />
           <Route from={pin("VOUT")} to={cap(3, 1)} width={LANE_WIDTH} maxLength={CAP_RUN} path={[pin("VOUT"), cap(3, 1)]} />
           <Route from={pin(farPin)} to={cap(far, 1)} maxLength={CAP_RUN} path={[pin(farPin), cap(far, 1)]} />
-          <Route from={cap(near, 2)} to={cap(far, 2)} maxLength={CAP_RUN} path={[cap(near, 2), cap(3, 2), cap(far, 2)]} />
-          {odd ? (
-            <Route
-              from={pin("GND")}
-              to={cap(near, 2)}
-              maxLength={CAP_RUN}
-              path={[pin("GND"), [CHIN_CAPS_U + 0.51, pinV("GND")], cap(near, 2)]}
-            />
-          ) : (
+          {odd && (
             <>
+              <Route from={cap(near, 2)} to={cap(far, 2)} maxLength={CAP_RUN} path={[cap(near, 2), cap(3, 2), cap(far, 2)]} />
               <Route
-                from={cap(far, 2)}
-                to=".Q3 > .pin2"
+                from={pin("GND")}
+                to={cap(near, 2)}
                 maxLength={CAP_RUN}
-                path={[cap(far, 2), [12.65, pinV("VREF")], [12.65, 7.65], ".Q3 > .pin2"]}
-              />
-              <Route
-                from=".Q3 > .pin2"
-                to={pin("GND")}
-                path={[".Q3 > .pin2", [PIN_U + 0.32, 7.65], [PIN_U, 7.33], pin("GND")]}
+                path={[pin("GND"), [CHIN_CAPS_U + 0.51, pinV("GND")], cap(near, 2)]}
               />
             </>
           )}
@@ -313,7 +307,7 @@ const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
               { via: senseVia, to: "bottom" },
               senseVia,
               [SENSE_U + 0.4, lane(2 * k + 1)],
-              [root, lane(2 * k + 1)],
+              root(lane(2 * k + 1)),
             ]}
           />
           <Route
@@ -339,11 +333,14 @@ const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
   )
 }
 
-/** Every way's routes. `ways` gives each way's clamp hole and nut. */
-export const Routes = ({ ways }: { ways: { n: number; finger: Pt; nut: Pt }[] }) => (
+/**
+ * Every way's routes. `ways` gives each way's clamp hole and nut, and `evenV3v3` where the even
+ * arm's 3V3 runs on past its root, in way 12's coordinates.
+ */
+export const Routes = ({ ways, evenV3v3 }: { ways: { n: number; finger: Pt; nut: Pt }[]; evenV3v3: [number, number][] }) => (
   <>
     {ways.map((way) => (
-      <WayRoutes key={way.n} {...way} />
+      <WayRoutes key={way.n} {...way} evenV3v3={evenV3v3} />
     ))}
   </>
 )
