@@ -222,7 +222,18 @@ const fingerQuote = (s: 1 | -1, lines: string[], x: number, down: boolean) =>
     ? join(...lines.map((l, k) => spine(s, text(0, 0, 1, l, { anchor: "middle" }), x, EDGE + (s > 0 ? 2.35 - 1.6 * k : 1.75 + 1.6 * k))))
     : join(...lines.map((l, k) => text(x, EDGE + 1.75 + 1.6 * k, 1, l, { anchor: "middle" })))
 
-type ArmStyle = "chevron-number" | "plate" | "big"
+// One line a slot, re-broken so the longest still fits the arm's depth at 1 mm.
+const ONE_LINE = [
+  "I'VE SEEN THINGS",
+  "YOU PEOPLE",
+  "WOULDN'T BELIEVE.",
+  "FRIDGES DRAWING",
+  "AMPS OFF THE",
+  "SHOULDER OF ORION.",
+  ...QUOTES.kept.slice(6).map((l) => l.join(" ")),
+]
+
+type ArmStyle = "chevron-number" | "plate" | "plate-one" | "big"
 const arm = (s: 1 | -1, style: ArmStyle, quote: string[][], order: Order): Art =>
   join(
     ...[0, 1, 2, 3, 4, 5].flatMap((i) => {
@@ -235,6 +246,13 @@ const arm = (s: 1 | -1, style: ArmStyle, quote: string[][], order: Order): Art =
       if (style === "big")
         // Nothing but the number, as large as the gap between the ring and the panel takes.
         return [number(s, way, 4, 5.0, x, 13.75, 0.4), fingerQuote(s, lines, x, false)]
+      if (style === "plate-one")
+        // Round two: as below, with the quote on one line, midway between two nuts.
+        return [
+          ...[11.4, 13.0, 14.6].map((y) => chevron(x, y, way === 1)),
+          number(s, way, 2.8, 3.6, x, EDGE + 2.3),
+          upright(s, centred(text(0, 0, 1, ONE_LINE[fragment(order, s, rowOf(s, i))])), s > 0 ? x - PITCH / 2 : x + PITCH / 2, 8.35),
+        ]
       // Rev A's three chevrons, the number on the finger, the quote upright between the nuts.
       const slot = s > 0 ? x - PITCH / 2 : x + PITCH / 2
       return [
@@ -354,6 +372,104 @@ const CHIN: Record<string, () => Art> = {
     ),
 }
 
+// ── Round two: A's chin with no feed marked, and three ways to close the wordmark's gap ─────
+
+/** The wordmark's two words, w wide overall, each with its left edge at x = 0, and its slant: how far the top leans right. */
+const words = (w: number) => {
+  const rings = logo(0, 0, w).fills[0]
+  const lo = (r: Pt[]) => Math.min(...r.map((p) => p.x))
+  const hi = (r: Pt[]) => Math.max(...r.map((p) => p.x))
+  const all = rings.flat()
+  const H = Math.max(...all.map((p) => p.y))
+  const mid = w * 0.429
+  const part = (keep: (r: Pt[]) => boolean) => {
+    const rs = rings.filter(keep)
+    const x0 = Math.min(...rs.map(lo))
+    return { rings: rs.map((r) => r.map((p) => P(p.x - x0, p.y))), w: Math.max(...rs.map(hi)) - x0 }
+  }
+  const first = rings.reduce((a, b) => (lo(a) < lo(b) ? a : b))
+  // The slant, measured off a render: the letters are cut into pieces, so no one edge gives it.
+  const k = 0.21
+  return { blade: part((r) => (lo(r) + hi(r)) / 2 < mid), reader: part((r) => (lo(r) + hi(r)) / 2 > mid), H, k }
+}
+/** BLADE from x = left and READER to x = right, tops at y, with whatever `between` draws from BLADE's end to READER's start. */
+const banner = (w: number, y: number, left: number, right: number, between: (x0: number, x1: number, H: number, k: number) => Art) => {
+  const { blade, reader, H, k } = words(w)
+  const put = (rs: Pt[][], dx: number) => rs.map((r) => r.map((p) => P(p.x + dx, p.y + y)))
+  return join(art([], [put(blade.rings, left), put(reader.rings, right - reader.w)]), between(left + blade.w, right - reader.w, H, k))
+}
+/** Bars on the wordmark's slant, t wide, filling x0 to x1 with the letters' own spacing either end. */
+const bars = (y: number, t = 1.1, g = 0.9) => (x0: number, x1: number, H: number, k: number) => {
+  const a = x0 - k * H + g
+  const n = Math.max(1, Math.floor((x1 - g - a - t) / (2 * t)) + 1)
+  const p = n > 1 ? (x1 - g - a - t) / (n - 1) : 0
+  return art([], Array.from({ length: n }, (_, i) => a + i * p).map((x) => [[P(x, y + H), P(x + t, y + H), P(x + t + k * H, y), P(x + k * H, y)]]))
+}
+const UNICORN: [number, number][][] = [
+  [[1.6, 6], [7.2, 4.8], [7.8, 7.3], [2.2, 7.6], [1.6, 6]],
+  [[1.6, 6], [7.8, 7.3]],
+  [[7.2, 4.8], [8.2, 1.6], [9.1, 2], [7.8, 7.3]],
+  [[8.2, 1.6], [10.4, 2.9], [9.1, 2]],
+  [[8.6, 1.8], [10.8, -1.6], [9, 1.95]],
+  [[1.6, 6], [0, 8.3], [2.2, 7.6]],
+  [[2.4, 7.55], [2, 10.4], [3, 7.5]],
+  [[3.6, 7.45], [3.9, 10.4], [4.2, 7.4]],
+  [[6.4, 7.35], [6.1, 10.4], [7, 7.32]],
+  [[7.3, 7.3], [7.8, 10.4], [7.8, 7.3]],
+]
+const unicorn = (ox: number, oy: number, k: number) => join(...UNICORN.map((p) => line(p.map(([x, y]) => [ox + x * k, oy + y * k]))))
+
+/** A's chin without the feed's corridor or polarity, under whichever banner. */
+const chinA = (top: Art) =>
+  join(
+    top,
+    cell(["OUTPUT NUT", "M4", "1.0-1.2 Nm"], -14.3, 16.5),
+    usbMark(18.3),
+    cell(["DERATE", "20 A PER WAY", "ABOVE 40 °C"], -36.6, 16.5),
+    cell(["REVISION", "B", "2026-10"], -46.3, 16.5),
+    cell(["LICENCE", "CERN-OHL-S-2.0", ""], 17.6, 16.5),
+    cell(["SOURCE", "XDGFX", "/BLADE-READER"], 31.2, 16.5),
+    SIGN,
+    frame(50.2, -7.4, 5.8, 11.2, 1),
+    crux(52.35, -6.4, 2.0),
+    mapArt(join(text(0, 0, 0.75, "DESIGNED IN"), text(0, 1.35, 0.75, "AUSTRALIA")), turn(53.75, -3.75, 90)),
+    text(g.x, g.y + 7.4, 1.2, "GND", { anchor: "middle" }),
+    earth(g.x, g.y + 8.1),
+  )
+const ROUND2: Record<string, () => Art> = {
+  // Centred on the feed as before, the gap closed with bars on the letters' slant.
+  d: () => chinA(banner(69, 8.9, -7.8 - words(69).blade.w, 7.8 + words(69).reader.w, bars(8.9))),
+  // Cal's: B on the panel's left side, R on its right, bars between.
+  e: () => chinA(banner(64, 9.1, -PANEL.half, PANEL.half, bars(9.1))),
+  // The same, with the unicorn where no feed covers it and bars under the lug.
+  f: () =>
+    chinA(
+      banner(64, 9.1, -PANEL.half, PANEL.half, (x0, x1, H, k) =>
+        join(unicorn(x0 + 1.2, 9.1 + 0.75, 0.42), bars(9.1)(x0 + 6.6, x1, H, k)),
+      ),
+    ),
+  // Cal's second: the wordmark on two lines right of the feed, the spec plate on two rows left of it.
+  g: () => {
+    const { blade, reader, H, k } = words(74)
+    const put = (rs: Pt[][], dx: number, y: number) => rs.map((r) => r.map((p) => P(p.x + dx, p.y + y)))
+    // The lower line starts clear of the tooling hole; the upper follows the slant up from it.
+    const [x, y0, y1] = [10.3, 8.9, 21.5 - H]
+    return join(
+      art([], [put(blade.rings, x + k * (y1 - y0), y0), put(reader.rings, x, y1)]),
+      cell(["REVISION", "B", "2026-10"], -41, 10.1),
+      cell(["DERATE", "20 A PER WAY", "ABOVE 40 °C"], -28.2, 10.1),
+      cell(["OUTPUT NUT", "M4", "1.0-1.2 Nm"], -14.3, 10.1),
+      cell(["SOURCE", "XDGFX", "/BLADE-READER"], -37.6, 16.5),
+      usbMark(18.3),
+      cell(["LICENCE", "CERN-OHL-S-2.0", ""], -14.3, 16.5),
+      SIGN,
+      frame(50.2, -7.4, 5.8, 11.2, 1),
+      crux(52.35, -6.4, 2.0),
+      mapArt(join(text(0, 0, 0.75, "DESIGNED IN"), text(0, 1.35, 0.75, "AUSTRALIA")), turn(53.75, -3.75, 90)),
+    )
+  },
+}
+
 // ── Variants ───────────────────────────────────────────────────────────────────────────────
 
 type Variant = { key: string; name: string; arm: ArmStyle; quote: keyof typeof QUOTES; order: Order; notes: [string, string][] }
@@ -404,6 +520,51 @@ const VARIANTS: Variant[] = [
     ],
   },
 ]
+
+const ARMS2: [string, string][] = [
+  ["Arms", "B's: three chevrons, the number on the finger, and the quote on one line midway between two nuts."],
+  ["Chin", "A's, with no feed corridor and no polarity mark: the feed may leave down, left or right."],
+]
+VARIANTS.push(
+  {
+    key: "d",
+    name: "D · Bars, centred",
+    arm: "plate-one",
+    quote: "kept",
+    order: "columns",
+    notes: [["Wordmark", "69 × 5.5 mm, centred on the feed as in A, the gap closed with bars on the letters' slant. A feed run down covers bars only."], ...ARMS2],
+  },
+  {
+    key: "e",
+    name: "E · Bars, on the panel's sides",
+    arm: "plate-one",
+    quote: "kept",
+    order: "columns",
+    notes: [["Wordmark", "64 × 5.1 mm: B starts on the panel's left side and R ends on its right, bars between. The gap sits 4.5 mm left of centre, since READER is the longer word."], ...ARMS2],
+  },
+  {
+    key: "f",
+    name: "F · Unicorn",
+    arm: "plate-one",
+    quote: "kept",
+    order: "columns",
+    notes: [["Wordmark", "As E, with Gaff's unicorn after BLADE, clear of a feed run down, and bars under the lug."], ...ARMS2],
+  },
+  {
+    key: "g",
+    name: "G · Stacked",
+    arm: "plate-one",
+    quote: "kept",
+    order: "columns",
+    notes: [
+      ["Wordmark", "74 × 5.9 mm, on two lines right of the feed: the largest yet. It has to be the right, since the USB stakes are in the left's lower line."],
+      ["Spec plate", "Two rows of cells left of the feed. The gap down the middle is the gutter between two blocks, not a hole in a word."],
+      ["GND", "No label: READER's end has the space under the ground nut."],
+      ...ARMS2,
+    ],
+  },
+)
+Object.assign(CHIN, ROUND2)
 
 // The USB socket's shell stakes and pegs come through the chin (chin view: x, y, half width, half height).
 const STAKES = [[-29.33, 15.74, 0.6, 1.0], [-20.67, 15.74, 0.6, 1.0], [-29.33, 19.92, 0.6, 0.9], [-20.67, 19.92, 0.6, 0.9]]
