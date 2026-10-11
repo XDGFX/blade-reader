@@ -248,8 +248,8 @@ const EDGE = HALF_WIDTH - PANEL.half
 const arm = (s: 1 | -1): Art =>
   join(
     ...[0, 1, 2, 3, 4, 5].flatMap((i) => {
-      // Assumed: even ways down one side and odd down the other, 11–12 at the positive end.
-      const way = s > 0 ? 12 - 2 * i : 1 + 2 * i
+      // Odd ways are on the left with the positive end down, which is +c; 11–12 are at that end.
+      const way = s > 0 ? 11 - 2 * i : 2 + 2 * i
       const lines = FINGER_LINES[s > 0 ? i : 6 + i]
       const x = i * PITCH
       return [
