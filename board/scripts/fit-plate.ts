@@ -11,7 +11,7 @@ const THICKNESS = 1.6
 const SEGMENTS = 64
 
 // bun scripts/fit-plate.ts [circuit.json] [out.stl]
-const [src = "dist/index/circuit.json", out = "fab/yoke-plate.stl"] = process.argv.slice(2)
+const [src = "dist/index/circuit.json", out = "fab/blade-reader-fit-plate.stl"]= process.argv.slice(2)
 const circuit: any[] = JSON.parse(readFileSync(src, "utf8"))
 const of = (type: string) => circuit.filter((e) => e.type === type)
 
@@ -42,8 +42,12 @@ for (const c of of("pcb_cutout")) {
   holes.push(slot(c.center.x, c.center.y, c.width, c.height))
 }
 for (const h of [...of("pcb_hole"), ...of("pcb_plated_hole")]) {
-  if ((h.shape ?? h.hole_shape) !== "circle") throw new Error(`unhandled hole shape ${h.shape ?? h.hole_shape}`)
-  holes.push(slot(h.x, h.y, h.hole_diameter, h.hole_diameter))
+  const shape = h.shape ?? h.hole_shape
+  if (shape === "circle") holes.push(slot(h.x, h.y, h.hole_diameter, h.hole_diameter))
+  else if (shape === "pill" && (h.ccw_rotation ?? 0) % 90 === 0) {
+    const turned = (h.ccw_rotation ?? 0) % 180 !== 0
+    holes.push(slot(h.x, h.y, turned ? h.hole_height : h.hole_width, turned ? h.hole_width : h.hole_height))
+  } else throw new Error(`unhandled hole shape ${shape}, turned ${h.ccw_rotation}`)
 }
 
 const rings = [outline, ...holes.map((r) => wind(r, false))]

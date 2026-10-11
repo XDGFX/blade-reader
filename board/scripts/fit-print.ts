@@ -27,6 +27,13 @@ for (const c of of("pcb_cutout")) {
   out.push(`<rect x="${f(vx(c.center.x) - c.width / 2)}" y="${f(vy(c.center.y) - c.height / 2)}" width="${c.width}" height="${c.height}" class="cut"/>`)
 }
 for (const h of [...of("pcb_hole"), ...of("pcb_plated_hole")]) {
+  if ((h.shape ?? h.hole_shape) === "pill") {
+    if ((h.ccw_rotation ?? 0) % 90 !== 0) throw new Error(`unhandled slot turned ${h.ccw_rotation}`)
+    const turned = (h.ccw_rotation ?? 0) % 180 !== 0
+    const [w, l] = turned ? [h.hole_height, h.hole_width] : [h.hole_width, h.hole_height]
+    out.push(`<rect x="${f(vx(h.x) - w / 2)}" y="${f(vy(h.y) - l / 2)}" width="${f(w)}" height="${f(l)}" rx="${f(Math.min(w, l) / 2)}" class="cut"/>`)
+    continue
+  }
   out.push(`<circle cx="${f(vx(h.x))}" cy="${f(vy(h.y))}" r="${h.hole_diameter / 2}" class="cut"/>`)
   if (h.outer_diameter) out.push(`<circle cx="${f(vx(h.x))}" cy="${f(vy(h.y))}" r="${h.outer_diameter / 2}" class="pad"/>`)
 }
