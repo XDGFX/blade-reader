@@ -1,6 +1,7 @@
 // The chin's own routes and its GND pour: the supply along the even half of the outer edge,
 // VSUP and 3V3 to both arms and the module, mux 2's grounds, and the lines that cross the chin
-// along its inner edge. The module's pins are not routed yet.
+// along its inner edge, and what stands at the module's pins, the USB socket and J1. The lines
+// from the module past mux 1 are not routed yet.
 //
 // Points are PCB coordinates, in mm, as lib/supply.tsx places its parts.
 //
@@ -56,6 +57,11 @@ const GND_VIAS: Record<string, Xy> = {
   TP6: [-10.35, 46.85],
   C6: [-55.0, 28.95],
   oddRoot: [-52.6, 29.3],
+  EP: [-53.6, 44.29],
+  mux1Outboard: [-43.2, 49.1],
+  mux1Y0: [-37.3, 48.655],
+  mux1Inboard: [-32.0, 50.45],
+  J1: [-7.27, 51.1],
 }
 /** The even arm's bus leaves the ring face here, cut off from the pour by the lines along the inner edge. */
 const EVEN_BUS_UP: Xy = [44.25, 37.3]
@@ -125,6 +131,19 @@ const ODD_V3V3_Y = 27.9
 const R8_VIA: Xy = [-51.5, 27.2]
 const PULLUP_VIA: Xy = [-47.95, 32.72]
 const C6_VIA: Xy = [-53.95, 31.0]
+/** USB: VBUS leaves each pad between its CC resistor's pads; the west one crosses to the east one on the ring face. */
+const VBUS_Y = 47.6
+const VBUS_WEST_X = -27.8
+const VBUS_EAST_X = -22.2
+const VBUS_DOWN_X = -19.2
+const VBUS_JOIN: Xy = [VBUS_DOWN_X, 48.3]
+/** PROG_VDD passes under J1 on the ring face, from a via beside its pad to one above D2's anode. */
+const PROG_FROM: Xy = [-10.2, 50.6]
+const PROG_TO: Xy = [5.0, 54.5]
+const PROG_Y = 50.1
+/** R50 takes 3V3 from a via on the trunk; the fault LED's anode line loops below both. */
+const R50_VIA: Xy = [-35.38, 56.5]
+const FAULT_Y = 57.05
 /** VSUP to TP5 and 3V3 to TP4, on the parts face between the test pads and J1. */
 const TP_V3V3_Y = 48.25
 const TP_VSUP_Y = 48.7
@@ -583,6 +602,98 @@ export const Chin = ({ nut, inner, corner }: { nut: Pt; inner: Pt[]; corner: [Pt
         ]}
       />
       <Route from=".R10 > .pin2" to="net.V3V3" path={[".R10 > .pin2", [8.51, 47.2], [8.51 + TP_V3V3_Y - 47.2, TP_V3V3_Y]]} />
+      {/* ── At the module ────────────────────────────────────────────────────── */}
+      {/* What stands at a pin: EN's capacitor and pull-up, the ADC's capacitor, the strapping
+          pull-ups and the status LED's resistor. */}
+      <Route from=".C8 > .pin1" to=".R3 > .pin1" maxLength={CAP_RUN} path={[".C8 > .pin1", ".R3 > .pin1"]} />
+      <Route from=".R3 > .pin1" to=".U1 > .EN" path={[".R3 > .pin1", ".U1 > .EN"]} />
+      <Route from=".U1 > .IO4" to=".C10 > .pin1" maxLength={CAP_RUN} path={[".U1 > .IO4", ".C10 > .pin1"]} />
+      <Route from=".U1 > .IO8" to=".R5 > .pin1" path={[".U1 > .IO8", ".R5 > .pin1"]} />
+      <Route from=".U1 > .IO9" to=".R6 > .pin1" path={[".U1 > .IO9", ".R6 > .pin1"]} />
+      <Route from=".U1 > .IO1" to=".R7 > .pin1" path={[".U1 > .IO1", ".R7 > .pin1"]} />
+      <Route from=".U1 > .IO2" to=".R4 > .pin1" path={[".U1 > .IO2", ".R4 > .pin1"]} />
+      {/* C10's GND, between C6 and the EN column to C8's. */}
+      <Route
+        from=".C10 > .pin2"
+        to=".C8 > .pin2"
+        width={LANE_WIDTH}
+        maxLength={CAP_RUN}
+        path={[".C10 > .pin2", [-55.35, 32.72], [-55.73, 32.34], [-55.73, 31.75], [-55.98, 31.5], ".C8 > .pin2"]}
+      />
+      <Route from=".U1 > .EP" to="net.GND" width={0.3} path={[".U1 > .EP", GND_VIAS.EP]} />
+
+      {/* ── Mux 1's grounds ──────────────────────────────────────────────────── */}
+      <Route from=".U2 > .N_E" to="net.GND" path={[".U2 > .N_E", [-42.6, 49.305], GND_VIAS.mux1Outboard]} />
+      <Route from=".U2 > .Y15" to=".U2 > .N_E" path={[".U2 > .Y15", [-42.6, 48.655], [-42.6, 49.305]]} />
+      <Route from=".U2 > .Y0" to="net.GND" path={[".U2 > .Y0", GND_VIAS.mux1Y0]} />
+      <Route from=".U2 > .GND" to="net.GND" path={[".U2 > .GND", [-32.3, 50.605], GND_VIAS.mux1Inboard]} />
+
+      {/* ── The fault LED ────────────────────────────────────────────────────── */}
+      <Route
+        from=".LED2 > .pin1"
+        to=".R50 > .pin2"
+        path={[".LED2 > .pin1", [-37.75, FAULT_Y - CUT], [-37.45, FAULT_Y], [-33.99, FAULT_Y], [-33.69, FAULT_Y - CUT], ".R50 > .pin2"]}
+      />
+      <Route from=".R50 > .pin1" to="net.V3V3" width={0.25} path={[".R50 > .pin1", ...down(R50_VIA), [R50_VIA[0], V3V3_TRUNK.y]]} />
+
+      {/* ── USB ──────────────────────────────────────────────────────────────── */}
+      {/* Each CC pad to its resistor, and each GND pad through its resistor's to the stake beside it. */}
+      <Route from=".J2 > .CC1" to=".R51 > .pin2" width={LANE_WIDTH} path={[".J2 > .CC1", [-23.75, 49.85], [-23.025, 49.125], ".R51 > .pin2"]} />
+      <Route from=".J2 > .CC2" to=".R52 > .pin2" width={LANE_WIDTH} path={[".J2 > .CC2", [-26.75, 49.7], [-26.975, 49.4], ".R52 > .pin2"]} />
+      <Route from=".J2 > .GND1" to=".R51 > .pin1" width={0.25} path={[".J2 > .GND1", [-21.8, 49.8], [-21.375, 49.3], ".R51 > .pin1"]} />
+      <Route from=".R51 > .pin1" to=".J2 > .EH3" width={0.25} path={[".R51 > .pin1", [-20.675, 49.6], ".J2 > .EH3"]} />
+      <Route from=".J2 > .GND2" to=".R52 > .pin1" width={0.25} path={[".J2 > .GND2", [-28.2, 49.8], [-28.625, 49.3], ".R52 > .pin1"]} />
+      <Route from=".R52 > .pin1" to=".J2 > .EH2" width={0.25} path={[".R52 > .pin1", [-29.325, 49.6], ".J2 > .EH2"]} />
+      {/* VBUS: the east pad up between R51's pads, along above it and down beside the socket to D3. */}
+      <Route
+        from=".J2 > .VBUS2"
+        to=".D3 > .anode"
+        width={0.3}
+        path={[
+          ".J2 > .VBUS2",
+          [-22.6, 49.75],
+          [VBUS_EAST_X, 49.35],
+          [VBUS_EAST_X, VBUS_Y + CUT],
+          [VBUS_EAST_X + CUT, VBUS_Y],
+          [VBUS_DOWN_X - CUT, VBUS_Y],
+          [VBUS_DOWN_X, VBUS_Y + CUT],
+          [VBUS_DOWN_X, 56.13 - CUT],
+          [VBUS_DOWN_X + CUT, 56.13],
+          ".D3 > .anode",
+        ]}
+      />
+      {/* The west pad up between R52's pads to a via, and across to that line on the ring face. */}
+      <Route
+        from=".J2 > .VBUS1"
+        to="net.USB_VBUS"
+        width={0.3}
+        path={[
+          ".J2 > .VBUS1",
+          [-27.4, 49.75],
+          [VBUS_WEST_X, 49.35],
+          ...down([VBUS_WEST_X, VBUS_Y]),
+          [VBUS_DOWN_X - CUT, VBUS_Y],
+          [VBUS_DOWN_X, VBUS_Y + CUT],
+          ...up(VBUS_JOIN),
+        ]}
+      />
+
+      {/* ── J1 ───────────────────────────────────────────────────────────────── */}
+      <Route
+        from=".J1 > .VDD"
+        to=".D2 > .anode"
+        width={0.4}
+        path={[
+          ".J1 > .VDD",
+          ...down(PROG_FROM),
+          [PROG_FROM[0] + 0.5, PROG_Y],
+          [PROG_TO[0] - 1.7, PROG_Y],
+          [PROG_TO[0], PROG_Y + 1.7],
+          ...up(PROG_TO),
+          ".D2 > .anode",
+        ]}
+      />
+      <Route from=".J1 > .GND" to="net.GND" width={0.3} path={[".J1 > .GND", GND_VIAS.J1]} />
     </>
   )
 }

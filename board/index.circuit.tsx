@@ -624,7 +624,7 @@ export default () => (
       <resistor
         key={net}
         name={`R5${i + 1}`}
-        {...at(22.2 + i * 5.6, -5.2)}
+        {...at(22.2 + i * 5.6, -5.2, i ? 0 : 180)}
         resistance="5.1k"
         footprint={FP_0603}
         supplierPartNumbers={{ jlcpcb: ["C23186"] }}
