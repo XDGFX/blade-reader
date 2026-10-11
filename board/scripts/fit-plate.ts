@@ -10,7 +10,9 @@ type Pt = [number, number]
 const THICKNESS = 1.6
 const SEGMENTS = 64
 
-const circuit: any[] = JSON.parse(readFileSync("dist/index/circuit.json", "utf8"))
+// bun scripts/fit-plate.ts [circuit.json] [out.stl]
+const [src = "dist/index/circuit.json", out = "fab/blade-reader-fit-plate.stl"] = process.argv.slice(2)
+const circuit: any[] = JSON.parse(readFileSync(src, "utf8"))
 const of = (type: string) => circuit.filter((e) => e.type === type)
 
 const area = (r: Pt[]) => r.reduce((a, [x, y], i) => {
@@ -40,7 +42,7 @@ for (const c of of("pcb_cutout")) {
   holes.push(slot(c.center.x, c.center.y, c.width, c.height))
 }
 for (const h of [...of("pcb_hole"), ...of("pcb_plated_hole")]) {
-  if (h.shape !== "circle") throw new Error(`unhandled hole shape ${h.shape}`)
+  if ((h.shape ?? h.hole_shape) !== "circle") throw new Error(`unhandled hole shape ${h.shape ?? h.hole_shape}`)
   holes.push(slot(h.x, h.y, h.hole_diameter, h.hole_diameter))
 }
 
@@ -76,7 +78,7 @@ for (const r of rings) {
 }
 
 const buf = Buffer.alloc(84 + 50 * tris.length)
-buf.write("Blade Reader rev A fit plate", 0)
+buf.write("Blade Reader fit plate", 0)
 buf.writeUInt32LE(tris.length, 80)
 tris.forEach((t, i) => {
   const o = 84 + 50 * i
@@ -88,5 +90,5 @@ tris.forEach((t, i) => {
 })
 
 mkdirSync("fab", { recursive: true })
-writeFileSync("fab/blade-reader-fit-plate.stl", buf)
-console.log(`wrote fab/blade-reader-fit-plate.stl: ${rings.length - 1} holes and slots, ${tris.length} triangles`)
+writeFileSync(out, buf)
+console.log(`wrote ${out}: ${rings.length - 1} holes and slots, ${tris.length} triangles`)
