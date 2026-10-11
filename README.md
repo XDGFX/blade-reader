@@ -80,9 +80,8 @@ antenna overhangs, and 13.5 mm below the positive end.
    The nuts take an M4 ring for 4–6 mm² cable at most. Tie the cables to the bulkhead within
    about 100 mm.
 7. **Fit the ground wire**: one wire from the nut marked GND, on the right-hand arm between way
-   12 and the chin, to the panel's negative bus. Its ring leaves outboard too, straight out past
-   the yoke's edge, and the wire turns towards the negative bus once it is off the yoke. Fit it
-   before plugging anything into the USB socket or the programming pads on the panel.
+   12 and the chin, to the panel's negative bus. Fit it before plugging anything into the USB
+   socket or the programming pads on the panel.
 8. **Put the cover back on**, reconnect the battery, and check every torque again after the first
    warm run. The joints clamp FR4, which settles when warm.
 
@@ -96,9 +95,8 @@ so a flat lug has to rise by the yoke's 1.6 mm or more: a washer about 2 mm thic
 leaves about 11.9 mm of stud. A lug that steps up from its palm may clear without one; check for
 a visible gap all the way across the chin.
 
-The feed may leave the stud down across the chin or to either side. Keep it 15 mm or more from
-the antenna at the lower left. How far the feed's field moves the readings of ways 11 and 12 is
-not known until a built yoke is bench-checked.
+How far the feed's field moves the readings of ways 11 and 12 is not known until a built yoke is
+bench-checked.
 
 ### On a 6 circuit panel
 
@@ -117,8 +115,6 @@ on each side. The plate fitted a Blue Sea ST Blade 6 circuit that way, and its c
 - **The yoke's last 6.5 mm.** The chin was shortened from 20 mm to 13.5 after the plate was
   printed, without a reprint. The inner edge and every hole are as printed; how stiff the arms
   are on the shorter chin is not.
-- **The ground wire's direction.** The ring keepout is checked for a ring leaving outboard, not
-  for one turned along the arm.
 - **Everything a plate can't show:** the joints after heat, the room a USB plug needs behind the
   yoke, and Wi-Fi range with the antenna beside way 11's cable.
 
