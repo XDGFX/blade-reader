@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>PROTOTYPE: yoke parts-face silkscreen (#86)</title>
+<style>
+body{margin:0;background:#1b1c1e;color:#eee;font:14px/1.4 system-ui}
+header{padding:10px 16px}header b{font-size:16px}#notes{color:#bbb;max-width:110ch}
+#stage{overflow:auto;height:calc(100vh - 150px);text-align:center}#stage img{width:var(--w,100%)}
+footer{position:fixed;bottom:0;left:0;right:0;background:#000c;padding:8px;display:flex;gap:8px;justify-content:center;align-items:center}
+button{font:inherit;padding:6px 14px;border-radius:6px;border:1px solid #666;background:#2a2b2e;color:#eee;cursor:pointer}
+button.on{background:#f4f3ee;color:#111}
+</style>
+<header><b>PROTOTYPE · parts-face silkscreen, seen chin down</b> <span id="state"></span><div id="notes"></div></header>
+<div id="stage"><img id="img"></div>
+<footer><span id="bar"></span><span>|</span><button id="bodies"></button><button id="zoom"></button></footer>
+<script>
+const V=[{"key":"a","name":"A · Echo","notes":"The ring face's look: each way's number and two chevrons between its finger and its nut, way 1's filled. Wordmark over the supply, unicorn, JLC marker. Designators on the chin's ICs and diodes only. One word each for J1, USB, the test pads and J3."},{"key":"b","name":"B · Service","notes":"Labelled to be worked on: big way numbers, every way diode named, J1's six pins named, ratings on USB, the fuse and the 3V3 rail, and the source, revision, date and licence under a smaller wordmark."},{"key":"c","name":"C · Quiet","notes":"Only what assembly and inspection need: pin-1 dots, cathode bars, the JLC marker, small way numbers and the wordmark. No designators, no captions."}];const q=new URLSearchParams(location.search)
+let s={variant:q.get("variant")||"a",bodies:q.get("bodies")!=="0",zoom:q.get("zoom")==="1"}
+function draw(){const v=V.find(x=>x.key===s.variant)||V[0]
+img.src=v.key+(s.bodies?"":"-bare")+".svg";stage.style.setProperty("--w",s.zoom?"300%":"100%")
+notes.textContent=v.notes;state.textContent="· "+v.name+" · parts "+(s.bodies?"fitted":"off")+" · "+(s.zoom?"3×":"fit")
+bar.innerHTML="";for(const x of V){const b=document.createElement("button");b.textContent=x.name;b.className=x.key===v.key?"on":"";b.onclick=()=>{s.variant=x.key;draw()};bar.append(b," ")}
+bodies.textContent=s.bodies?"Hide parts":"Show parts";zoom.textContent=s.zoom?"Fit":"Zoom 3×"
+history.replaceState(0,"","?variant="+v.key+"&bodies="+(s.bodies?1:0)+"&zoom="+(s.zoom?1:0))}
+bodies.onclick=()=>{s.bodies=!s.bodies;draw()};zoom.onclick=()=>{s.zoom=!s.zoom;draw()};draw()
+</script>
