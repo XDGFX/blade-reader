@@ -11,8 +11,8 @@ button.on{background:#f4f3ee;color:#111}
 <div id="stage"><img id="img"></div>
 <footer><span id="bar"></span><span>|</span><button id="bodies"></button><button id="zoom"></button></footer>
 <script>
-const V=[{"key":"a","name":"A · Rain","notes":"The film's weather, and the quote's last word on the ring face: streaks falling 14° off vertical, broken into drops."},{"key":"b","name":"B · Iris","notes":"The Voight-Kampff eye. Fibres run out from the fuse panel, which is the pupil, with a broken collarette ring."},{"key":"c","name":"C · Creases","notes":"The sheet Gaff's unicorn is folded from: a crease pattern, mountain folds solid and valley folds dashed."},{"key":"d","name":"D · Field","notes":"What the board reads: contours of the field round the twelve ways' currents. Not from the film."}];const q=new URLSearchParams(location.search)
-let s={variant:q.get("variant")||"a",bodies:q.get("bodies")!=="0",zoom:q.get("zoom")==="1"}
+const V=[{"key":"d","name":"D · Field, round 1","notes":"As first drawn: right on the chin, too dense on the arms."},{"key":"e","name":"E · Field, 1.0 apart","notes":"Contours never closer than 1.0 mm: where they crowd, every second, fourth or eighth is kept."},{"key":"f","name":"F · Field, 1.5 apart","notes":"Contours never closer than 1.5 mm."},{"key":"g","name":"G · Field, 2.2 apart","notes":"Contours never closer than 2.2 mm: the arms about as open as the chin."}];const q=new URLSearchParams(location.search)
+let s={variant:q.get("variant")||"f",bodies:q.get("bodies")!=="0",zoom:q.get("zoom")==="1"}
 function draw(){const v=V.find(x=>x.key===s.variant)||V[0]
 img.src=v.key+(s.bodies?"":"-bare")+".svg";stage.style.setProperty("--w",s.zoom?"300%":"100%")
 notes.textContent=v.notes;state.textContent="· "+v.name+" · parts "+(s.bodies?"fitted":"off")+" · "+(s.zoom?"3×":"fit")

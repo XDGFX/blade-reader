@@ -176,7 +176,8 @@ const creases = (): Art => {
 }
 
 /** The field the board reads: contours of the magnetic potential round twelve ways' currents. */
-const field = (): Art => {
+/** `min` thins the arms: where contours would fall closer than that, every second, fourth or eighth is kept. */
+const field = (min = 0): Art => {
   // Each way's current runs from its finger out to its nut; a line of current sources along it.
   const src: Pt[] = []
   for (const s of [1, -1]) for (let k = 0; k < 6; k++) for (let d = 30; d <= 53; d += 1) src.push(P(s * d, 15.6 - 13.36 * k))
@@ -193,7 +194,8 @@ const field = (): Art => {
     for (let i = 0; i <= nx; i++) g[j].push(f(-60 + i * h, -59 + j * h))
   }
   const out: Art[] = []
-  for (let level = -40; level <= 40; level += 0.7) {
+  for (let n = -58; n <= 58; n++) {
+    const level = n * 0.7
     for (let j = 0; j < ny; j++)
       for (let i = 0; i < nx; i++) {
         const c = [g[j][i], g[j][i + 1], g[j + 1][i + 1], g[j + 1][i]]
@@ -206,6 +208,11 @@ const field = (): Art => {
             cross.push(P(at[e].x + (at[(e + 1) % 4].x - at[e].x) * t, at[e].y + (at[(e + 1) % 4].y - at[e].y) * t))
           }
         }
+        // The contours' spacing here is the level step over the field's slope.
+        const slope = Math.hypot(c[1] - c[0] + c[2] - c[3], c[3] - c[0] + c[2] - c[1]) / (2 * h)
+        let stride = 1
+        while ((0.7 * stride) / slope < min && stride < 64) stride *= 2
+        if (n % stride) continue
         if (cross.length === 2 && !blocked(cross[0]) && !blocked(cross[1])) out.push(art([{ pts: cross, w: W }]))
       }
   }
@@ -214,8 +221,8 @@ const field = (): Art => {
 
 const v = (name: string, notes: string, texture: Art) => ({ name, notes, art: join(texture, MARKS) })
 export const VARIANTS: Record<string, { name: string; notes: string; art: Art }> = {
-  a: v("A · Rain", "The film's weather, and the quote's last word on the ring face: streaks falling 14° off vertical, broken into drops.", rain()),
-  b: v("B · Iris", "The Voight-Kampff eye. Fibres run out from the fuse panel, which is the pupil, with a broken collarette ring.", iris()),
-  c: v("C · Creases", "The sheet Gaff's unicorn is folded from: a crease pattern, mountain folds solid and valley folds dashed.", creases()),
-  d: v("D · Field", "What the board reads: contours of the field round the twelve ways' currents. Not from the film.", field()),
+  d: v("D · Field, round 1", "As first drawn: right on the chin, too dense on the arms.", field()),
+  e: v("E · Field, 1.0 apart", "Contours never closer than 1.0 mm: where they crowd, every second, fourth or eighth is kept.", field(1.0)),
+  f: v("F · Field, 1.5 apart", "Contours never closer than 1.5 mm.", field(1.5)),
+  g: v("G · Field, 2.2 apart", "Contours never closer than 2.2 mm: the arms about as open as the chin.", field(2.2)),
 }

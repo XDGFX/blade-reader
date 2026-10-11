@@ -125,7 +125,7 @@ button.on{background:#f4f3ee;color:#111}
 <footer><span id="bar"></span><span>|</span><button id="bodies"></button><button id="zoom"></button></footer>
 <script>
 const V=${JSON.stringify(meta)};const q=new URLSearchParams(location.search)
-let s={variant:q.get("variant")||"a",bodies:q.get("bodies")!=="0",zoom:q.get("zoom")==="1"}
+let s={variant:q.get("variant")||"f",bodies:q.get("bodies")!=="0",zoom:q.get("zoom")==="1"}
 function draw(){const v=V.find(x=>x.key===s.variant)||V[0]
 img.src=v.key+(s.bodies?"":"-bare")+".svg";stage.style.setProperty("--w",s.zoom?"300%":"100%")
 notes.textContent=v.notes;state.textContent="· "+v.name+" · parts "+(s.bodies?"fitted":"off")+" · "+(s.zoom?"3×":"fit")
