@@ -52,7 +52,7 @@ const PIN1_DOTS: [number, number][] = [
   [57.7, 37.15], // U1, under the module: nothing fits beside pin 1
   [35.48, 42.63], // U2
   [-28.95, 51.45], // U3
-  [-55.55, 31.36], // U4
+  [-55.55, 32.36], // U4
   [9.85, 56.4], // J1, beside pin 1
 ]
 /** Cathode bars, 0.25 wide, alongside the cathode pad. */

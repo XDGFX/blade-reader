@@ -46,8 +46,9 @@ export const evenDivider = (n: number): { r3: Uv; r4: Uv } => {
   return { r3: [(DIVIDED_U[1] + SENSE_U) / 2, v], r4: [(GND_U + DIVIDED_U[0]) / 2, v] }
 }
 
-/** Mux 2's middle, and its pads from it: twelve a side on a 0.65 pitch, the sides 6.04 apart. */
-export const EVEN_MUX: Uv = [19.33, 8.9]
+// Mux 2's middle, and its pads from it: twelve a side on a 0.65 pitch, the sides 6.04 apart.
+// It stands 1.28 clear of the sense vias, which leaves room there for a via at its common pin.
+export const EVEN_MUX: Uv = [20.33, 8.9]
 const padU = (r: number) => EVEN_MUX[0] + (r - 5.5) * 0.65
 /** The inboard pins run VCC, Y8 to Y15 towards the chin; the outboard ones Z, Y7 down to Y0. */
 const inboardU = (y: number) => padU(y - 7)

@@ -367,7 +367,7 @@ export default () => (
     />
     <capacitor
       name="C40"
-      {...at(-45.2, 12.1)}
+      {...at(-45.2, 11.1)}
       {...C_100N}
       schX={0}
       schY={-12}
