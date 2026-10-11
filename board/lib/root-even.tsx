@@ -69,8 +69,19 @@ const BUS_VIA_U = 13.2
 const SENSE12_V = 2.53
 const SENSE12_VIA: Uv = [14.5, SENSE12_V]
 // Past the sense vias the voltage lines close up to a 0.32 pitch on way 2's, which keeps them
-// out of the ground nut's ring keepout swung 39°.
-const CLOSE_U = 15.5
+// out of the ground nut's ring keepout swung 39°. The mux's common comes down by a via beside
+// its pin, between two of them, so it closes up with them in a slot of its own, and Y12 is left
+// spare for it to pass between the voltage lines' vias and out under the inboard pins.
+const CLOSE_U = 16.2
+const closeV = (slot: number) => alongV(0) + 0.32 * slot
+/** Where they turn in to their pins the corner is cut further, clear of that keepout. */
+const DROP_CUT = 0.5
+/** The voltage lines' slots and channels, ways 2 to 12; the common has slot 3, over Y12. */
+const VOLTS_SLOT = [0, 1, 2, 4, 5, 6]
+const COMMON_SLOT = 3
+const COMMON_VIA: Uv = [15.9, alongV(5)]
+/** Where the common's line stops, inboard of the mux's pins, for the chin to take on. */
+const COMMON_END_V = 4.3
 // Under the mux's body each voltage line ends in a via in line with its pin, in two rows so that
 // neighbours clear each other.
 const VOLTS_VIA_V = [7.75, 7.05]
@@ -109,7 +120,7 @@ export const EVEN_CHANNELS = Array.from({ length: 16 }, (_, y) => {
   if (y >= 5 && y <= 7) return `net.S${ROW_WAYS[y - 5]}_MUX`
   if (y >= 2 && y <= 4) return `net.S${ROW_WAYS[7 - y]}_MUX`
   if (y === 8) return "net.TEMP_EVEN"
-  if (y >= 9 && y <= 14) return `net.S${2 * (y - 8)}_VOLTS`
+  if (y >= 9 && y !== 9 + COMMON_SLOT) return `net.S${2 * (VOLTS_SLOT.indexOf(y - 9) + 1)}_VOLTS`
   return "net.GND"
 })
 
@@ -157,9 +168,9 @@ export const EvenRoot = () => {
       {/* Voltage lines: from the mux's pin to its via under the body, out on the ring face,
           between two sense vias and round the turn. */}
       {[0, 2, 4, 6, 8, 10].map((i) => {
-        const y = 9 + i / 2
-        const via: Uv = [inboardU(y), VOLTS_VIA_V[(i / 2) % 2]]
-        const close = alongV(0) + 0.16 * i
+        const y = 9 + VOLTS_SLOT[i / 2]
+        const via: Uv = [inboardU(y), VOLTS_VIA_V[y % 2]]
+        const close = closeV(VOLTS_SLOT[i / 2])
         const fall = alongV(i) - close
         return (
           <Route
@@ -169,8 +180,8 @@ export const EvenRoot = () => {
             path={[
               `.U4 > .Y${y}`,
               ...through(via, "bottom"),
-              [via[0], close - CUT],
-              [via[0] - CUT, close],
+              [via[0], close - DROP_CUT],
+              [via[0] - DROP_CUT, close],
               ...(fall > 0 ? ([[CLOSE_U + fall, close], [CLOSE_U, alongV(i)]] as Uv[]) : []),
               ...toArm(outU(i), alongV(i), lane(i)),
             ]}
@@ -256,6 +267,23 @@ export const EvenRoot = () => {
       {ROW_WAYS.map((n, r) => (
         <Route key={n} from={r3(n, 1)} to={r4(n, 2)} path={[r3(n, 1), [LEAVE_U, rowV(r)]]} />
       ))}
+
+      {/* The mux's common: down beside its pin, along with the voltage lines, between their vias
+          over Y12 and out under the inboard pins. */}
+      <Route
+        from=".U4 > .Z"
+        to="net.ADC2"
+        path={[
+          ".U4 > .Z",
+          [padU(0), COMMON_VIA[1]],
+          ...through(COMMON_VIA, "bottom"),
+          [CLOSE_U, COMMON_VIA[1]],
+          [CLOSE_U + COMMON_VIA[1] - closeV(COMMON_SLOT), closeV(COMMON_SLOT)],
+          [inboardU(9 + COMMON_SLOT) - DROP_CUT, closeV(COMMON_SLOT)],
+          [inboardU(9 + COMMON_SLOT), closeV(COMMON_SLOT) - DROP_CUT],
+          [inboardU(9 + COMMON_SLOT), COMMON_END_V],
+        ]}
+      />
 
       {/* The arm's temperature: Q3's base and collector joined through R9's pad, and under the
           body to Y8. R9 takes its 3V3 at the mux's VCC pin. */}
