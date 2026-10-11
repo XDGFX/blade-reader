@@ -1,5 +1,5 @@
 // The yoke: one board for all 12 ways of a 12-way ST Blade. The outline, the holes and the
-// schematic: the arms are placed, the chin is not, and nothing is routed. Decisions behind
+// schematic: the arms and the chin are placed, and nothing is routed. Decisions behind
 // every part are in docs/design.md. Part codes are LCSC/JLCPCB.
 //
 // Panel coordinates, in mm, as the research notes give them: `a` runs along the fuse panel from
@@ -172,15 +172,15 @@ const Temperature = ({
   q: string
   r: string
   net: string
-  /** Where the transistor and its resistor stand. The arms' wait for the arm's layout. */
-  place?: { q: Place; r: Place }
+  /** Where the transistor and its resistor stand. */
+  place: { q: Place; r: Place }
   schX: number
   schY: number
 }) => (
   <>
     <resistor
       name={r}
-      {...place?.r}
+      {...place.r}
       {...R_10K}
       schX={schX}
       schY={schY}
@@ -190,7 +190,7 @@ const Temperature = ({
     />
     <transistor
       name={q}
-      {...place?.q}
+      {...place.q}
       type="npn"
       footprint={FP_SOT23}
       manufacturerPartNumber="MMBT3904"
@@ -378,7 +378,7 @@ export default () => (
       <Fragment key={n}>
         <resistor
           name={`R3${n}`}
-          {...at(-49.6 - k * 1.3, 16.6, 90)}
+          {...at(-51.1 - k, 16.6, 90)}
           resistance="22k"
           footprint={FP_0402}
           supplierPartNumbers={{ jlcpcb: ["C25768"] }}
@@ -390,7 +390,7 @@ export default () => (
         />
         <resistor
           name={`R4${n}`}
-          {...at(-49.6 - k * 1.3, 14.2, 90)}
+          {...at(-51.1 - k, 14.2, 90)}
           resistance="100k"
           footprint={FP_0402}
           supplierPartNumbers={{ jlcpcb: ["C25741"] }}
@@ -410,8 +410,24 @@ export default () => (
       schX={-8}
       schY={4}
     />
-    <Temperature q="Q2" r="R8" net="net.TEMP_ODD" schX={-11} schY={4} />
-    <Temperature q="Q3" r="R9" net="net.TEMP_EVEN" schX={-14} schY={4} />
+    {/* Each arm's stands at its root, beside way 11 or 12's signal pins: the odd arm's as far
+        from the module as the diode allows, the even arm's between mux 2's dividers and the caps. */}
+    <Temperature
+      q="Q2"
+      r="R8"
+      net="net.TEMP_ODD"
+      place={{ q: at(53.2, 17.85), r: at(50, 17.85, 90) }}
+      schX={-11}
+      schY={4}
+    />
+    <Temperature
+      q="Q3"
+      r="R9"
+      net="net.TEMP_EVEN"
+      place={{ q: at(-48.8, 15, 90), r: at(-52, 18.4) }}
+      schX={-14}
+      schY={4}
+    />
 
     {/* ── ESP32-C3 ─────────────────────────────────────────────────────────── */}
     {/* Every pin is used. GPIO4 and GPIO3 read the two multiplexers, GPIO7, 6, 5 and 10 select,
