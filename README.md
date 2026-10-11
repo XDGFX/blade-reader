@@ -49,8 +49,11 @@ ordered, and is kept at the tag [`rev-a-strip`](https://github.com/XDGFX/blade-r
 | Fuse panel | Status |
 |---|---|
 | Blue Sea Systems ST Blade, 12 circuit (5026) | Target. Way pitch 13.36 mm, #8 output screws |
-| Blue Sea Systems ST Blade, 6 circuit | Not fitted by the yoke. The rev A strip is where a 6-way board would restart |
+| Blue Sea Systems ST Blade, 6 circuit | Not a target. The yoke's outline fits it with the three spare fingers a side cut off (printed plate, 2026-10-11), but no 6-way board is laid out. The rev A strip is the other place one would restart |
 | Generic blade fuse boxes | Wanted. Pitches and terminals vary, so each would need its own outline |
+
+The chin sits under the feed lug on the + stud. Most lugs step up from their palm and clear it. If
+yours touches the board, put a washer under the lug.
 
 ## Repository
 
