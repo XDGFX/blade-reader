@@ -1,5 +1,6 @@
 // The yoke: one board for all 12 ways of a 12-way ST Blade. The outline, the holes and the
-// schematic: the arms and the chin are placed, and nothing is routed. Decisions behind
+// schematic: the arms and the chin are placed, each way's current path is poured, and nothing
+// is routed. Decisions behind
 // every part are in docs/design.md. Part codes are LCSC/JLCPCB.
 //
 // Panel coordinates, in mm, as the research notes give them: `a` runs along the fuse panel from
@@ -13,6 +14,7 @@ import { ESP32_C3_WROOM_02_N4 } from "./imports/ESP32_C3_WROOM_02_N4"
 import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
 import { SS210 } from "./imports/SS210"
 import { TYPE_C_31_M_12 } from "./imports/TYPE_C_31_M_12"
+import { WayCopper } from "./lib/copper"
 import { finger, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
 import { ExpansionPads, FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
 import { ringFace, type Yoke } from "./lib/ring-face"
@@ -297,6 +299,9 @@ export default () => (
         schY={20 - Math.floor((n - 1) / 2) * WAY_PITCH}
         section={n % 2 ? "WaysOdd" : "WaysEven"}
       />
+    ))}
+    {WAYS.map((n) => (
+      <WayCopper key={n} n={n} finger={CLAMPS[hole(n)]} nut={NUTS[hole(n)]} open={n < 3} />
     ))}
 
     {/* Ground: a ring-terminated wire from this nut to the panel's negative bus. */}
