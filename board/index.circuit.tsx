@@ -17,6 +17,7 @@ import { TYPE_C_31_M_12 } from "./imports/TYPE_C_31_M_12"
 import { WayCopper } from "./lib/copper"
 import { finger, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
 import { ExpansionPads, FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
+import { partsFace } from "./lib/parts-face"
 import { ringFace, type Yoke } from "./lib/ring-face"
 import { Face } from "./lib/silkscreen"
 import { Supply } from "./lib/supply"
@@ -139,7 +140,7 @@ const at = (c: number, a: number, pcbRotation = 0): Place => {
 
 /** The one ground nut, on the even arm's root. */
 export const GROUND_NUT = pcb(-51, -2.5)
-/** What the ring face's silk is laid out against. */
+/** What each face's silk is laid out against. */
 export const YOKE: Yoke = {
   pcb,
   waysA: WAYS_A,
@@ -707,6 +708,7 @@ export default () => (
     ))}
 
     <Face a={ringFace(YOKE)} layer="bottom" />
+    <Face a={partsFace(YOKE)} layer="top" />
 
     <pcbnotepath route={MODULE} />
     <pcbnotepath route={ANTENNA_KEEPOUT} />
