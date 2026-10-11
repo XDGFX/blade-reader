@@ -1,12 +1,22 @@
-// The yoke: one board for all 12 ways of a 12-way ST Blade. So far outline and holes only: no
-// schematic, placement or routing.
+// The yoke: one board for all 12 ways of a 12-way ST Blade. The outline, the holes and the
+// schematic: only the fingers and the nuts are placed, and nothing is routed. Decisions behind
+// every part are in docs/design.md. Part codes are LCSC/JLCPCB.
 //
 // Panel coordinates, in mm, as the research notes give them: `a` runs along the fuse panel from
 // its positive end, so the chin is at negative a, and `c` runs across from the centreline.
 // PCB coordinates are seen from the parts face (tscircuit's top) with the chin at the top:
 // X = c mirrored, which the symmetric outline hides, and Y = A_MID − a.
 
+import { Fragment } from "react"
+import { A_74HC4067PW_118 } from "./imports/A_74HC4067PW_118"
+import { ESP32_C3_WROOM_02_N4 } from "./imports/ESP32_C3_WROOM_02_N4"
+import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
+import { SS210 } from "./imports/SS210"
+import { TYPE_C_31_M_12 } from "./imports/TYPE_C_31_M_12"
 import { finger, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
+import { ExpansionPads, FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
+import { Supply } from "./lib/supply"
+import { Way, WAY_PITCH } from "./lib/way"
 
 const PANEL_HALF = 84.2 / 2
 /** Arm depth from the panel edge, and the output nut row's distance out from it (#48, revised). */
@@ -114,21 +124,481 @@ export const GROUND_NUT = onChamfer(-1, 0, -7)
 /** JLC tooling holes, Ø1.152: one on the chin near the ground nut, one at the far arm's open end, clear of every ring keepout. */
 export const TOOLING = [pcb(-18, A_OUTER + 2.5), pcb(PANEL_HALF + 3, A_OPEN - 2.5)]
 
-const Drill = ({ name, at, diameter }: { name: string; at: Pt; diameter: number }) => (
-  <hole name={name} pcbX={at.x} pcbY={at.y} diameter={diameter} />
+const WAYS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+const ODD = WAYS.filter((n) => n % 2 === 1)
+const EVEN = WAYS.filter((n) => n % 2 === 0)
+/** Way `n`'s place in CLAMPS and NUTS: odd ways at +c, which is −X, and 11–12 nearest the chin. */
+const hole = (n: number) => (n % 2 ? 0 : 6) + 5 - Math.floor((n - 1) / 2)
+// The column as rev A drew it has its sensor on the chin side only on the odd arm. The even arm,
+// the ground nut's, takes the mirror (#65), so its current runs the other way through its sensors.
+const mirrored = (n: number) => n % 2 === 0
+
+const R_10K = { resistance: "10k", footprint: FP_0402, supplierPartNumbers: { jlcpcb: ["C25744"] } }
+const C_100N = { capacitance: "100nF", footprint: FP_0402, supplierPartNumbers: { jlcpcb: ["C307331"] } }
+const C_10N = { capacitance: "10nF", footprint: FP_0402, supplierPartNumbers: { jlcpcb: ["C15195"] } }
+
+// Diode-connected transistor as a temperature sensor: about 265 µA through the 10k gives a Vbe
+// near 0.65 V, falling about 2 mV/°C. Only the change since each way was zeroed is used, so its
+// part-to-part spread doesn't matter. A basic part, unlike any NTC.
+// Wired by pad number: the MMBT3904's SOT-23 is 1 = B, 2 = E, 3 = C, but tscircuit's transistor
+// names pin1 collector and pin3 emitter, so its pin labels would be wrong.
+const Temperature = ({ q, r, net, schX, schY }: { q: string; r: string; net: string; schX: number; schY: number }) => (
+  <>
+    <resistor
+      name={r}
+      {...R_10K}
+      schX={schX}
+      schY={schY}
+      schRotation={90}
+      schSectionName="Adc"
+      connections={{ pin2: "net.V3V3", pin1: net }}
+    />
+    <transistor
+      name={q}
+      type="npn"
+      footprint={FP_SOT23}
+      manufacturerPartNumber="MMBT3904"
+      supplierPartNumbers={{ jlcpcb: ["C20526"] }}
+      schX={schX}
+      schY={schY - 3}
+      schSectionName="Adc"
+      connections={{ pin1: net, pin3: net, pin2: "net.GND" }}
+    />
+  </>
+)
+
+// One arm's 16:1 multiplexer. Channel k reads the arm's k-th way from the open end, so Y0 is way
+// 1 or 2 and Y5 way 11 or 12, and channel 8 + k reads that way's voltage. Y6 is the arm's
+// temperature and Y7 whatever `y7` gives it. Routing may reorder the channels; firmware follows
+// this schematic.
+const Mux = ({
+  name,
+  ways,
+  sense,
+  temperature,
+  y7,
+  common,
+  schX,
+  schY,
+}: {
+  name: string
+  ways: number[]
+  sense: (n: number) => string
+  temperature: string
+  y7: string
+  common: string
+  schX: number
+  schY: number
+}) => (
+  <A_74HC4067PW_118
+    name={name}
+    schX={schX}
+    schY={schY}
+    schSectionName="Adc"
+    connections={{
+      ...Object.fromEntries(
+        ways.flatMap((n, k) => [
+          [`Y${k}`, sense(n)],
+          [`Y${8 + k}`, `net.S${n}_VOLTS`],
+        ]),
+      ),
+      Y6: temperature,
+      Y7: y7,
+      Y14: "net.GND",
+      Y15: "net.GND",
+      Z: common,
+      S0: "net.MUX_S0",
+      S1: "net.MUX_S1",
+      S2: "net.MUX_S2",
+      S3: "net.MUX_S3",
+      N_E: "net.GND",
+      GND: "net.GND",
+      VCC: "net.V3V3",
+    }}
+  />
 )
 
 export default () => (
-  <board outline={OUTLINE} thickness="1.6mm" routingDisabled>
-    {CLAMPS.map((at, i) => (
-      <Drill key={`clamp${i}`} name={`CLAMP${i + 1}`} at={at} diameter={5.4} />
+  <board
+    outline={OUTLINE}
+    thickness="1.6mm"
+    solderMaskColor="black"
+    silkscreenColor="white"
+    routingDisabled
+  >
+    <schematicsection name="WaysOdd" displayName="Odd ways, 1–11" />
+    <schematicsection name="WaysEven" displayName="Even ways, 2–12: the mirrored arm" />
+    <schematicsection name="Supply" displayName="Supply" />
+    <schematicsection name="Mcu" displayName="ESP32-C3, USB and programming" />
+    <schematicsection name="Adc" displayName="Multiplexers, dividers and temperature" />
+
+    {/* ── Ways ─────────────────────────────────────────────────────────────── */}
+    {WAYS.map((n) => (
+      <Way
+        key={n}
+        n={n}
+        finger={CLAMPS[hole(n)]}
+        nut={NUTS[hole(n)]}
+        mirrored={mirrored(n)}
+        schX={n % 2 ? -68 : -46}
+        schY={20 - Math.floor((n - 1) / 2) * WAY_PITCH}
+        section={n % 2 ? "WaysOdd" : "WaysEven"}
+      />
     ))}
-    {[...NUTS, GROUND_NUT].map((at, i) => (
-      <Drill key={`nut${i}`} name={`NUT${i + 1}`} at={at} diameter={6.4} />
-    ))}
+
+    {/* Ground: a ring-terminated wire from this nut to the panel's negative bus. */}
+    <SMTSO4040CTJ
+      name="N13"
+      pcbX={GROUND_NUT.x}
+      pcbY={GROUND_NUT.y}
+      schX={-8}
+      schY={14}
+      schSectionName="Supply"
+      connections={{ pin1: "net.GND" }}
+    />
     {TOOLING.map((at, i) => (
-      <Drill key={`tool${i}`} name={`TOOL${i + 1}`} at={at} diameter={1.152} />
+      <Fragment key={i}>
+        <hole name={`TOOL${i + 1}`} pcbX={at.x} pcbY={at.y} diameter={1.152} />
+      </Fragment>
     ))}
+
+    {/* ── Supply ───────────────────────────────────────────────────────────── */}
+    <Supply schX={-8} schY={24} />
+
+    {/* ── Multiplexers and ADC ─────────────────────────────────────────────── */}
+    {/* Mux 1 reads the odd arm and the chin's temperature, on GPIO4. */}
+    <Mux
+      name="U2"
+      ways={ODD}
+      sense={(n) => `net.S${n}_SENSE`}
+      temperature="net.TEMP_ODD"
+      y7="net.TEMP_CHIN"
+      common="net.ADC"
+      schX={0}
+      schY={2}
+    />
+    <capacitor
+      name="C9"
+      {...C_100N}
+      schX={0}
+      schY={8}
+      schRotation={-90}
+      schSectionName="Adc"
+      connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
+    />
+    {/* At the ADC pin. Settles in under 5 ms per mux step: set ESPHome's mux delay to 5 ms
+        or more. The mux's on-resistance isolates it from the CC6905's 2.2 nF load limit. */}
+    <capacitor
+      name="C10"
+      {...C_10N}
+      schX={5}
+      schY={-4}
+      schRotation={90}
+      schSectionName="Adc"
+      connections={{ pin1: "net.ADC", pin2: "net.GND" }}
+    />
+    {/* Mux 2 reads the even arm, on GPIO3. */}
+    <Mux
+      name="U4"
+      ways={EVEN}
+      sense={(n) => `net.S${n}_MUX`}
+      temperature="net.TEMP_EVEN"
+      y7="net.GND"
+      common="net.ADC2"
+      schX={0}
+      schY={-18}
+    />
+    <capacitor
+      name="C40"
+      {...C_100N}
+      schX={0}
+      schY={-12}
+      schRotation={-90}
+      schSectionName="Adc"
+      connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
+    />
+    <capacitor
+      name="C41"
+      {...C_10N}
+      schX={5}
+      schY={-24}
+      schRotation={90}
+      schSectionName="Adc"
+      connections={{ pin1: "net.ADC2", pin2: "net.GND" }}
+    />
+    {/* The mirrored arm's sense lines, divided by 0.820 at mux 2: 1.35 V at rest and 2.43 V at
+        30 A, under the ADC's 2.5 V (#73). With C41 the divider's 18 kΩ is an 880 Hz low-pass. */}
+    {EVEN.map((n, k) => (
+      <Fragment key={n}>
+        <resistor
+          name={`R3${n}`}
+          resistance="22k"
+          footprint={FP_0402}
+          supplierPartNumbers={{ jlcpcb: ["C25768"] }}
+          schX={-16 + k * 1.5}
+          schY={-16}
+          schRotation={90}
+          schSectionName="Adc"
+          connections={{ pin2: `net.S${n}_SENSE`, pin1: `net.S${n}_MUX` }}
+        />
+        <resistor
+          name={`R4${n}`}
+          resistance="100k"
+          footprint={FP_0402}
+          supplierPartNumbers={{ jlcpcb: ["C25741"] }}
+          schX={-16 + k * 1.5}
+          schY={-19}
+          schRotation={90}
+          schSectionName="Adc"
+          connections={{ pin2: `net.S${n}_MUX`, pin1: "net.GND" }}
+        />
+      </Fragment>
+    ))}
+    <Temperature q="Q1" r="R10" net="net.TEMP_CHIN" schX={-8} schY={4} />
+    <Temperature q="Q2" r="R8" net="net.TEMP_ODD" schX={-11} schY={4} />
+    <Temperature q="Q3" r="R9" net="net.TEMP_EVEN" schX={-14} schY={4} />
+
+    {/* ── ESP32-C3 ─────────────────────────────────────────────────────────── */}
+    {/* Every pin is used. GPIO4 and GPIO3 read the two multiplexers, GPIO7, 6, 5 and 10 select,
+        GPIO18 and GPIO19 are the native USB, and GPIO0, the last clean ADC1 pin, goes to J3 with
+        GPIO2. GPIO2, GPIO8 and GPIO9 are the strapping pins, all pulled high. */}
+    <ESP32_C3_WROOM_02_N4
+      name="U1"
+      schX={22}
+      schY={0}
+      schSectionName="Mcu"
+      connections={{
+        "3V3": "net.V3V3",
+        EN: "net.EN",
+        IO4: "net.ADC",
+        IO3: "net.ADC2",
+        IO7: "net.MUX_S0",
+        IO6: "net.MUX_S1",
+        IO5: "net.MUX_S2",
+        IO10: "net.MUX_S3",
+        IO1: "net.LED",
+        IO8: "net.IO8",
+        IO9: "net.IO9",
+        IO2: "net.IO2",
+        IO0: "net.IO0",
+        IO18: "net.USB_DN",
+        IO19: "net.USB_DP",
+        RXD: "net.U0RXD",
+        TXD: "net.U0TXD",
+        GND: "net.GND",
+        EP: "net.GND",
+      }}
+    />
+    <capacitor
+      name="C6"
+      capacitance="10uF"
+      footprint={FP_0603}
+      supplierPartNumbers={{ jlcpcb: ["C19702"] }}
+      schX={14}
+      schY={10}
+      schRotation={-90}
+      schSectionName="Mcu"
+      connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
+    />
+    <capacitor
+      name="C7"
+      {...C_100N}
+      schX={15.5}
+      schY={10}
+      schRotation={-90}
+      schSectionName="Mcu"
+      connections={{ pin1: "net.V3V3", pin2: "net.GND" }}
+    />
+    {/* EN: the module has no RC of its own. Also gives esptool's auto-reset a clean edge. */}
+    <resistor
+      name="R3"
+      {...R_10K}
+      schX={14}
+      schY={-6}
+      schRotation={90}
+      schSectionName="Mcu"
+      connections={{ pin2: "net.V3V3", pin1: "net.EN" }}
+    />
+    <capacitor
+      name="C8"
+      capacitance="1uF"
+      footprint={FP_0402}
+      supplierPartNumbers={{ jlcpcb: ["C52923"] }}
+      schX={14}
+      schY={-9}
+      schRotation={90}
+      schSectionName="Mcu"
+      connections={{ pin1: "net.EN", pin2: "net.GND" }}
+    />
+    {/* Strapping pins: normal boot needs GPIO2 and GPIO9 high, and a serial download GPIO8 high. */}
+    {(
+      [
+        ["R4", "net.IO2"],
+        ["R5", "net.IO8"],
+        ["R6", "net.IO9"],
+      ] as const
+    ).map(([name, net], i) => (
+      <resistor
+        key={name}
+        name={name}
+        {...R_10K}
+        schX={30 + i * 1.5}
+        schY={8}
+        schRotation={90}
+        schSectionName="Mcu"
+        connections={{ pin2: "net.V3V3", pin1: net }}
+      />
+    ))}
+    {/* Status LED, green, ESPHome status_led, on GPIO1. */}
+    <resistor
+      name="R7"
+      resistance="1k"
+      footprint={FP_0402}
+      supplierPartNumbers={{ jlcpcb: ["C11702"] }}
+      schX={30}
+      schY={-6}
+      schSectionName="Mcu"
+      connections={{ pin1: "net.LED", pin2: "net.LED_A" }}
+    />
+    <led
+      name="LED1"
+      color="green"
+      footprint="0805"
+      supplierPartNumbers={{ jlcpcb: ["C2297"] }}
+      schX={33}
+      schY={-8}
+      schRotation={-90}
+      schSectionName="Mcu"
+      connections={{ anode: "net.LED_A", cathode: "net.GND" }}
+    />
+    {/* Fault LED, red, lit when GPIO8 is low. From 3V3, because GPIO8 must be high at boot; R5
+        is what holds it there, since the LED alone would leave it a diode drop short. */}
+    <resistor
+      name="R50"
+      resistance="1k"
+      footprint={FP_0402}
+      supplierPartNumbers={{ jlcpcb: ["C11702"] }}
+      schX={30}
+      schY={-12}
+      schSectionName="Mcu"
+      connections={{ pin1: "net.V3V3", pin2: "net.FAULT_A" }}
+    />
+    <led
+      name="LED2"
+      color="red"
+      footprint={FP_LED_0603}
+      supplierPartNumbers={{ jlcpcb: ["C2286"] }}
+      schX={33}
+      schY={-14}
+      schRotation={-90}
+      schSectionName="Mcu"
+      connections={{ anode: "net.FAULT_A", cathode: "net.IO8" }}
+    />
+
+    {/* ── USB ──────────────────────────────────────────────────────────────── */}
+    {/* The module's native USB: no bridge chip, no auto-reset parts. A 5.1k on each CC pin asks
+        the host for 5 V whichever way up the plug is. */}
+    <TYPE_C_31_M_12
+      name="J2"
+      schX={40}
+      schY={-12}
+      schSectionName="Mcu"
+      connections={{
+        VBUS1: "net.USB_VBUS",
+        VBUS2: "net.USB_VBUS",
+        DP1: "net.USB_DP",
+        DP2: "net.USB_DP",
+        DN1: "net.USB_DN",
+        DN2: "net.USB_DN",
+        CC1: "net.USB_CC1",
+        CC2: "net.USB_CC2",
+        GND1: "net.GND",
+        GND2: "net.GND",
+        EH1: "net.GND",
+        EH2: "net.GND",
+        EH3: "net.GND",
+        EH4: "net.GND",
+      }}
+    />
+    {(["USB_CC1", "USB_CC2"] as const).map((net, i) => (
+      <resistor
+        key={net}
+        name={`R5${i + 1}`}
+        resistance="5.1k"
+        footprint={FP_0603}
+        supplierPartNumbers={{ jlcpcb: ["C23186"] }}
+        schX={46 + i * 1.5}
+        schY={-16}
+        schRotation={90}
+        schSectionName="Mcu"
+        connections={{ pin2: `net.${net}`, pin1: "net.GND" }}
+      />
+    ))}
+    {/* Stops a live panel back-feeding 12–24 V into the USB host. */}
+    <SS210
+      name="D3"
+      schX={37}
+      schY={-6}
+      schSectionName="Mcu"
+      connections={{ anode: "net.USB_VBUS", cathode: "net.VSUP" }}
+    />
+
+    {/* ── Programming ──────────────────────────────────────────────────────── */}
+    {/* The recovery route: an ESP-PROG through a pogo clamp on J1's pads, power jumper at 5 V.
+        Flash off the panel, or with the ground wire fitted. */}
+    <ProgPads
+      name="J1"
+      schX={40}
+      schY={2}
+      schSectionName="Mcu"
+      connections={{
+        EN: "net.EN",
+        VDD: "net.PROG_VDD",
+        TXD: "net.U0RXD",
+        GND: "net.GND",
+        RXD: "net.U0TXD",
+        IO0: "net.IO9",
+      }}
+    />
+    {/* Stops a live panel back-feeding 12–24 V into the ESP-PROG. */}
+    <SS210
+      name="D2"
+      schX={40}
+      schY={7}
+      schSectionName="Mcu"
+      connections={{ anode: "net.PROG_VDD", cathode: "net.VSUP" }}
+    />
+    {/* Unpopulated. GPIO2 is a strapping pin: anything that holds it low at power-up stops the
+        board booting. */}
+    <ExpansionPads
+      name="J3"
+      schX={30}
+      schY={-18}
+      schSectionName="Mcu"
+      connections={{ "3V3": "net.V3V3", GND: "net.GND", IO0: "net.IO0", IO2: "net.IO2" }}
+    />
+
+    {/* ── Test pads ────────────────────────────────────────────────────────── */}
+    {(
+      [
+        ["TP4", "net.V3V3"],
+        ["TP5", "net.VSUP"],
+        ["TP6", "net.GND"],
+      ] as const
+    ).map(([name, net], i) => (
+      <testpoint
+        key={name}
+        name={name}
+        footprintVariant="pad"
+        padShape="circle"
+        padDiameter="1.5mm"
+        schX={22 + i * 2}
+        schY={-12}
+        schSectionName="Mcu"
+        connections={{ pin1: net }}
+      />
+    ))}
+
     <pcbnotepath route={MODULE} />
     <pcbnotepath route={ANTENNA_KEEPOUT} />
   </board>

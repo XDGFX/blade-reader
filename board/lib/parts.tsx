@@ -88,6 +88,32 @@ const progPins = {
 
 const PITCH = 2.54
 
+const expansionPins = { pin1: ["3V3"], pin2: ["GND"], pin3: ["IO0"], pin4: ["IO2"] } as const
+
+// Four bare pads in a row on 2.54 mm, for a wire or a header soldered on later. Nothing is fitted.
+export const ExpansionPads = (props: ChipProps<typeof expansionPins>) => (
+  <chip
+    pinLabels={expansionPins}
+    doNotPlace
+    footprint={
+      <footprint>
+        {[0, 1, 2, 3].map((i) => (
+          <Fragment key={i}>
+            <smtpad
+              portHints={[`pin${i + 1}`]}
+              pcbX={`${(i - 1.5) * PITCH}mm`}
+              pcbY="0mm"
+              shape="circle"
+              radius="0.75mm"
+            />
+          </Fragment>
+        ))}
+      </footprint>
+    }
+    {...props}
+  />
+)
+
 // Six SMT pads, 2×3 on 2.54 mm, on the parts face only, for a pogo clamp slid on from the board
 // edge. Nothing is fitted, and nothing of J1 is on the ring face, under way 1's ring keepout.
 export const ProgPads = (props: ChipProps<typeof progPins>) => (
