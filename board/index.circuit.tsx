@@ -309,7 +309,7 @@ export default () => (
     {/* Mux 1 reads the odd arm and the chin's temperature, on GPIO4. */}
     <Mux
       name="U2"
-      place={at(48.2, 15.5, 90)}
+      place={at(38.5, -3.6, 90)}
       ways={ODD}
       sense={(n) => `net.S${n}_SENSE`}
       temperature="net.TEMP_ODD"
@@ -320,7 +320,7 @@ export default () => (
     />
     <capacitor
       name="C9"
-      {...at(54.3, 19.1)}
+      {...at(41.5, 1.4)}
       {...C_100N}
       schX={0}
       schY={8}
@@ -378,7 +378,7 @@ export default () => (
       <Fragment key={n}>
         <resistor
           name={`R3${n}`}
-          {...at(-47.75 - k * 1.3, 16.6, 90)}
+          {...at(-49.6 - k * 1.3, 16.6, 90)}
           resistance="22k"
           footprint={FP_0402}
           supplierPartNumbers={{ jlcpcb: ["C25768"] }}
@@ -390,7 +390,7 @@ export default () => (
         />
         <resistor
           name={`R4${n}`}
-          {...at(-47.75 - k * 1.3, 14.2, 90)}
+          {...at(-49.6 - k * 1.3, 14.2, 90)}
           resistance="100k"
           footprint={FP_0402}
           supplierPartNumbers={{ jlcpcb: ["C25741"] }}
@@ -643,7 +643,7 @@ export default () => (
         board booting. */}
     <ExpansionPads
       name="J3"
-      {...at(37, -8.5)}
+      {...at(37, -9.6)}
       schX={30}
       schY={-18}
       schSectionName="Mcu"
