@@ -115,7 +115,8 @@ export const ExpansionPads = (props: ChipProps<typeof expansionPins>) => (
 )
 
 // Six SMT pads, 2×3 on 2.54 mm, on the parts face only, for a pogo clamp slid on from the board
-// edge. Nothing is fitted, and nothing of J1 is on the ring face, under way 1's ring keepout.
+// edge, lined up by eye (#77). Each runs from 0.25 to 4.1 mm either side of the centre line, so
+// they also take a hand-soldered surface-mount 2×3 header. Nothing is fitted.
 export const ProgPads = (props: ChipProps<typeof progPins>) => (
   <chip
     pinLabels={progPins}
@@ -128,9 +129,10 @@ export const ProgPads = (props: ChipProps<typeof progPins>) => (
               <smtpad
                 portHints={[`pin${col * 2 + 1 + i}`]}
                 pcbX={`${(col - 1) * PITCH}mm`}
-                pcbY={`${(row * PITCH) / 2}mm`}
-                shape="circle"
-                radius="0.75mm"
+                pcbY={`${row * 2.175}mm`}
+                shape="rect"
+                width="1.5mm"
+                height="3.85mm"
               />
             </Fragment>
           )),

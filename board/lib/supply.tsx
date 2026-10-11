@@ -2,9 +2,8 @@
 // Circuit and values from docs/research/way-monitor-power-supply.md, "Recommended circuit
 // and BOM", with its D1 replaced by the way diodes and its F1 by the fuse (issue #6).
 //
-// The circuit is the yoke's. The placement is still the strip's and waits for the chin's.
-// PCB: a line along the band behind ways 4–6, in the order the current flows towards the way 6
-// end: fuse, TVS diode, input caps and buck, then the inductor and output caps. U3 lies with
+// PCB: a line along the even half of the chin's outer edge, the strip's arrangement moved
+// across, in the order the current flows from the ground nut towards the chin's middle: fuse, TVS diode, input caps and buck, then the inductor and output caps. U3 lies with
 // VIN and EN towards the input caps and SW towards L1: C2 stands across its VIN end, C3 across
 // its SW end, and the feedback divider sits under its FB pin.
 
@@ -21,8 +20,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
         2.3 ms soft-start keeps the output capacitors' charge current below 0.1 A. */}
     <A_0466001_NRHF
       name="F1"
-      pcbX={-5.0}
-      pcbY={21.0}
+      pcbX={48.0}
+      pcbY={52.48}
       pcbRotation={180}
       schX={schX}
       schY={schY}
@@ -31,8 +30,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <SMBJ33A
       name="D1"
-      pcbX={-13.0}
-      pcbY={21.9}
+      pcbX={40.0}
+      pcbY={53.38}
       pcbRotation={0}
       schX={schX + 2.5}
       schY={schY - 2}
@@ -41,8 +40,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C1"
-      pcbX={-18.3}
-      pcbY={22.5}
+      pcbX={34.7}
+      pcbY={53.98}
       pcbRotation={-90}
       capacitance="2.2uF"
       footprint="1206"
@@ -56,8 +55,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C2"
-      pcbX={-20.4}
-      pcbY={22.95}
+      pcbX={32.6}
+      pcbY={54.43}
       pcbRotation={-90}
       capacitance="100nF"
       footprint="0805"
@@ -71,8 +70,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <LMR51610XDBVR
       name="U3"
-      pcbX={-23.1}
-      pcbY={22.5}
+      pcbX={29.9}
+      pcbY={53.98}
       pcbRotation={-90}
       schX={schX + 9}
       schY={schY}
@@ -88,8 +87,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C3"
-      pcbX={-25.35}
-      pcbY={22.5}
+      pcbX={27.65}
+      pcbY={53.98}
       pcbRotation={90}
       capacitance="100nF"
       footprint={FP_0402}
@@ -103,8 +102,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <SWPA6045S220MT
       name="L1"
-      pcbX={-33.0}
-      pcbY={22.15}
+      pcbX={20.0}
+      pcbY={53.63}
       pcbRotation={180}
       schX={schX + 14}
       schY={schY}
@@ -114,8 +113,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     {/* 0.8 V × (1 + 75k / 24k) = 3.30 V */}
     <resistor
       name="R1"
-      pcbX={-21.6}
-      pcbY={19.85}
+      pcbX={31.4}
+      pcbY={51.33}
       pcbRotation={180}
       resistance="75k"
       footprint={FP_0402}
@@ -128,8 +127,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <resistor
       name="R2"
-      pcbX={-20.1}
-      pcbY={20.3}
+      pcbX={32.9}
+      pcbY={51.78}
       pcbRotation={-90}
       resistance="24k"
       footprint={FP_0402}
@@ -144,8 +143,8 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
       <capacitor
         key={i}
         name={`C${i}`}
-        pcbX={-39.6}
-        pcbY={i === 4 ? 20.05 : 22.35}
+        pcbX={13.4}
+        pcbY={i === 4 ? 51.53 : 53.83}
         pcbRotation={180}
         capacitance="22uF"
         footprint="1206"

@@ -55,10 +55,10 @@ const INNER: Pt[] = PANEL_END.map((p, i) => {
 })
 /** The chin's inner edge on the centreline. */
 const A_CHIN_FLOOR = INNER[0].y
-export const CHIN_DEPTH = 20
+export const CHIN_DEPTH = 13.5
 export const A_OUTER = A_CHIN_FLOOR - CHIN_DEPTH
 /** Each outer corner of the chin is cut back this far across and along. */
-export const CHAMFER = { across: 35, along: 12 }
+export const CHAMFER = { across: 3, along: 3 }
 /** The cut across each arm's outer corner at the open end. */
 const END_CHAMFER = 4
 
@@ -94,35 +94,54 @@ export const CLAMPS = sides.flatMap((s) => WAYS_A.map((a) => pcb(s * (PANEL_HALF
 /** Output nuts. */
 export const NUTS = sides.flatMap((s) => WAYS_A.map((a) => pcb(s * (PANEL_HALF + NUT_OUT), a)))
 
-/** A point on the chamfer at side `s`: `along` from its middle towards the side edge, `out` past it. */
-const onChamfer = (s: 1 | -1, along: number, out: number): Pt => {
-  const len = Math.hypot(CHAMFER.across, CHAMFER.along)
-  const [uc, ua] = [CHAMFER.across / len, CHAMFER.along / len]
-  return pcb(
-    s * (HALF_WIDTH - CHAMFER.across / 2 + uc * along + ua * out),
-    A_OUTER + CHAMFER.along / 2 + ua * along - uc * out,
-  )
-}
-const box = (s: 1 | -1, mid: number, half: number, inboard: number, out: number): Pt[] =>
-  [[-half, -inboard], [half, -inboard], [half, out], [-half, out], [-half, -inboard]].map(([u, n]) =>
-    onChamfer(s, mid + u, n),
-  )
-
-// ESP32-C3-MINI-1 square to the chamfer at −X, its 11.2 mm pad area on the board and its antenna
-// 5.4 past the chamfer (#47). It sits 4 mm towards the side edge from the chamfer's middle, which
-// keeps the antenna inside the bounding rectangle.
-const MODULE_WIDTH = 13.2
-const ANTENNA = 5.4
+// WROOM-02 on the odd arm's root, between the chin and way 11: 14 mm of its 20 on the board and
+// its 6 mm antenna past the arm's outboard edge. Seen from its top with the antenna up, the
+// antenna's feed is at the right, the pin 18 side, and Espressif asks for the feed at the
+// board's corner: on this arm that side faces the chin's outer corner, on the even arm it would
+// face way 12.
+const MODULE_WIDTH = 18
+const MODULE_ON_BOARD = 14
+/** The module's pad rows are centred this far in from where its antenna starts. */
+const MODULE_ORIGIN = 7.1
+const ANTENNA = 6
 const KEEPOUT = 15
-const MODULE_AT = 4
-export const MODULE = box(1, MODULE_AT, MODULE_WIDTH / 2, 11.2, ANTENNA)
+/** The module's middle, along: its antenna ends 15 mm short of way 11's nut land. */
+const MODULE_A = -1
+/** A box on the odd arm's outboard edge, `half` either side of the module's middle. */
+const sideBox = (half: number, inboard: number, out: number): Pt[] =>
+  [[-half, -inboard], [half, -inboard], [half, out], [-half, out], [-half, -inboard]].map(([u, n]) =>
+    pcb(HALF_WIDTH + n, MODULE_A + u),
+  )
+export const MODULE = sideBox(MODULE_WIDTH / 2, MODULE_ON_BOARD, ANTENNA)
+export const ANTENNA_AREA = sideBox(MODULE_WIDTH / 2, 0, ANTENNA)
 /** No nut, inductor, test pad or tall part within 15 mm of the antenna. */
-export const ANTENNA_KEEPOUT = box(1, MODULE_AT, MODULE_WIDTH / 2 + KEEPOUT, KEEPOUT, ANTENNA)
+export const ANTENNA_KEEPOUT = sideBox(MODULE_WIDTH / 2 + KEEPOUT, KEEPOUT, ANTENNA + KEEPOUT)
 
-/** The one ground nut, 7 mm in from the middle of the other chamfer. */
-export const GROUND_NUT = onChamfer(-1, 0, -7)
-/** JLC tooling holes, Ø1.152: one on the chin near the ground nut, one at the far arm's open end, clear of every ring keepout. */
-export const TOOLING = [pcb(-18, A_OUTER + 2.5), pcb(PANEL_HALF + 3, A_OPEN - 2.5)]
+type Place = { pcbX: number; pcbY: number; pcbRotation: number }
+/**
+ * A place in the module's own frame, as its footprint is drawn: x across its pin rows with pins
+ * 10–18 at +x, the chin's side, and y towards the antenna. `turn` is the part's rotation in
+ * that frame.
+ */
+const byModule = (x: number, y: number, turn = 0): Place => {
+  const p = pcb(HALF_WIDTH - MODULE_ORIGIN + y, MODULE_A - x)
+  return { pcbX: p.x, pcbY: p.y, pcbRotation: 90 + turn }
+}
+/** A place in panel coordinates, across and along; the rotation is the PCB's. */
+const at = (c: number, a: number, pcbRotation = 0): Place => {
+  const p = pcb(c, a)
+  return { pcbX: p.x, pcbY: p.y, pcbRotation }
+}
+
+/** The one ground nut, on the even arm's root. */
+export const GROUND_NUT = pcb(-51, -2.5)
+/** JLC tooling holes, Ø1.152: one on the chin beside J1's diode, one at the far arm's open end, clear of every ring keepout. */
+export const TOOLING = [pcb(-9, A_OUTER + 2.5), pcb(PANEL_HALF + 3, A_OPEN - 2.5)]
+
+/** J1's middle: the pogo clamp's pads, their centre line 4.6 from the chin's outer edge (#77). */
+export const J1_AT = pcb(6, A_OUTER + 4.6)
+/** Kept clear for the clamp on both faces: 18 along the edge, 9.5 in. */
+export const J1_BOX = [[-9, 4.6], [9, 4.6], [9, -4.9], [-9, -4.9], [-9, 4.6]].map(([x, y]) => ({ x: J1_AT.x + x, y: J1_AT.y + y }))
 
 const WAYS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 const ODD = WAYS.filter((n) => n % 2 === 1)
@@ -142,10 +161,26 @@ const C_10N = { capacitance: "10nF", footprint: FP_0402, supplierPartNumbers: { 
 // part-to-part spread doesn't matter. A basic part, unlike any NTC.
 // Wired by pad number: the MMBT3904's SOT-23 is 1 = B, 2 = E, 3 = C, but tscircuit's transistor
 // names pin1 collector and pin3 emitter, so its pin labels would be wrong.
-const Temperature = ({ q, r, net, schX, schY }: { q: string; r: string; net: string; schX: number; schY: number }) => (
+const Temperature = ({
+  q,
+  r,
+  net,
+  place,
+  schX,
+  schY,
+}: {
+  q: string
+  r: string
+  net: string
+  /** Where the transistor and its resistor stand. The arms' wait for the arm's layout. */
+  place?: { q: Place; r: Place }
+  schX: number
+  schY: number
+}) => (
   <>
     <resistor
       name={r}
+      {...place?.r}
       {...R_10K}
       schX={schX}
       schY={schY}
@@ -155,6 +190,7 @@ const Temperature = ({ q, r, net, schX, schY }: { q: string; r: string; net: str
     />
     <transistor
       name={q}
+      {...place?.q}
       type="npn"
       footprint={FP_SOT23}
       manufacturerPartNumber="MMBT3904"
@@ -178,10 +214,12 @@ const Mux = ({
   temperature,
   y7,
   common,
+  place,
   schX,
   schY,
 }: {
   name: string
+  place: Place
   ways: number[]
   sense: (n: number) => string
   temperature: string
@@ -192,6 +230,7 @@ const Mux = ({
 }) => (
   <A_74HC4067PW_118
     name={name}
+    {...place}
     schX={schX}
     schY={schY}
     schSectionName="Adc"
@@ -270,6 +309,7 @@ export default () => (
     {/* Mux 1 reads the odd arm and the chin's temperature, on GPIO4. */}
     <Mux
       name="U2"
+      place={at(38.5, -3.6, 90)}
       ways={ODD}
       sense={(n) => `net.S${n}_SENSE`}
       temperature="net.TEMP_ODD"
@@ -280,6 +320,7 @@ export default () => (
     />
     <capacitor
       name="C9"
+      {...at(41.5, 1.4)}
       {...C_100N}
       schX={0}
       schY={8}
@@ -291,6 +332,7 @@ export default () => (
         or more. The mux's on-resistance isolates it from the CC6905's 2.2 nF load limit. */}
     <capacitor
       name="C10"
+      {...byModule(-11.2, 2.9, 180)}
       {...C_10N}
       schX={5}
       schY={-4}
@@ -301,6 +343,7 @@ export default () => (
     {/* Mux 2 reads the even arm, on GPIO3. */}
     <Mux
       name="U4"
+      place={at(-51, 8.5, 90)}
       ways={EVEN}
       sense={(n) => `net.S${n}_MUX`}
       temperature="net.TEMP_EVEN"
@@ -311,6 +354,7 @@ export default () => (
     />
     <capacitor
       name="C40"
+      {...at(-45.2, 12.1)}
       {...C_100N}
       schX={0}
       schY={-12}
@@ -320,6 +364,7 @@ export default () => (
     />
     <capacitor
       name="C41"
+      {...byModule(11.2, 1.5)}
       {...C_10N}
       schX={5}
       schY={-24}
@@ -333,6 +378,7 @@ export default () => (
       <Fragment key={n}>
         <resistor
           name={`R3${n}`}
+          {...at(-49.6 - k * 1.3, 16.6, 90)}
           resistance="22k"
           footprint={FP_0402}
           supplierPartNumbers={{ jlcpcb: ["C25768"] }}
@@ -344,6 +390,7 @@ export default () => (
         />
         <resistor
           name={`R4${n}`}
+          {...at(-49.6 - k * 1.3, 14.2, 90)}
           resistance="100k"
           footprint={FP_0402}
           supplierPartNumbers={{ jlcpcb: ["C25741"] }}
@@ -355,7 +402,14 @@ export default () => (
         />
       </Fragment>
     ))}
-    <Temperature q="Q1" r="R10" net="net.TEMP_CHIN" schX={-8} schY={4} />
+    <Temperature
+      q="Q1"
+      r="R10"
+      net="net.TEMP_CHIN"
+      place={{ q: at(-4, -3.2), r: at(-8, -3.2) }}
+      schX={-8}
+      schY={4}
+    />
     <Temperature q="Q2" r="R8" net="net.TEMP_ODD" schX={-11} schY={4} />
     <Temperature q="Q3" r="R9" net="net.TEMP_EVEN" schX={-14} schY={4} />
 
@@ -365,6 +419,7 @@ export default () => (
         GPIO2. GPIO2, GPIO8 and GPIO9 are the strapping pins, all pulled high. */}
     <ESP32_C3_WROOM_02_N4
       name="U1"
+      {...byModule(0, 0)}
       schX={22}
       schY={0}
       schSectionName="Mcu"
@@ -392,6 +447,7 @@ export default () => (
     />
     <capacitor
       name="C6"
+      {...byModule(-13.75, 3.3, 180)}
       capacitance="10uF"
       footprint={FP_0603}
       supplierPartNumbers={{ jlcpcb: ["C19702"] }}
@@ -403,6 +459,7 @@ export default () => (
     />
     <capacitor
       name="C7"
+      {...byModule(-12.5, 5.9, 180)}
       {...C_100N}
       schX={15.5}
       schY={10}
@@ -413,6 +470,7 @@ export default () => (
     {/* EN: the module has no RC of its own. Also gives esptool's auto-reset a clean edge. */}
     <resistor
       name="R3"
+      {...byModule(-10.75, 5.25, 90)}
       {...R_10K}
       schX={14}
       schY={-6}
@@ -422,6 +480,7 @@ export default () => (
     />
     <capacitor
       name="C8"
+      {...byModule(-12.5, 4.6, 180)}
       capacitance="1uF"
       footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C52923"] }}
@@ -434,14 +493,15 @@ export default () => (
     {/* Strapping pins: normal boot needs GPIO2 and GPIO9 high, and a serial download GPIO8 high. */}
     {(
       [
-        ["R4", "net.IO2"],
-        ["R5", "net.IO8"],
-        ["R6", "net.IO9"],
+        ["R4", "net.IO2", byModule(11.2, 3.0)],
+        ["R5", "net.IO8", byModule(-11.2, -3.0, 180)],
+        ["R6", "net.IO9", byModule(-11.2, -4.5, 180)],
       ] as const
-    ).map(([name, net], i) => (
+    ).map(([name, net, place], i) => (
       <resistor
         key={name}
         name={name}
+        {...place}
         {...R_10K}
         schX={30 + i * 1.5}
         schY={8}
@@ -453,6 +513,7 @@ export default () => (
     {/* Status LED, green, ESPHome status_led, on GPIO1. */}
     <resistor
       name="R7"
+      {...byModule(11.2, 4.5)}
       resistance="1k"
       footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C11702"] }}
@@ -463,6 +524,7 @@ export default () => (
     />
     <led
       name="LED1"
+      {...at(41, -12.6)}
       color="green"
       footprint="0805"
       supplierPartNumbers={{ jlcpcb: ["C2297"] }}
@@ -476,6 +538,7 @@ export default () => (
         is what holds it there, since the LED alone would leave it a diode drop short. */}
     <resistor
       name="R50"
+      {...at(34.2, -12.6)}
       resistance="1k"
       footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C11702"] }}
@@ -486,6 +549,7 @@ export default () => (
     />
     <led
       name="LED2"
+      {...at(37, -12.6)}
       color="red"
       footprint={FP_LED_0603}
       supplierPartNumbers={{ jlcpcb: ["C2286"] }}
@@ -501,6 +565,7 @@ export default () => (
         the host for 5 V whichever way up the plug is. */}
     <TYPE_C_31_M_12
       name="J2"
+      {...at(25, A_OUTER + 4.85, 180)}
       schX={40}
       schY={-12}
       schSectionName="Mcu"
@@ -525,6 +590,7 @@ export default () => (
       <resistor
         key={net}
         name={`R5${i + 1}`}
+        {...at(22.2 + i * 5.6, -5.2)}
         resistance="5.1k"
         footprint={FP_0603}
         supplierPartNumbers={{ jlcpcb: ["C23186"] }}
@@ -538,6 +604,7 @@ export default () => (
     {/* Stops a live panel back-feeding 12–24 V into the USB host. */}
     <SS210
       name="D3"
+      {...at(17.3, -10.5, 90)}
       schX={37}
       schY={-6}
       schSectionName="Mcu"
@@ -549,6 +616,8 @@ export default () => (
         Flash off the panel, or with the ground wire fitted. */}
     <ProgPads
       name="J1"
+      pcbX={J1_AT.x}
+      pcbY={J1_AT.y}
       schX={40}
       schY={2}
       schSectionName="Mcu"
@@ -564,6 +633,7 @@ export default () => (
     {/* Stops a live panel back-feeding 12–24 V into the ESP-PROG. */}
     <SS210
       name="D2"
+      {...at(-5, -10.5, 90)}
       schX={40}
       schY={7}
       schSectionName="Mcu"
@@ -573,6 +643,7 @@ export default () => (
         board booting. */}
     <ExpansionPads
       name="J3"
+      {...at(37, -9.6)}
       schX={30}
       schY={-18}
       schSectionName="Mcu"
@@ -590,6 +661,7 @@ export default () => (
       <testpoint
         key={name}
         name={name}
+        {...at(3 + i * 3, -2.9)}
         footprintVariant="pad"
         padShape="circle"
         padDiameter="1.5mm"
@@ -602,5 +674,6 @@ export default () => (
 
     <pcbnotepath route={MODULE} />
     <pcbnotepath route={ANTENNA_KEEPOUT} />
+    <pcbnotepath route={J1_BOX} />
   </board>
 )
