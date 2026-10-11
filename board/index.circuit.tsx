@@ -15,6 +15,8 @@ import { SS210 } from "./imports/SS210"
 import { TYPE_C_31_M_12 } from "./imports/TYPE_C_31_M_12"
 import { finger, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
 import { ExpansionPads, FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
+import { ringFace, type Yoke } from "./lib/ring-face"
+import { Face } from "./lib/silkscreen"
 import { Supply } from "./lib/supply"
 import { Way, WAY_PITCH } from "./lib/way"
 
@@ -135,6 +137,17 @@ const at = (c: number, a: number, pcbRotation = 0): Place => {
 
 /** The one ground nut, on the even arm's root. */
 export const GROUND_NUT = pcb(-51, -2.5)
+/** What the ring face's silk is laid out against. */
+export const YOKE: Yoke = {
+  pcb,
+  waysA: WAYS_A,
+  halfWidth: HALF_WIDTH,
+  armDepth: ARM_DEPTH,
+  aOuter: A_OUTER,
+  inner: INNER,
+  aEar: A_EAR,
+  groundNut: { x: -51, y: -2.5 },
+}
 /** JLC tooling holes, Ø1.152: one on the chin beside J1's diode, one at the far arm's open end, clear of every ring keepout. */
 export const TOOLING = [pcb(-9, A_OUTER + 2.5), pcb(PANEL_HALF + 3, A_OPEN - 2.5)]
 
@@ -687,6 +700,8 @@ export default () => (
         connections={{ pin1: net }}
       />
     ))}
+
+    <Face a={ringFace(YOKE)} layer="bottom" />
 
     <pcbnotepath route={MODULE} />
     <pcbnotepath route={ANTENNA_KEEPOUT} />

@@ -1,34 +1,18 @@
 // Draws the yoke and two rev A strips fitted to a 12-way ST Blade, seen from the ring face as
 // installed, for issue #52. The strips' outline, holes and silk are read from a built
 // circuit.json of the strip, which is the tag rev-a-strip: check it out as a worktree and run
-// `bun run silk` in its board/. The yoke's outline is index.circuit.tsx and its silk is a first
-// take laid out here, not a design. Run in board/: bun scripts/yoke-view.ts <strip circuit.json>
+// `bun run silk` in its board/. The yoke's outline is index.circuit.tsx and its silk is
+// lib/ring-face.ts. Run in board/: bun scripts/yoke-view.ts <strip circuit.json>
 //
 // Everything is drawn in panel coordinates, in mm: c across from the centreline and a along
 // from the positive end. The sheets are drawn as the panel is fitted, positive end down.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { ringFace } from "../lib/ring-face"
+import type { Art } from "../lib/silkscreen"
 import {
-  type Art,
-  art,
-  chevron,
-  crux,
-  earth,
-  frame,
-  join,
-  kana,
-  line,
-  logo,
-  mapArt,
-  ring,
-  text,
-  turn,
-} from "../lib/silkscreen"
-import {
-  A_OUTER,
   ANTENNA_AREA,
   ANTENNA_KEEPOUT,
-  CHAMFER,
   CLAMPS,
   GROUND_NUT,
   HALF_WIDTH,
@@ -39,6 +23,7 @@ import {
   PANEL_END,
   TOOLING,
   WAYS_A,
+  YOKE,
   pcb,
 } from "../index.circuit"
 
@@ -241,147 +226,15 @@ const A0 = pcb(0, 0).y
 /** The yoke's PCB coordinates, seen from the parts face, to the panel's. */
 const yokeAt = (p: Pt) => P(-p.x, A0 - p.y)
 
-/** An arm's face: x along from its first way, y in from its outboard edge, as the strip's ring face is. */
-const armAt = (s: 1 | -1) => (p: Pt) =>
-  s > 0 ? P(HALF_WIDTH - p.y, WAYS_A[0] + p.x) : P(-HALF_WIDTH + p.y, WAYS_A[5] - p.x)
-
-// Placeholder copy: the banner's quote runs down one arm, and a continuation back up the other.
-const FINGER_LINES = [
-  ["I'VE SEEN", "THINGS"],
-  ["YOU", "PEOPLE"],
-  ["WOULDN'T", "BELIEVE."],
-  ["FRIDGES", "DRAWING"],
-  ["AMPS OFF", "THE SHOULDER"],
-  ["OF", "ORION."],
-  ["I WATCHED", "FUSES"],
-  ["GLITTER IN", "THE DARK."],
-  ["ALL THOSE", "AMPS"],
-  ["WILL BE", "LOGGED"],
-  ["IN TIME,", "LIKE"],
-  ["WATTS", "IN RAIN."],
-]
-
 const EDGE = HALF_WIDTH - PANEL.half
-/** One arm: each way's number and chevron between its nut and the panel, the quote on its finger. */
-const arm = (s: 1 | -1): Art =>
-  join(
-    ...[0, 1, 2, 3, 4, 5].flatMap((i) => {
-      // Assumed: even ways down one side and odd down the other, 11–12 at the positive end.
-      const way = s > 0 ? 12 - 2 * i : 1 + 2 * i
-      const lines = FINGER_LINES[s > 0 ? i : 6 + i]
-      const x = i * PITCH
-      return [
-        chevron(x, 11.5, false),
-        text(x, EDGE - 0.75, 3, String(way), { anchor: "middle", w: 0.3 }),
-        text(x, EDGE + 1.75, 1, lines[0], { anchor: "middle" }),
-        text(x, EDGE + 3.35, 1, lines[1], { anchor: "middle" }),
-      ]
-    }),
-  )
-
-const CELLS = {
-  left: [
-    ["REVISION", "A", "2026-10"],
-    ["DERATE", "20 A PER WAY", "ABOVE 40 °C"],
-    ["OUTPUT NUT", "M4", "1.0-1.2 Nm"],
-  ],
-  right: [
-    ["LICENCE", "CERN-OHL-S-2.0", ""],
-    ["SOURCE", "XDGFX", "/BLADE-READER"],
-  ],
-}
-/** A spec plate cell, its label's baseline at y, centred on x: its art and its width. */
-const cell = ([label, a, b]: string[], y: number) => {
-  const parts = (x: number) =>
-    join(
-      text(x, y, 0.8, label, { anchor: "middle", ls: 0.06 }),
-      line([[x - 3, y + 0.55], [x + 3, y + 0.55]]),
-      text(x, y + 2.2, 1, a, { anchor: "middle" }),
-      text(x, y + 3.9, 1, b, { anchor: "middle" }),
-    )
-  const b0 = bbox(parts(0))
-  return { parts, half: Math.max(-b0.x0, b0.x1) }
-}
-/** Cells in a row from x, running in direction dir, 1.8 mm apart. */
-const cells = (list: string[][], x: number, dir: 1 | -1, y: number) => {
-  const out: Art[] = []
-  let at = x
-  for (const c of dir > 0 ? list : [...list].reverse()) {
-    const { parts, half } = cell(c, y)
-    out.push(parts(at + dir * half))
-    at += dir * (2 * half + 1.8)
-  }
-  return join(...out)
-}
-
-/** The wordmark, w wide, split at its word gap: BLADE ends at −gap and READER starts at +gap. */
-const wordmark = (w: number, y: number, gap: number) => {
-  const rings = logo(0, 0, w).fills[0]
-  const spans = rings.map((r) => [Math.min(...r.map((p) => p.x)), Math.max(...r.map((p) => p.x))]).sort((p, q) => p[0] - q[0])
-  // The widest clear gap between letters is the one between the words.
-  let reach = spans[0][1]
-  let split = { at: 0, size: 0, left: 0, right: 0 }
-  for (const [x0, x1] of spans) {
-    if (x0 - reach > split.size) split = { at: (x0 + reach) / 2, size: x0 - reach, left: reach, right: x0 }
-    reach = Math.max(reach, x1)
-  }
-  const centre = (r: Pt[]) => (Math.min(...r.map((p) => p.x)) + Math.max(...r.map((p) => p.x))) / 2
-  const shift = (r: Pt[], dx: number) => r.map((p) => P(p.x + dx, p.y + y))
-  return art(
-    [],
-    [
-      rings.filter((r) => centre(r) < split.at).map((r) => shift(r, -gap - split.left)),
-      rings.filter((r) => centre(r) > split.at).map((r) => shift(r, gap - split.right)),
-    ],
-  )
-}
-
 const G = yokeAt(GROUND_NUT)
-/** The chin's layout assumes its outer edge 22 past the panel's end; this is how far it really is from that. */
-const CHIN_SHIFT = A_OUTER + 22
-/** Where the maker's mark sits, in the chin's own view: under the ground nut, on the outer edge. */
-const makersMark = turn(40.5, 21, 0)
-
-// The panel is fitted positive end down, so the chin is read from the other way up than the
-// panel's coordinates run: it is laid out in its own view, x = −c and y = −a, outer edge at the bottom.
-const chin = (): Art => mapArt(chinArt(), (p) => P(-p.x, -p.y + CHIN_SHIFT))
-/** The chin: the spec plate, the wordmark below it either side of the feed, a sign on each shoulder. */
-const chinArt = (): Art => {
-  const g = P(-G.x, -(G.y - CHIN_SHIFT))
-  return join(
-    cells(CELLS.left, -10.5, -1, 10.3),
-    cells(CELLS.right, 10.5, 1, 10.3),
-    // Rev A's width: the ground nut's land is clear of it.
-    wordmark(58, 15.6, 9.2),
-    // The feed's corridor, and its polarity under the lug.
-    line([[-8, 9.5], [-8, 20.8]]),
-    line([[8, 9.5], [8, 20.8]]),
-    ring(0, 12.6, 3.2, 0.3),
-    line([[-1.7, 12.6], [1.7, 12.6]], 0.4),
-    line([[0, 10.9], [0, 14.3]], 0.4),
-    // The framed sign, as in the strip's way 1 ear, and its twin.
-    frame(-56, -7.4, 5.8, 22.4, 1),
-    kana(-53.1, -6.1, 2.3, 2.55),
-    text(g.x - 1.8, g.y - 8.6, 1.2, "GND"),
-    earth(g.x + 0.1, g.y - 7.3),
-    mapArt(
-      join(
-        crux(0, -2.9, 2.0),
-        text(2.8, -2.1, 0.8, "DESIGNED IN"),
-        text(2.8, -0.9, 0.8, "AUSTRALIA"),
-      ),
-      makersMark,
-    ),
-  )
-}
 
 const yokeBoard = (wired: boolean) => {
   const out: string[] = []
   // The WROOM-02's antenna, 6 mm past the odd arm's outboard edge; the module itself is under the board.
   out.push(poly(ANTENNA_AREA.map(yokeAt), "#15301f", `stroke="${C.edge}" stroke-width="0.2"`))
   out.push(poly(OUTLINE.map(yokeAt), C.mask, `stroke="${C.edge}" stroke-width="0.25"`))
-  out.push(silk(chin()))
-  for (const s of sides) out.push(silk(arm(s), armAt(s)))
+  out.push(silk(ringFace(YOKE), yokeAt))
   for (const t of TOOLING) out.push(disc(yokeAt(t), 0.576, C.bulkhead))
   for (const h of CLAMPS) out.push(clamp(yokeAt(h)))
   NUTS.forEach((h, i) => {

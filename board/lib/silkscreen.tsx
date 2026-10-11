@@ -1,5 +1,5 @@
-// Silkscreen drawing primitives: white on black mask. The yoke's two faces are not laid out yet;
-// scripts/yoke-view.ts holds a first take of the ring face.
+// Silkscreen drawing primitives: white on black mask. The yoke's ring face is laid out in
+// ring-face.ts; its parts face is not laid out yet.
 //
 // Art is drawn in a face's own coordinates, in mm with y running down, then mapped to the
 // board's with mapArt and placed with <Face>.
