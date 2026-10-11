@@ -106,8 +106,10 @@ $0.8992/m² for each extra 1 %.
 page says whether it can be combined with PCBA, and the Economic PCBA page doesn't mention it.
 <https://jlcpcb.com/news/multi-color-silkscreen-pcb>
 
-**Order number.** JLC adds no mark by default, and removing one is free. "Specify Position" uses a
-`JLCJLCJLCJLC` placeholder; this comes from search snippets only. <https://cart.jlcpcb.com/quote>
+**Order number.** JLC adds no mark by default, and removing one is free. JLC's help page still
+describes "Order Number (Specify Position)" with a `JLCJLCJLCJLC` placeholder, but the order form on
+2026-10-12 offered only Remove Mark or a 2D barcode, with Remove Mark fixed.
+<https://jlcpcb.com/help/article/How-to-mark-on-PCB>
 
 ## Authoring in tscircuit 0.0.2786
 

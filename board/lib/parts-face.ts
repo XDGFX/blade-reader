@@ -87,9 +87,6 @@ const chin = (): Art =>
   join(
     // The wordmark over the supply.
     centredAt(logo(0, 0, 33), -28, 47.2),
-    // JLC replaces this with the order number.
-    roundRect(11.3, 45.0, 13.4, 1.3, 0.5, 0.15),
-    text(18, 45.95, 0.8, "JLCJLCJLCJLC", { anchor: "middle" }),
     ...PIN1_DOTS.map(([x, y]) => dot(x, y, 0.46)),
     ...CATHODE_BARS.map(([x0, y0, x1, y1]) => bar(x0, y0, x1, y1)),
     ...LED_CATHODES.map((l) => line(l)),
