@@ -49,11 +49,78 @@ ordered, and is kept at the tag [`rev-a-strip`](https://github.com/XDGFX/blade-r
 | Fuse panel | Status |
 |---|---|
 | Blue Sea Systems ST Blade, 12 circuit (5026) | Target. Way pitch 13.36 mm, #8 output screws |
-| Blue Sea Systems ST Blade, 6 circuit | Unsupported, but possible. Clip off the parts between each arm's third and fourth fingers and cut both arms there. The outline fits that way (printed plate, 2026-10-11); no cut board has been tried, and nothing is checked for it |
+| Blue Sea Systems ST Blade, 6 circuit | Unsupported, but possible, with both arms cut short: see [Installing](#on-a-6-circuit-panel). The outline fits that way (printed plate, 2026-10-11); no cut board has been tried, and nothing is checked for it |
 | Generic blade fuse boxes | Wanted. Pitches and terminals vary, so each would need its own outline |
 
-The chin sits under the feed lug on the + stud. Most lugs step up from their palm and clear it. If
-yours touches the board, put a washer under the lug.
+## Installing
+
+No yoke has been built, so these notes come from the design and from a 1.6 mm printed plate of
+the outline. The plate was fitted to a Blue Sea ST Blade 12 circuit on 2026-10-11: it dropped on
+with all 12 holes lined up, cleared the + stud and the mounting screws, and the cover went on.
+
+The yoke is drawn for a fuse panel mounted positive end down, as Blue Sea draws it. The chin is
+then below the panel, the odd ways are on the left with 11 and 12 nearest the chin, and the
+silkscreen reads upright. The parts face goes towards the bulkhead and the ring face towards you.
+It needs 16.7 mm beside each long side of the panel, 22.7 mm at the lower left where the ESP32's
+antenna overhangs, and 13.5 mm below the positive end.
+
+1. **Isolate the battery.** The feed lug has to come off, and the + stud is live until you do.
+2. **Strip the positive end.** Take the feed lug off the + stud, lift every circuit's ring
+   terminal, and take out all 12 way screws. Keep the lock washer from each screw.
+3. **Lower the yoke on, holding it by the chin.** Never carry or press it by an arm: the arms have
+   no stiffening, and bending an assembled arm a couple of millimetres can crack its capacitors.
+   All 12 fingers go into their pockets together, 9.5 mm fingers into 11.1 mm pockets, with about
+   ±0.6 mm of float at the holes.
+4. **Refit all 12 way screws**, each with its lock washer, and torque them before anything else
+   goes on. They are the yoke's only fixing.
+5. **Refit the feed lug with a washer under it**, so that it stands clear of the chin. See below.
+6. **Bolt each circuit's ring terminal to its own way's nut**, with an M4 split spring washer
+   under the bolt, to 1.0–1.2 N·m. The numbers are on the fingers. Run the ring's tongue straight
+   out, away from the panel, and hold it there while you tighten: within about 20° either way.
+   The nuts take an M4 ring for 4–6 mm² cable at most. Tie the cables to the bulkhead within
+   about 100 mm.
+7. **Fit the ground wire**: one wire from the nut marked GND, on the right-hand arm between way
+   12 and the chin, to the panel's negative bus. Its ring leaves outboard too, straight out past
+   the yoke's edge, and the wire turns towards the negative bus once it is off the yoke. Fit it
+   before plugging anything into the USB socket or the programming pads on the panel.
+8. **Put the cover back on**, reconnect the battery, and check every torque again after the first
+   warm run. The joints clamp FR4, which settles when warm.
+
+### The feed lug and the chin
+
+The feed lug crosses the chin on its way off the + stud, and the whole of the chin's ring face
+is GND copper under solder mask. Mask is not insulation: a lug that rests on the chin can scrape
+through it, and that joins the feed to the ground wire with no fuse between them. So the lug must
+stand clear of the chin, not lie on it. The lug's seat on the stud is level with the parts face,
+so a flat lug has to rise by the yoke's 1.6 mm or more: a washer about 2 mm thick under it, which
+leaves about 11.9 mm of stud. A lug that steps up from its palm may clear without one; check for
+a visible gap all the way across the chin.
+
+The feed may leave the stud down across the chin or to either side. Keep it 15 mm or more from
+the antenna at the lower left. How far the feed's field moves the readings of ways 11 and 12 is
+not known until a built yoke is bench-checked.
+
+### On a 6 circuit panel
+
+Unsupported, but possible. Clip off the parts between each arm's third and fourth fingers,
+counting from the chin, and cut both arms there, which leaves the three fingers nearest the chin
+on each side. The plate fitted a Blue Sea ST Blade 6 circuit that way, and its cover went on.
+
+### Untested
+
+- **The feed lug over the chin.** No lug has been tried on the plate or on a yoke. The washer and
+  its thickness are worked out from the panel's CAD, not measured.
+- **Any clone.** Both panels the plate was fitted to were Blue Sea's. The yoke fixes the row
+  spacing at the ST Blade's 84.2 mm.
+- **A cut yoke on a 6 circuit panel.** Only the plate was cut. Nothing is laid out or checked
+  for it.
+- **The yoke's last 6.5 mm.** The chin was shortened from 20 mm to 13.5 after the plate was
+  printed, without a reprint. The inner edge and every hole are as printed; how stiff the arms
+  are on the shorter chin is not.
+- **The ground wire's direction.** The ring keepout is checked for a ring leaving outboard, not
+  for one turned along the arm.
+- **Everything a plate can't show:** the joints after heat, the room a USB plug needs behind the
+  yoke, and Wi-Fi range with the antenna beside way 11's cable.
 
 ## Repository
 
