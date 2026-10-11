@@ -14,6 +14,7 @@ import { ESP32_C3_WROOM_02_N4 } from "./imports/ESP32_C3_WROOM_02_N4"
 import { SMTSO4040CTJ } from "./imports/SMTSO4040CTJ"
 import { SS210 } from "./imports/SS210"
 import { TYPE_C_31_M_12 } from "./imports/TYPE_C_31_M_12"
+import { Chin } from "./lib/chin"
 import { WayCopper } from "./lib/copper"
 import { finger, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
 import { ExpansionPads, FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
@@ -303,7 +304,11 @@ export default () => (
     <Routes ways={WAYS.map((n) => ({ n, finger: CLAMPS[hole(n)], nut: NUTS[hole(n)] }))} evenV3v3={EVEN_V3V3} />
     <OddRoot finger={CLAMPS[hole(11)]} mux={{ x: U2_AT.pcbX, y: U2_AT.pcbY }} />
     <EvenRoot />
-
+    <Chin
+      nut={GROUND_NUT}
+      inner={INNER.map((p) => pcb(p.x, p.y))}
+      corner={[pcb(HALF_WIDTH, A_OUTER + CHAMFER.along), pcb(HALF_WIDTH - CHAMFER.across, A_OUTER)]}
+    />
 
     {/* Ground: a ring-terminated wire from this nut to the panel's negative bus. */}
     <SMTSO4040CTJ
