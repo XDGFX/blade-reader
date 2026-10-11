@@ -339,8 +339,8 @@ const wordmark = (w: number, y: number, gap: number) => {
 const G = yokeAt(GROUND_NUT)
 /** The chin's layout assumes its outer edge 22 past the panel's end; this is how far it really is from that. */
 const CHIN_SHIFT = A_OUTER + 22
-/** The chamfer over the module, in the chin's own view: x along it from the chin's flat edge towards the arm's corner, y out of the board. */
-const moduleChamfer = turn(HALF_WIDTH - CHAMFER.across, 22, (-Math.atan2(CHAMFER.along, CHAMFER.across) * 180) / Math.PI)
+/** Where the maker's mark sits, in the chin's own view: under the ground nut, on the outer edge. */
+const makersMark = turn(40.5, 21, 0)
 
 // The panel is fitted positive end down, so the chin is read from the other way up than the
 // panel's coordinates run: it is laid out in its own view, x = −c and y = −a, outer edge at the bottom.
@@ -349,37 +349,35 @@ const chin = (): Art => mapArt(chinArt(), (p) => P(-p.x, -p.y + CHIN_SHIFT))
 const chinArt = (): Art => {
   const g = P(-G.x, -(G.y - CHIN_SHIFT))
   return join(
-    cells(CELLS.left, -10.5, -1, 5.6),
-    cells(CELLS.right, 10.5, 1, 5.6),
+    cells(CELLS.left, -10.5, -1, 10.3),
+    cells(CELLS.right, 10.5, 1, 10.3),
     // Rev A's width: the ground nut's land is clear of it.
-    wordmark(58, 13.2, 9.2),
+    wordmark(58, 15.6, 9.2),
     // The feed's corridor, and its polarity under the lug.
-    line([[-8, 3.2], [-8, 20.8]]),
-    line([[8, 3.2], [8, 20.8]]),
-    ring(0, 11.5, 3.2, 0.3),
-    line([[-1.7, 11.5], [1.7, 11.5]], 0.4),
-    line([[0, 9.8], [0, 13.2]], 0.4),
+    line([[-8, 9.5], [-8, 20.8]]),
+    line([[8, 9.5], [8, 20.8]]),
+    ring(0, 12.6, 3.2, 0.3),
+    line([[-1.7, 12.6], [1.7, 12.6]], 0.4),
+    line([[0, 10.9], [0, 14.3]], 0.4),
     // The framed sign, as in the strip's way 1 ear, and its twin.
-    frame(-56, -13.9, 5.8, 22.4, 1),
-    kana(-53.1, -12.6, 2.3, 2.55),
-    frame(50.2, -13.9, 5.8, 22.4, 1),
-    mapArt(text(0, 0, 1.6, "12 WAY ST BLADE", { anchor: "middle", w: 0.2 }), turn(53.1 - 0.56, -2.7, 90)),
+    frame(-56, -7.4, 5.8, 22.4, 1),
+    kana(-53.1, -6.1, 2.3, 2.55),
     text(g.x - 1.8, g.y - 8.6, 1.2, "GND"),
     earth(g.x + 0.1, g.y - 7.3),
     mapArt(
       join(
-        crux(18.6, -2.9, 2.0),
-        text(21.4, -2.1, 0.8, "DESIGNED IN"),
-        text(21.4, -0.9, 0.8, "AUSTRALIA"),
+        crux(0, -2.9, 2.0),
+        text(2.8, -2.1, 0.8, "DESIGNED IN"),
+        text(2.8, -0.9, 0.8, "AUSTRALIA"),
       ),
-      moduleChamfer,
+      makersMark,
     ),
   )
 }
 
 const yokeBoard = (wired: boolean) => {
   const out: string[] = []
-  // The WROOM-02's antenna, 6 mm past the even arm's chamfer; the module itself is under the board.
+  // The WROOM-02's antenna, 6 mm past the odd arm's outboard edge; the module itself is under the board.
   out.push(poly(ANTENNA_AREA.map(yokeAt), "#15301f", `stroke="${C.edge}" stroke-width="0.2"`))
   out.push(poly(OUTLINE.map(yokeAt), C.mask, `stroke="${C.edge}" stroke-width="0.25"`))
   out.push(silk(chin()))
@@ -509,7 +507,7 @@ writeFileSync(
     10,
   ),
 )
-const CHIN: View = { x0: -64, y0: -30, w: 128, h: 56 }
+const CHIN: View = { x0: -70, y0: -24, w: 140, h: 50 }
 writeFileSync(
   `${OUT}/yoke-chin-parts.svg`,
   sheet([[{ title: "Yoke: the chin's placement, parts face seen through the board", body: panel() + chinParts() }]], CHIN, 10),

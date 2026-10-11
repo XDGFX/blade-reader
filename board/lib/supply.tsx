@@ -2,9 +2,8 @@
 // Circuit and values from docs/research/way-monitor-power-supply.md, "Recommended circuit
 // and BOM", with its D1 replaced by the way diodes and its F1 by the fuse (issue #6).
 //
-// PCB: a line across the odd half of the chin, the strip's arrangement turned half round, in the
-// order the current flows from the ground nut towards the chin's middle: fuse, TVS diode, input
-// caps and buck, then the inductor and output caps. U3 lies with
+// PCB: a line along the even half of the chin's outer edge, the strip's arrangement moved
+// across, in the order the current flows from the ground nut towards the chin's middle: fuse, TVS diode, input caps and buck, then the inductor and output caps. U3 lies with
 // VIN and EN towards the input caps and SW towards L1: C2 stands across its VIN end, C3 across
 // its SW end, and the feedback divider sits under its FB pin.
 
@@ -21,9 +20,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
         2.3 ms soft-start keeps the output capacitors' charge current below 0.1 A. */}
     <A_0466001_NRHF
       name="F1"
-      pcbX={-36.5}
-      pcbY={47.65}
-      pcbRotation={0}
+      pcbX={48.0}
+      pcbY={52.48}
+      pcbRotation={180}
       schX={schX}
       schY={schY}
       schSectionName="Supply"
@@ -31,9 +30,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <SMBJ33A
       name="D1"
-      pcbX={-28.5}
-      pcbY={46.75}
-      pcbRotation={180}
+      pcbX={40.0}
+      pcbY={53.38}
+      pcbRotation={0}
       schX={schX + 2.5}
       schY={schY - 2}
       schSectionName="Supply"
@@ -41,9 +40,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C1"
-      pcbX={-23.2}
-      pcbY={46.15}
-      pcbRotation={90}
+      pcbX={34.7}
+      pcbY={53.98}
+      pcbRotation={-90}
       capacitance="2.2uF"
       footprint="1206"
       maxVoltageRating="50V"
@@ -56,9 +55,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C2"
-      pcbX={-21.1}
-      pcbY={45.7}
-      pcbRotation={90}
+      pcbX={32.6}
+      pcbY={54.43}
+      pcbRotation={-90}
       capacitance="100nF"
       footprint="0805"
       maxVoltageRating="100V"
@@ -71,9 +70,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <LMR51610XDBVR
       name="U3"
-      pcbX={-18.4}
-      pcbY={46.15}
-      pcbRotation={90}
+      pcbX={29.9}
+      pcbY={53.98}
+      pcbRotation={-90}
       schX={schX + 9}
       schY={schY}
       schSectionName="Supply"
@@ -88,9 +87,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <capacitor
       name="C3"
-      pcbX={-16.15}
-      pcbY={46.15}
-      pcbRotation={-90}
+      pcbX={27.65}
+      pcbY={53.98}
+      pcbRotation={90}
       capacitance="100nF"
       footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C307331"] }}
@@ -103,9 +102,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <SWPA6045S220MT
       name="L1"
-      pcbX={-8.5}
-      pcbY={46.5}
-      pcbRotation={0}
+      pcbX={20.0}
+      pcbY={53.63}
+      pcbRotation={180}
       schX={schX + 14}
       schY={schY}
       schSectionName="Supply"
@@ -114,9 +113,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     {/* 0.8 V × (1 + 75k / 24k) = 3.30 V */}
     <resistor
       name="R1"
-      pcbX={-19.9}
-      pcbY={48.8}
-      pcbRotation={0}
+      pcbX={31.4}
+      pcbY={51.33}
+      pcbRotation={180}
       resistance="75k"
       footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C25798"] }}
@@ -128,9 +127,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
     />
     <resistor
       name="R2"
-      pcbX={-21.4}
-      pcbY={48.35}
-      pcbRotation={90}
+      pcbX={32.9}
+      pcbY={51.78}
+      pcbRotation={-90}
       resistance="24k"
       footprint={FP_0402}
       supplierPartNumbers={{ jlcpcb: ["C25769"] }}
@@ -144,9 +143,9 @@ export const Supply = ({ schX, schY }: { schX: number; schY: number }) => (
       <capacitor
         key={i}
         name={`C${i}`}
-        pcbX={-1.9}
-        pcbY={i === 4 ? 48.6 : 46.3}
-        pcbRotation={0}
+        pcbX={13.4}
+        pcbY={i === 4 ? 51.53 : 53.83}
+        pcbRotation={180}
         capacitance="22uF"
         footprint="1206"
         maxVoltageRating="25V"
