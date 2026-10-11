@@ -86,6 +86,15 @@ antenna overhangs, and 13.5 mm below the positive end.
 8. **Put the cover back on**, reconnect the battery, and check every torque again after the first
    warm run. The joints clamp FR4, which settles when warm.
 
+### Flashing through the programming pads
+
+The first flash goes in over the USB-C socket. The six pads marked PROG are the recovery route,
+for an Espressif ESP-PROG on a pogo clamp, and on rev B their TXD and RXD are crossed: the pad
+labelled TXD is wired to the module's RXD and the pad labelled RXD to its TXD, where the
+ESP-PROG's header names its pins from the ESP's side. So swap the TXD and RXD leads between the
+ESP-PROG and the clamp. EN, VDD, GND and IO0 go straight through. The ESP-PROG's signals stay at
+3.3 V whichever way its power jumper is set; set it to 5 V so the board runs off the panel.
+
 ### The feed lug and the chin
 
 The feed lug crosses the chin on its way off the + stud, and the whole of the chin's ring face
