@@ -253,7 +253,7 @@ const yokeJson = "dist/index/circuit.json"
 const yoke: El[] = existsSync(yokeJson) ? JSON.parse(readFileSync(yokeJson, "utf8")) : []
 const KIND = { ic: "#4f8fd6", power: "#e0863a", passive: "#9aa3ad", pad: "#d8c25a" }
 const kindOf = (name: string): keyof typeof KIND =>
-  /^(J1|J3|TP)/.test(name) ? "pad" : /^(F|L|D|U3|C[1-5]$|N13)/.test(name) ? "power" : /^(U|Q|J2)/.test(name) ? "ic" : "passive"
+  /^(J1|TP)/.test(name) ? "pad" : /^(F|L|D|U3|C[1-5]$|N13)/.test(name) ? "power" : /^(U|Q|J2)/.test(name) ? "ic" : "passive"
 /** Parts worth naming at this scale. */
 const NAMED = /^(U\d|J\d|L1|D\d|F1|Q1|LED\d|N13)$/
 const SMALL = 'font-family="Helvetica, Arial, sans-serif" font-size="1.5" text-anchor="middle" fill="#fff"'

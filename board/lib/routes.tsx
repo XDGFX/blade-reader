@@ -232,7 +232,8 @@ const WayRoutes = ({ n, finger, nut, evenV3v3 }: { n: number; finger: Pt; nut: P
           <Route from={pin(farPin)} to={cap(far, 1)} maxLength={CAP_RUN} path={[pin(farPin), cap(far, 1)]} />
           {odd && (
             <>
-              <Route from={cap(near, 2)} to={cap(far, 2)} maxLength={CAP_RUN} path={[cap(near, 2), cap(3, 2), cap(far, 2)]} />
+              <Route from={cap(near, 2)} to={cap(3, 2)} maxLength={CAP_RUN} path={[cap(near, 2), cap(3, 2)]} />
+              <Route from={cap(3, 2)} to={cap(far, 2)} maxLength={CAP_RUN} path={[cap(3, 2), cap(far, 2)]} />
               <Route
                 from={pin("GND")}
                 to={cap(near, 2)}

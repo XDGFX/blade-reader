@@ -1,7 +1,7 @@
 // The chin's own routes and its GND pour: the supply along the even half of the outer edge,
 // VSUP and 3V3 to both arms and the module, mux 2's grounds, and the lines that cross the chin
-// along its inner edge, and what stands at the module's pins, the USB socket and J1. The lines
-// from the module past mux 1 are not routed yet.
+// along its inner edge, what stands at the module's pins, the USB socket and J1, and the
+// module's lines past mux 1.
 //
 // Points are PCB coordinates, in mm, as lib/supply.tsx places its parts.
 //
@@ -18,7 +18,7 @@ const MARGIN = 0.3
 /** Where the pour stops on each arm's root: short of the odd arm's lanes, and of mux 2's lines. */
 const POUR_FROM = { odd: 28.5, even: 36.2 }
 // tscircuit holds a trace from a capacitor's pin to 1 mm unless told otherwise.
-const CAP_RUN = 80
+const CAP_RUN = 150
 
 /** VSUP up the even arm's outboard edge, outside mux 2's divided lines. */
 const VSUP_X = 58.25
@@ -62,6 +62,9 @@ const GND_VIAS: Record<string, Xy> = {
   mux1Y0: [-37.3, 48.655],
   mux1Inboard: [-32.0, 50.45],
   J1: [-7.27, 51.1],
+  module: [-45.7, 49.0],
+  C41: [-52.3, 55.4],
+  LED1: [-39.1, 55.4],
 }
 /** The even arm's bus leaves the ring face here, cut off from the pour by the lines along the inner edge. */
 const EVEN_BUS_UP: Xy = [44.25, 37.3]
@@ -149,6 +152,56 @@ const TP_V3V3_Y = 48.25
 const TP_VSUP_Y = 48.7
 
 /**
+ * The module's lines past mux 1. The pins on its arm side leave northwards, cross above R5 and
+ * R6 at `over`, and come down the strip between the module's GND pad and the arm's inner edge at
+ * `x`: the outer two follow the inner edge, at `inset` from it, and the selects go on down.
+ */
+const STRIP = {
+  ADC: { over: 30.4, x: -43.59, inset: 0.49 },
+  V3V3: { over: 31.0, x: -43.93, inset: 0.83 },
+  S2: { over: 31.52, x: -44.33 },
+  S3: { over: 31.84, x: -44.65 },
+  S0: { over: 32.16, x: -44.97 },
+}
+/** The inner edge's points the two outer lines follow, from the arm's side: 3V3 to C9, the common to Z. */
+const EDGE_FROM = 15
+const V3V3_LEAVES = 13
+const ADC_LEAVES = 7
+/** 3V3 for mux 1 comes up between the common's line and S2's, from C6's line on the ring face. */
+const MUX1_V3V3_VIA: Xy = [-52.8, 31.0]
+const ADC_X = -53.4
+const S2_X = -52.2
+/** The lines running east past mux 1, between it and the LEDs, each on its own y. */
+const PAST = { S0: 51.16, IO9: 51.48, TXD: 51.8, RXD: 52.12, DN: 54.2, DP: 54.52, IO8: 54.84 }
+/** S0 turns up under mux 1's body to its pin's inner end. */
+const S0_UP_X = -37.4
+/** GPIO10 takes S1 by a via beside its pad, along ADC2's outside on the ring face to S1's via. */
+const S1_VIA: Xy = [-44.55, 53.18]
+const S1_PAST_Y = ADC2_Y + LANE_PITCH
+/** GPIO8 crosses the module's chin-side row between GPIO3's pad and GPIO19's. */
+const IO8_DOWN_X = -49.45
+const IO8_GAP_X = -52.45
+/** Between mux 1 and the USB socket four lines turn up to the inner edge and run east along it. */
+const UP = { IO9: { x: -31.4, y: 45.8 }, TXD: { x: -31.08, y: 46.12 }, RXD: { x: -30.76, y: 46.44 }, DN: { x: -30.44, y: 46.76 } }
+/** Past VBUS they step down to pass between the test pads and J1. */
+const STEP = { from: -18.4, by: 1.65 }
+/** Where each comes down at J1: U0RXD on its west side, the other two between its last two columns. */
+const J1_DOWN = { RXD: -11.1, TXD: -4.89, IO9: -4.57 }
+const ROW_GAP_Y = 53.28
+/** D− drops between the CC resistors to a bar above its pads; D+ goes between the west stakes to one below its own. */
+const DN_BAR_Y = 49.75
+const DP_BAR_Y = 52.0
+/** EN leaves R3 by a via and follows the inside of the 3V3 trunk on the ring face to a via beside its J1 pad. */
+const EN_VIA: Xy = [-55.45, 33.3]
+const EN_TO: Xy = [-10.5, 55.4]
+const EN_OFF = 0.55
+/** R4 takes 3V3 from a via on the trunk; the status LED's line passes below it. */
+const R4_VIA: Xy = [-54.05, 56.62]
+const STATUS_Y = 57.25
+/** C9's GND goes under mux 1's body, between the outboard pins' ends and the sense vias, to Y15. */
+const C9_GND_X = -40.44
+
+/**
  * The chin's routes and pour. `nut` is the ground nut, `inner` the chin's inner edge from the
  * centreline to the odd arm's side, and `corner` the cut across the odd arm's outer corner,
  * from the side to the outer edge.
@@ -208,6 +261,33 @@ export const Chin = ({ nut, inner, corner }: { nut: Pt; inner: Pt[]; corner: [Pt
     const y = a[1] + ((x + CUT - a[0]) / (b[0] - a[0])) * (b[1] - a[1])
     return [[x + CUT, y], [x, y + CUT]]
   }
+
+  /** A line's turn off its y above R5 and R6 and down the strip, as far as the inner edge's curve. */
+  const strip = (name: keyof typeof STRIP): Xy[] => {
+    const { over, x } = STRIP[name]
+    return [[x - CUT, over], [x, over + CUT], ...("inset" in STRIP[name] ? [] : [[x, 37.0] as Xy])]
+  }
+  /** A line `d` inside the inner edge, from the arm's side as far as the edge's point `to`. */
+  const edge = (d: number, to: number): Xy[] => inset(d).slice(to, EDGE_FROM + 1).reverse()
+  /** The point at `x` on that line's next stretch, past the point `from`. */
+  const along = (d: number, from: number, x: number): Xy => {
+    const [a, b] = [inset(d)[from], inset(d)[from - 1]]
+    return [x, a[1] + ((x - a[0]) / (b[0] - a[0])) * (b[1] - a[1])]
+  }
+  /** A line past mux 1, up its column, along the inner edge and down its step, as far as J1. */
+  const round = (name: keyof typeof UP): Xy[] => {
+    const { x, y } = UP[name]
+    const from = STEP.from - (y - UP.IO9.y) * (Math.SQRT2 - 1)
+    return [
+      [x - CUT, PAST[name]],
+      [x, PAST[name] - CUT],
+      [x, y + CUT],
+      [x + CUT, y],
+      [from, y],
+      [from + STEP.by, y + STEP.by],
+    ]
+  }
+  const EN_BEND = EN_OFF * Math.tan(Math.PI / 8)
 
   const mirror = (p: Pt) => ({ x: -p.x, y: p.y })
   const side = inner[inner.length - 1].x
@@ -584,9 +664,9 @@ export const Chin = ({ nut, inner, corner }: { nut: Pt; inner: Pt[]; corner: [Pt
         maxLength={CAP_RUN}
         path={[".C6 > .pin1", ...down(C6_VIA), [V3V3_TRUNK.x, C6_VIA[1]]]}
       />
-      {/* 3V3 between the USB socket's stakes cuts the lower pair off from the pour: each is tied to
-          the one above it on the parts face. */}
-      <Route from=".J2 > .EH1" to=".J2 > .EH2" path={[".J2 > .EH1", ".J2 > .EH2"]} />
+      {/* 3V3 between the USB socket's stakes cuts the lower pair off from the pour: they are tied
+          to each other and to the upper east one, which leaves the west side open for D+. */}
+      <Route from=".J2 > .EH1" to=".J2 > .EH4" path={[".J2 > .EH1", ".J2 > .EH4"]} />
       <Route from=".J2 > .EH4" to=".J2 > .EH3" path={[".J2 > .EH4", ".J2 > .EH3"]} />
       {/* TP4 and R10, from the output capacitors' line. */}
       <Route
@@ -694,6 +774,259 @@ export const Chin = ({ nut, inner, corner }: { nut: Pt; inner: Pt[]; corner: [Pt
         ]}
       />
       <Route from=".J1 > .GND" to="net.GND" width={0.3} path={[".J1 > .GND", GND_VIAS.J1]} />
+
+      {/* ── The module's lines past mux 1 ────────────────────────────────────── */}
+      {/* Mux 1's common, outermost: round the inner edge above C9 and into Z from above. */}
+      <Route
+        from=".C10 > .pin1"
+        to=".U2 > .Z"
+        width={LANE_WIDTH}
+        maxLength={CAP_RUN}
+        path={[
+          ".C10 > .pin1",
+          [ADC_X - CUT, 33.74],
+          [ADC_X, 33.74 - CUT],
+          [ADC_X, STRIP.ADC.over + CUT],
+          [ADC_X + CUT, STRIP.ADC.over],
+          ...strip("ADC"),
+          ...edge(STRIP.ADC.inset, ADC_LEAVES),
+          along(STRIP.ADC.inset, ADC_LEAVES, -35.9),
+          [-35.48, along(STRIP.ADC.inset, ADC_LEAVES, -35.9)[1] + 0.42],
+          ".U2 > .Z",
+        ]}
+      />
+      {/* 3V3 inside it, to C9 and on to the VCC pin. */}
+      <Route
+        from=".C9 > .pin1"
+        to="net.V3V3"
+        width={LANE_WIDTH}
+        maxLength={CAP_RUN}
+        path={[
+          ".C9 > .pin1",
+          [-42.01, 41.0],
+          ...edge(STRIP.V3V3.inset, V3V3_LEAVES).reverse(),
+          ...strip("V3V3").reverse(),
+          ...down(MUX1_V3V3_VIA),
+          C6_VIA,
+        ]}
+      />
+      <Route from=".C9 > .pin1" to=".U2 > .VCC" maxLength={CAP_RUN} path={[".C9 > .pin1", [-42.01, 43.46], ".U2 > .VCC"]} />
+      <Route
+        from=".C9 > .pin2"
+        to=".U2 > .Y15"
+        width={LANE_WIDTH}
+        maxLength={CAP_RUN}
+        path={[".C9 > .pin2", [C9_GND_X, 42.58], [C9_GND_X, 48.41], [C9_GND_X - 0.25, 48.66], ".U2 > .Y15"]}
+      />
+      {/* The three selects on that side, each straight to its pin. */}
+      <Route
+        from=".U1 > .IO5"
+        to=".U2 > .S2"
+        width={LANE_WIDTH}
+        path={[
+          ".U1 > .IO5",
+          [-53.2, 34.93],
+          [S2_X, 33.93],
+          [S2_X, STRIP.S2.over + CUT],
+          [S2_X + CUT, STRIP.S2.over],
+          ...strip("S2"),
+          [STRIP.S2.x, 49.96 - CUT],
+          [STRIP.S2.x + CUT, 49.96],
+          ".U2 > .S2",
+        ]}
+      />
+      <Route
+        from=".U1 > .IO6"
+        to=".U2 > .S3"
+        width={LANE_WIDTH}
+        path={[
+          ".U1 > .IO6",
+          [-51.7, STRIP.S3.over + CUT],
+          [-51.7 + CUT, STRIP.S3.over],
+          ...strip("S3"),
+          [STRIP.S3.x, 50.605 - CUT],
+          [STRIP.S3.x + CUT, 50.605],
+          ".U2 > .S3",
+        ]}
+      />
+      <Route
+        from=".U1 > .IO7"
+        to=".U2 > .S0"
+        width={LANE_WIDTH}
+        path={[
+          ".U1 > .IO7",
+          [-50.2, STRIP.S0.over + CUT],
+          [-50.2 + CUT, STRIP.S0.over],
+          ...strip("S0"),
+          [STRIP.S0.x, PAST.S0 - CUT],
+          [STRIP.S0.x + CUT, PAST.S0],
+          [S0_UP_X - CUT, PAST.S0],
+          [S0_UP_X, PAST.S0 - CUT],
+          [S0_UP_X, 49.305 + CUT],
+          [S0_UP_X + CUT, 49.305],
+          ".U2 > .S0",
+        ]}
+      />
+      {/* S1, from GPIO10. */}
+      <Route
+        from=".U1 > .IO10"
+        to="net.MUX_S1"
+        width={LANE_WIDTH}
+        path={[
+          ".U1 > .IO10",
+          ...down(S1_VIA),
+          [S1_VIA[0], S1_PAST_Y + CUT],
+          [S1_VIA[0] + CUT, S1_PAST_Y],
+          [AT_MUX1.S1 - LANE_PITCH, S1_PAST_Y],
+          [AT_MUX1.S1, S1_PAST_Y - LANE_PITCH],
+          [AT_MUX1.S1, 49.955],
+        ]}
+      />
+      {/* The module's GND pin, down under the module to the first pour clear of the root's lanes. */}
+      <Route from=".U1 > .GND" to="net.GND" width={0.25} path={[".U1 > .GND", GND_VIAS.module]} />
+
+      {/* GPIO8, under the module and out through its chin-side row, the lowest line past mux 1, to the fault LED. */}
+      <Route
+        from=".U1 > .IO8"
+        to=".LED2 > .pin2"
+        width={LANE_WIDTH}
+        path={[
+          ".U1 > .IO8",
+          [-48.7, 37.0],
+          [IO8_DOWN_X, 37.75],
+          [IO8_DOWN_X, PAST.TXD - CUT],
+          [IO8_DOWN_X - CUT, PAST.TXD],
+          [IO8_GAP_X + CUT, PAST.TXD],
+          [IO8_GAP_X, PAST.TXD + CUT],
+          [IO8_GAP_X, PAST.IO8 - CUT],
+          [IO8_GAP_X + CUT, PAST.IO8],
+          [-36.25 - CUT, PAST.IO8],
+          [-36.25, PAST.IO8 + CUT],
+          ".LED2 > .pin2",
+        ]}
+      />
+      {/* GPIO9 and the UART, up between mux 1 and the USB socket, along the inner edge to J1. */}
+      <Route
+        from=".U1 > .IO9"
+        to=".J1 > .IO0"
+        width={LANE_WIDTH}
+        path={[
+          ".U1 > .IO9",
+          [-47.2, PAST.IO9 - CUT],
+          [-47.2 + CUT, PAST.IO9],
+          ...round("IO9"),
+          [J1_DOWN.IO9 - CUT, UP.IO9.y + STEP.by],
+          [J1_DOWN.IO9, UP.IO9.y + STEP.by + CUT],
+          [J1_DOWN.IO9, 50.0],
+          ".J1 > .IO0",
+        ]}
+      />
+      <Route
+        from=".U1 > .TXD"
+        to=".J1 > .RXD"
+        width={LANE_WIDTH}
+        path={[
+          ".U1 > .TXD",
+          [-48.7, PAST.TXD + CUT],
+          [-48.7 + CUT, PAST.TXD],
+          ...round("TXD"),
+          [J1_DOWN.TXD - CUT, UP.TXD.y + STEP.by],
+          [J1_DOWN.TXD, UP.TXD.y + STEP.by + CUT],
+          [J1_DOWN.TXD, 54.02],
+          ".J1 > .RXD",
+        ]}
+      />
+      <Route
+        from=".U1 > .RXD"
+        to=".J1 > .TXD"
+        width={LANE_WIDTH}
+        path={[
+          ".U1 > .RXD",
+          [-47.2, PAST.RXD + CUT],
+          [-47.2 + CUT, PAST.RXD],
+          ...round("RXD"),
+          [J1_DOWN.RXD - CUT, UP.RXD.y + STEP.by],
+          [J1_DOWN.RXD, UP.RXD.y + STEP.by + CUT],
+          [J1_DOWN.RXD, 52.1],
+          [-9.92, ROW_GAP_Y],
+          [-6.0, ROW_GAP_Y],
+          ".J1 > .TXD",
+        ]}
+      />
+      {/* USB: D− goes that way too, as far as the socket. */}
+      <Route
+        from=".U1 > .IO18"
+        to="net.USB_DN"
+        width={LANE_WIDTH}
+        path={[
+          ".U1 > .IO18",
+          [-50.2, PAST.DN - CUT],
+          [-50.2 + CUT, PAST.DN],
+          [UP.DN.x - CUT, PAST.DN],
+          [UP.DN.x, PAST.DN - CUT],
+          [UP.DN.x, UP.DN.y + CUT],
+          [UP.DN.x + CUT, UP.DN.y],
+          [-24.75 - CUT, UP.DN.y],
+          [-24.75, UP.DN.y + CUT],
+          [-24.75, DN_BAR_Y],
+        ]}
+      />
+      <Route
+        from=".J2 > .DN1"
+        to=".J2 > .DN2"
+        width={LANE_WIDTH}
+        path={[".J2 > .DN1", [-25.25, DN_BAR_Y], [-24.25, DN_BAR_Y], ".J2 > .DN2"]}
+      />
+      <Route
+        from=".U1 > .IO19"
+        to=".J2 > .DP2"
+        width={LANE_WIDTH}
+        path={[
+          ".U1 > .IO19",
+          [-51.7, PAST.DP - CUT],
+          [-51.7 + CUT, PAST.DP],
+          [-25.75 - CUT, PAST.DP],
+          [-25.75, PAST.DP - CUT],
+          ".J2 > .DP2",
+        ]}
+      />
+      <Route
+        from=".J2 > .DP2"
+        to=".J2 > .DP1"
+        width={LANE_WIDTH}
+        path={[".J2 > .DP2", [-25.75, DP_BAR_Y], [-24.75, DP_BAR_Y], ".J2 > .DP1"]}
+      />
+
+      {/* ── EN ───────────────────────────────────────────────────────────────── */}
+      <Route
+        from=".R3 > .pin1"
+        to=".J1 > .EN"
+        width={LANE_WIDTH}
+        path={[
+          ".R3 > .pin1",
+          ...down(EN_VIA),
+          [V3V3_TRUNK.x + EN_OFF, EN_VIA[1] + EN_VIA[0] - V3V3_TRUNK.x - EN_OFF],
+          [V3V3_TRUNK.x + EN_OFF, 54.31 - EN_BEND],
+          [-55.41 + EN_BEND, V3V3_TRUNK.y - EN_OFF],
+          [STAKES.to - EN_BEND, V3V3_TRUNK.y - EN_OFF],
+          [STAKES.to + (V3V3_TRUNK.y - STAKES.y) - EN_BEND, STAKES.y - EN_OFF],
+          [STAKES.from - (V3V3_TRUNK.y - STAKES.y) + EN_BEND, STAKES.y - EN_OFF],
+          [STAKES.from + EN_BEND, V3V3_TRUNK.y - EN_OFF],
+          [EN_TO[0] - (V3V3_TRUNK.y - EN_OFF - EN_TO[1]), V3V3_TRUNK.y - EN_OFF],
+          ...up(EN_TO),
+          ".J1 > .EN",
+        ]}
+      />
+
+      {/* ── The status LED, R4 and the chin-side grounds ─────────────────────── */}
+      <Route
+        from=".R7 > .pin2"
+        to=".LED1 > .anode"
+        path={[".R7 > .pin2", [-55.09, STATUS_Y], [-42.43, STATUS_Y], [-41.91, 56.73], ".LED1 > .anode"]}
+      />
+      <Route from=".R4 > .pin2" to="net.V3V3" width={0.25} path={[".R4 > .pin2", ...down(R4_VIA), [R4_VIA[0], V3V3_TRUNK.y]]} />
+      <Route from=".C41 > .pin2" to="net.GND" maxLength={CAP_RUN} path={[".C41 > .pin2", [-52.75, 56.14], [-52.3, 55.69], GND_VIAS.C41]} />
+      <Route from=".LED1 > .cathode" to="net.GND" path={[".LED1 > .cathode", GND_VIAS.LED1]} />
     </>
   )
 }

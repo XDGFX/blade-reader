@@ -81,11 +81,6 @@ const LABELS: [string, number, number, "start" | "middle" | "end"][] = [
   ["3V3", 3, 48.5, "middle"],
   ["VSUP", 6, 48.5, "middle"],
   ["GND", 9, 48.5, "middle"],
-  // J3's pads, each named under it.
-  ["IO2", 33.19, 54.97, "middle"],
-  ["IO0", 35.73, 54.97, "middle"],
-  ["GND", 38.27, 54.97, "middle"],
-  ["3V3", 40.81, 54.97, "middle"],
 ]
 
 const chin = (): Art =>

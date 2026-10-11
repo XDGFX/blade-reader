@@ -17,7 +17,7 @@ import { TYPE_C_31_M_12 } from "./imports/TYPE_C_31_M_12"
 import { Chin } from "./lib/chin"
 import { WayCopper } from "./lib/copper"
 import { finger, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
-import { ExpansionPads, FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
+import { FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
 import { partsFace } from "./lib/parts-face"
 import { ringFace, type Yoke } from "./lib/ring-face"
 import { ODD_CHANNELS, OddRoot } from "./lib/root"
@@ -448,9 +448,9 @@ export default () => (
     />
 
     {/* ── ESP32-C3 ─────────────────────────────────────────────────────────── */}
-    {/* Every pin is used. GPIO4 and GPIO3 read the two multiplexers, GPIO7, 6, 5 and 10 select,
-        GPIO18 and GPIO19 are the native USB, and GPIO0, the last clean ADC1 pin, goes to J3 with
-        GPIO2. GPIO2, GPIO8 and GPIO9 are the strapping pins, all pulled high. */}
+    {/* GPIO4 and GPIO3 read the two multiplexers, GPIO7, 10, 5 and 6 select, and GPIO18 and
+        GPIO19 are the native USB. GPIO0, the last clean ADC1 pin, is left unconnected. GPIO2,
+        GPIO8 and GPIO9 are the strapping pins, all pulled high. */}
     <ESP32_C3_WROOM_02_N4
       name="U1"
       {...byModule(0, 0)}
@@ -463,14 +463,13 @@ export default () => (
         IO4: "net.ADC",
         IO3: "net.ADC2",
         IO7: "net.MUX_S0",
-        IO6: "net.MUX_S1",
+        IO10: "net.MUX_S1",
         IO5: "net.MUX_S2",
-        IO10: "net.MUX_S3",
+        IO6: "net.MUX_S3",
         IO1: "net.LED",
         IO8: "net.IO8",
         IO9: "net.IO9",
         IO2: "net.IO2",
-        IO0: "net.IO0",
         IO18: "net.USB_DN",
         IO19: "net.USB_DP",
         RXD: "net.U0RXD",
@@ -673,17 +672,6 @@ export default () => (
       schSectionName="Mcu"
       connections={{ anode: "net.PROG_VDD", cathode: "net.VSUP" }}
     />
-    {/* Unpopulated. GPIO2 is a strapping pin: anything that holds it low at power-up stops the
-        board booting. */}
-    <ExpansionPads
-      name="J3"
-      {...at(37, -9.6)}
-      schX={30}
-      schY={-18}
-      schSectionName="Mcu"
-      connections={{ "3V3": "net.V3V3", GND: "net.GND", IO0: "net.IO0", IO2: "net.IO2" }}
-    />
-
     {/* ── Test pads ────────────────────────────────────────────────────────── */}
     {(
       [
