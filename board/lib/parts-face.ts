@@ -5,9 +5,10 @@
 // Each mark stands beside the pads as they are placed. If a part moves, scripts/silk.ts fails
 // until its mark follows it.
 
+import fieldJson from "./art/field.json"
 import type { Pt } from "./outline"
 import type { Yoke } from "./ring-face"
-import { type Art, bar, chevron, dot, join, line, logo, mapArt, roundRect, text } from "./silkscreen"
+import { type Art, art, bar, chevron, dot, join, line, logo, mapArt, roundRect, text } from "./silkscreen"
 
 const P = (x: number, y: number): Pt => ({ x, y })
 
@@ -100,6 +101,18 @@ const chin = (): Art =>
     ...LABELS.map(([str, x, y, anchor]) => text(x, y, 0.8, str, { anchor })),
   )
 
+/** The face's marks, in its own coordinates: what the texture is cut round. */
+export const partsMarks = (yoke: Yoke): Art => join(chin(), ...WAYS.map((n) => way(yoke, n)))
+
+// The texture behind the marks (#88): contours of the field round the twelve ways' currents,
+// which is what the board reads. scripts/field.ts draws it, cut clear of the pads and the marks.
+const field = (): Art =>
+  art(
+    (fieldJson.lines as number[][]).map((l) => ({
+      pts: Array.from({ length: l.length / 2 }, (_, i) => P(l[2 * i], l[2 * i + 1])),
+      w: fieldJson.w,
+    })),
+  )
+
 /** The parts face's silk, in the board's coordinates. */
-export const partsFace = (yoke: Yoke): Art =>
-  mapArt(join(chin(), ...WAYS.map((n) => way(yoke, n))), (p) => P(-p.x, p.y))
+export const partsFace = (yoke: Yoke): Art => mapArt(join(field(), partsMarks(yoke)), (p) => P(-p.x, p.y))
