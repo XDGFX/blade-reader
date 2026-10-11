@@ -7,7 +7,7 @@
 // Everything is drawn in panel coordinates, in mm: c across from the centreline and a along
 // from the positive end. The sheets are drawn as the panel is fitted, positive end down.
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import {
   type Art,
   art,
@@ -24,7 +24,23 @@ import {
   text,
   turn,
 } from "../lib/silkscreen"
-import { A_OUTER, CHAMFER, CLAMPS, GROUND_NUT, HALF_WIDTH, NUTS, OUTLINE, PANEL_END, TOOLING, WAYS_A, pcb } from "../index.circuit"
+import {
+  A_OUTER,
+  ANTENNA_AREA,
+  ANTENNA_KEEPOUT,
+  CHAMFER,
+  CLAMPS,
+  GROUND_NUT,
+  HALF_WIDTH,
+  J1_BOX,
+  MODULE,
+  NUTS,
+  OUTLINE,
+  PANEL_END,
+  TOOLING,
+  WAYS_A,
+  pcb,
+} from "../index.circuit"
 
 type Pt = { x: number; y: number }
 const P = (x: number, y: number): Pt => ({ x, y })
@@ -323,8 +339,8 @@ const wordmark = (w: number, y: number, gap: number) => {
 const G = yokeAt(GROUND_NUT)
 /** The chin's layout assumes its outer edge 22 past the panel's end; this is how far it really is from that. */
 const CHIN_SHIFT = A_OUTER + 22
-/** The chamfer over the module, in the chin's own view: x along it from the arm's corner towards the centre, y out of the board. */
-const moduleChamfer = turn(-HALF_WIDTH, 22 - CHAMFER.along, (Math.atan2(CHAMFER.along, CHAMFER.across) * 180) / Math.PI)
+/** The chamfer over the module, in the chin's own view: x along it from the chin's flat edge towards the arm's corner, y out of the board. */
+const moduleChamfer = turn(HALF_WIDTH - CHAMFER.across, 22, (-Math.atan2(CHAMFER.along, CHAMFER.across) * 180) / Math.PI)
 
 // The panel is fitted positive end down, so the chin is read from the other way up than the
 // panel's coordinates run: it is laid out in its own view, x = −c and y = −a, outer edge at the bottom.
@@ -335,8 +351,8 @@ const chinArt = (): Art => {
   return join(
     cells(CELLS.left, -10.5, -1, 5.6),
     cells(CELLS.right, 10.5, 1, 5.6),
-    // As wide as the ground nut's land and the chamfer leave room for.
-    wordmark(50, 13.2, 9.2),
+    // Rev A's width: the ground nut's land is clear of it.
+    wordmark(58, 13.2, 9.2),
     // The feed's corridor, and its polarity under the lug.
     line([[-8, 3.2], [-8, 20.8]]),
     line([[8, 3.2], [8, 20.8]]),
@@ -348,30 +364,23 @@ const chinArt = (): Art => {
     kana(-53.1, -12.6, 2.3, 2.55),
     frame(50.2, -13.9, 5.8, 22.4, 1),
     mapArt(text(0, 0, 1.6, "12 WAY ST BLADE", { anchor: "middle", w: 0.2 }), turn(53.1 - 0.56, -2.7, 90)),
-    text(g.x + 5.7, g.y - 0.2, 1.2, "GND"),
-    earth(g.x + 7.6, g.y + 1.1),
+    text(g.x - 1.8, g.y - 8.6, 1.2, "GND"),
+    earth(g.x + 0.1, g.y - 7.3),
     mapArt(
       join(
-        text(21, -2.1, 0.8, "DESIGNED IN", { anchor: "end" }),
-        text(21, -0.9, 0.8, "AUSTRALIA", { anchor: "end" }),
-        crux(22.4, -2.9, 2.0),
+        crux(18.6, -2.9, 2.0),
+        text(21.4, -2.1, 0.8, "DESIGNED IN"),
+        text(21.4, -0.9, 0.8, "AUSTRALIA"),
       ),
       moduleChamfer,
     ),
   )
 }
 
-/** A point on the module's chamfer: along from its middle towards the arm, outward past the edge. */
-const on = (along: number, outward: number) => {
-  const len = Math.hypot(CHAMFER.across, CHAMFER.along)
-  const [uc, ua] = [CHAMFER.across / len, CHAMFER.along / len]
-  return P(HALF_WIDTH - CHAMFER.across / 2 + uc * along + ua * outward, A_OUTER + CHAMFER.along / 2 + ua * along - uc * outward)
-}
-
 const yokeBoard = (wired: boolean) => {
   const out: string[] = []
-  // The WROOM-02's antenna, 6 mm past the other chamfer; the module itself is under the board.
-  out.push(poly([on(-5, 0), on(13, 0), on(13, 6), on(-5, 6)], "#15301f", `stroke="${C.edge}" stroke-width="0.2"`))
+  // The WROOM-02's antenna, 6 mm past the even arm's chamfer; the module itself is under the board.
+  out.push(poly(ANTENNA_AREA.map(yokeAt), "#15301f", `stroke="${C.edge}" stroke-width="0.2"`))
   out.push(poly(OUTLINE.map(yokeAt), C.mask, `stroke="${C.edge}" stroke-width="0.25"`))
   out.push(silk(chin()))
   for (const s of sides) out.push(silk(arm(s), armAt(s)))
@@ -381,64 +390,55 @@ const yokeBoard = (wired: boolean) => {
     const p = yokeAt(h)
     out.push(wired ? ringTerminal(p, P(Math.sign(p.x), 0), 60, WIRE[i % 6]) : nut(p))
   })
-  out.push(wired ? ringTerminal(G, P(-0.5, -0.866), 60, C.black, 2.6) : nut(G))
+  out.push(wired ? ringTerminal(G, P(Math.sign(G.x) * 0.5, -0.866), 60, C.black, 2.6) : nut(G))
   return out.join("")
 }
 
 // ── What the chin carries ──────────────────────────────────────────────────────────────────
 
-// A sketch, not a placement: each part's courtyard at its real size, on the parts face, seen
-// through the board from the ring face so it lines up with the other views.
-type Block = { name: string; c: number; a: number; w: number; h: number; kind: "ic" | "power" | "passive" | "pad" }
+// The chin's placement, read from the yoke's own build: each part's courtyard and pads on the
+// parts face, seen through the board from the ring face so it lines up with the other views.
+const yokeJson = "dist/index/circuit.json"
+const yoke: El[] = existsSync(yokeJson) ? JSON.parse(readFileSync(yokeJson, "utf8")) : []
 const KIND = { ic: "#4f8fd6", power: "#e0863a", passive: "#9aa3ad", pad: "#d8c25a" }
-const BLOCKS: Block[] = [
-  { name: "MUX", c: 51.4, a: 11.5, w: 8.3, h: 6.9, kind: "ic" },
-  { name: "MUX", c: -51.4, a: 11.5, w: 8.3, h: 6.9, kind: "ic" },
-  { name: "", c: 51.4, a: 16.6, w: 1.6, h: 0.9, kind: "passive" },
-  { name: "", c: -51.4, a: 16.6, w: 1.6, h: 0.9, kind: "passive" },
-  // The supply: fuse, TVS, buck, inductor and their capacitors.
-  { name: "F1", c: -30, a: -15.6, w: 4, h: 2.2, kind: "power" },
-  { name: "D1", c: -23.2, a: -17.4, w: 6.6, h: 4.2, kind: "power" },
-  { name: "C1", c: -29.6, a: -10.2, w: 2.2, h: 4, kind: "power" },
-  { name: "C2", c: -26.8, a: -10.2, w: 2.2, h: 4, kind: "power" },
-  { name: "U3", c: -22.6, a: -10.6, w: 3.4, h: 3.3, kind: "power" },
-  { name: "L1", c: -15.4, a: -9.4, w: 6.6, h: 6.6, kind: "power" },
-  { name: "", c: -14.6, a: -16.2, w: 1.6, h: 2.6, kind: "power" },
-  { name: "", c: -12.4, a: -16.2, w: 1.6, h: 2.6, kind: "power" },
-  { name: "", c: -10.2, a: -16.2, w: 1.6, h: 2.6, kind: "power" },
-  { name: "", c: -20.4, a: -6.4, w: 0.9, h: 1.6, kind: "passive" },
-  { name: "", c: -21.9, a: -6.4, w: 0.9, h: 1.6, kind: "passive" },
-  { name: "", c: -19.4, a: -13.8, w: 1.6, h: 0.9, kind: "passive" },
-  // Programming pads at the outer edge for the pogo clamp, their diode, the LED and the rest.
-  { name: "J1", c: 17, a: -19.1, w: 6.6, h: 4.2, kind: "pad" },
-  { name: "D2", c: 26, a: -16.8, w: 5.4, h: 3, kind: "power" },
-  { name: "LED", c: 12.4, a: -13.6, w: 2.2, h: 1.2, kind: "passive" },
-  { name: "", c: 15.2, a: -13.6, w: 1.6, h: 0.9, kind: "passive" },
-  { name: "Q1", c: 14, a: -8, w: 3.2, h: 3, kind: "ic" },
-  { name: "", c: 21, a: -10.8, w: 1.4, h: 1.4, kind: "pad" },
-  { name: "", c: 23.6, a: -10.8, w: 1.4, h: 1.4, kind: "pad" },
-  { name: "", c: 26.2, a: -10.8, w: 1.4, h: 1.4, kind: "pad" },
-]
-const SMALL = 'font-family="Helvetica, Arial, sans-serif" font-size="1.7" text-anchor="middle" fill="#fff"'
+const kindOf = (name: string): keyof typeof KIND =>
+  /^(J1|J3|TP)/.test(name) ? "pad" : /^(F|L|D|U3|C[1-5]$|N13)/.test(name) ? "power" : /^(U|Q|J2)/.test(name) ? "ic" : "passive"
+/** Parts worth naming at this scale. */
+const NAMED = /^(U\d|J\d|L1|D\d|F1|Q1|LED\d|N13)$/
+const SMALL = 'font-family="Helvetica, Arial, sans-serif" font-size="1.5" text-anchor="middle" fill="#fff"'
+
+const padShape = (e: El): Pt[] => {
+  const [w, h] = e.shape === "circle" ? [e.radius, e.radius] : [(e.width ?? e.outer_width ?? e.outer_diameter) / 2, (e.height ?? e.outer_height ?? e.outer_diameter) / 2]
+  const a = ((e.ccw_rotation ?? 0) * Math.PI) / 180
+  return e.shape === "polygon"
+    ? e.points
+    : [[-w, -h], [w, -h], [w, h], [-w, h]].map(([x, y]) => P(e.x + x * Math.cos(a) - y * Math.sin(a), e.y + x * Math.sin(a) + y * Math.cos(a)))
+}
 
 const chinParts = () => {
-  const out = [`<g opacity="0.45">${yokeBoard(false)}</g>`]
-  const block = (pts: Pt[], kind: Block["kind"]) =>
-    poly(pts, KIND[kind], `fill-opacity="0.75" stroke="${KIND[kind]}" stroke-width="0.2"`)
-  // The WROOM-02: 18 × 20, 14 of it on the board, and the three capacitors in a row behind it.
-  out.push(block([on(-5, 0), on(13, 0), on(13, -14), on(-5, -14)], "ic"))
-  for (const k of [-2, 1, 4]) out.push(block([on(k, -14.6), on(k + 1.6, -14.6), on(k + 1.6, -15.5), on(k, -15.5)], "passive"))
-  const u1 = on(4, -7)
+  const out = [`<g opacity="0.4">${yokeBoard(false)}</g>`]
   // Upright on a sheet drawn positive end down.
   const label = (p: Pt, name: string) =>
-    `<text x="${f(p.x)}" y="${f(p.y + 0.6)}" transform="rotate(180 ${f(p.x)} ${f(p.y)})" ${SMALL}>${name}</text>`
-  out.push(label(u1, "WROOM-02"))
-  for (const b of BLOCKS) {
-    const a = b.a + CHIN_SHIFT
-    out.push(block([P(b.c - b.w / 2, a - b.h / 2), P(b.c + b.w / 2, b.a - b.h / 2), P(b.c + b.w / 2, b.a + b.h / 2), P(b.c - b.w / 2, b.a + b.h / 2)], b.kind))
-    if (b.name) out.push(label(P(b.c, a), b.name))
+    `<text x="${f(p.x)}" y="${f(p.y + 0.5)}" transform="rotate(180 ${f(p.x)} ${f(p.y)})" ${SMALL}>${name}</text>`
+  const dashed = (pts: Pt[], colour: string) => stroke(pts.map(yokeAt), colour, 0.2, 'stroke-dasharray="1 0.8"', "butt")
+  out.push(dashed(ANTENNA_KEEPOUT, "#7fd18b"), dashed(J1_BOX, KIND.pad))
+  out.push(poly(MODULE.map(yokeAt), KIND.ic, `fill-opacity="0.35" stroke="${KIND.ic}" stroke-width="0.2"`))
+  const names = new Map(yoke.filter((e) => e.type === "source_component").map((e) => [e.source_component_id, e.name as string]))
+  // A way's own parts wait for the arm's layout.
+  const onArm = /^(W\d+|N([1-9]|1[0-2])|U1\d+|D1\d+|R[12]\d+|C[123]\d+|Q[23]|R[89])$/
+  const labels: string[] = []
+  for (const c of yoke.filter((e) => e.type === "pcb_component")) {
+    const name = names.get(c.source_component_id)!
+    if (onArm.test(name) && !/^(R10|C10)$/.test(name)) continue
+    const mine = yoke.filter((e) => e.pcb_component_id === c.pcb_component_id)
+    const pads = mine.filter((e) => e.type === "pcb_smtpad" || e.type === "pcb_plated_hole")
+    const kind = kindOf(name)
+    for (const e of mine.filter((e) => e.type === "pcb_courtyard_outline"))
+      out.push(poly(e.outline.map(yokeAt), KIND[kind], `fill-opacity="0.3" stroke="${KIND[kind]}" stroke-width="0.12"`))
+    for (const e of pads) out.push(poly(padShape(e).map(yokeAt), KIND[kind], 'fill-opacity="0.95"'))
+    if (NAMED.test(name)) labels.push(label(yokeAt(c.center), name === "U1" ? "WROOM-02" : name))
   }
-  return out.join("")
+  return out.join("") + labels.join("")
 }
 
 // ── Sheets ─────────────────────────────────────────────────────────────────────────────────
@@ -512,6 +512,6 @@ writeFileSync(
 const CHIN: View = { x0: -64, y0: -30, w: 128, h: 56 }
 writeFileSync(
   `${OUT}/yoke-chin-parts.svg`,
-  sheet([[{ title: "Yoke: what the chin carries. Courtyards seen through the board; a sketch, not a placement", body: panel() + chinParts() }]], CHIN, 10),
+  sheet([[{ title: "Yoke: the chin's placement, parts face seen through the board", body: panel() + chinParts() }]], CHIN, 10),
 )
 console.log(`strip depth ${STRIP_DEPTH.toFixed(1)}, yoke arm ${EDGE.toFixed(1)}; wrote ${OUT}/yoke-installed{,-detail}.svg`)
