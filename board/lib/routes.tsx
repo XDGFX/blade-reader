@@ -24,17 +24,17 @@ const BUS_V = 0.65
 const BUS_WIDTH = 0.3
 // Channel lanes from the bus out, 0.16 wide and 0.16 apart, so 2 oz copper stays open (#87).
 // The pitch keeps the last sense via inboard of the even arm's VREF line.
-const lane = (i: number) => 1.2 + 0.32 * i
-const LANE_WIDTH = 0.16
+export const lane = (i: number) => 1.2 + 0.32 * i
+export const LANE_WIDTH = 0.16
 /** A line's via stands 0.16 clear of the lane below its own. */
 const entry = (i: number) => lane(i) + 0.22
 // 3V3 has the top of the channel, with its vias 0.3 short of the load copper. Lanes 0–9 are the
-// ways'; an eleventh would fit below 3V3's vias and is spare.
+// ways'; an eleventh fits below 3V3's vias, and on the odd arm it is way 11's voltage line's.
 const V3V3_V = 5.34
 const V3V3_WIDTH = 0.2
 const V3V3_VIA_V = 5.2
 /** Where the lines stop, past the last way of an arm: short of the step in the inner edge. */
-const ROOT_U = 10.5
+export const ROOT_U = 10.5
 
 /** The sensor's signal pins: their centres along the arm, and their pads' ends. */
 const PIN_U = GAP + 2.6
@@ -127,6 +127,25 @@ const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
   /** Where the next way's 3V3 via stands, seen from this way. */
   const nextV3v3U = NEXT + (odd && k < 4 ? FAR_U : INNER_V3V3_U)
 
+  // The voltage line: along the panel edge under the line copper's corner, to its via under the
+  // sensor's body, and into its lane.
+  const voltsLine = (
+    <Route
+      from={`.R2${n} > .pin2`}
+      to={volts}
+      width={LANE_WIDTH}
+      path={[
+        `.R2${n} > .pin2`,
+        [DIVIDER_U[1], EDGE_V],
+        [VOLTS_U - 0.4, EDGE_V],
+        [VOLTS_U, EDGE_V + 0.4],
+        down(voltsVia),
+        [VOLTS_U + 0.4, lane(2 * k)],
+        [root, lane(2 * k)],
+      ]}
+    />
+  )
+
   return (
     <>
       {/* The divider: its line pad onto a stitching via in the neck, its two VOLTS pads joined,
@@ -146,7 +165,8 @@ const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
           `.R2${n} > .pin1`,
           down([DIVIDER_U[1], ROOT_VIA_V]),
           [DIVIDER_U[1], BUS_V],
-          chinmost ? [root, BUS_V] : [NEXT + DIVIDER_U[1], BUS_V],
+          // The odd arm's bus ends at way 11's GND via: the edge steps out past it (lib/root.tsx).
+          chinmost ? [odd ? BUS_VIA_U : root, BUS_V] : [NEXT + DIVIDER_U[1], BUS_V],
         ]}
       />
 
@@ -185,8 +205,12 @@ const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
               ] as Step[])),
           { via: v3v3Via, to: "bottom" },
           v3v3Via,
-          [v3v3Via[0] + 0.2, V3V3_V],
-          ...(chinmost ? [[root, V3V3_V] as Uv] : [[nextV3v3U - 0.2, V3V3_V] as Uv, [nextV3v3U, V3V3_VIA_V] as Uv]),
+          // On the odd arm 3V3 ends at way 11's via, to leave the root's ring face to the lines.
+          ...(chinmost
+            ? odd
+              ? []
+              : [[v3v3Via[0] + 0.2, V3V3_V] as Uv, [root, V3V3_V] as Uv]
+            : [[v3v3Via[0] + 0.2, V3V3_V] as Uv, [nextV3v3U - 0.2, V3V3_V] as Uv, [nextV3v3U, V3V3_VIA_V] as Uv]),
         ]}
       />
 
@@ -194,7 +218,9 @@ const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
         <>
           {/* The last way's caps lie beside their pins. Their GND pads are joined in a row, which
               reaches the sensor's GND pin along the panel side on the odd arm, and round Q3 by
-              its GND pad on the even arm. Its voltage and sense lines start at the root. */}
+              its GND pad on the even arm. Way 11's voltage line takes the eleventh lane; its
+              sense line and both of way 12's start at the root. */}
+          {odd && voltsLine}
           <Route from={pin(nearPin)} to={cap(near, 1)} maxLength={CAP_RUN} path={[pin(nearPin), cap(near, 1)]} />
           <Route from={pin("VOUT")} to={cap(3, 1)} width={LANE_WIDTH} maxLength={CAP_RUN} path={[pin("VOUT"), cap(3, 1)]} />
           <Route from={pin(farPin)} to={cap(far, 1)} maxLength={CAP_RUN} path={[pin(farPin), cap(far, 1)]} />
@@ -298,22 +324,7 @@ const WayRoutes = ({ n, finger, nut }: { n: number; finger: Pt; nut: Pt }) => {
             path={[cap(3, 1), ...capFrom(SENSE_U, CAPS_U[1]).reverse(), senseVia]}
           />
 
-          {/* The voltage line: along the panel edge under the line copper's corner, to its via
-              under the sensor's body, and into its lane. */}
-          <Route
-            from={`.R2${n} > .pin2`}
-            to={volts}
-            width={LANE_WIDTH}
-            path={[
-              `.R2${n} > .pin2`,
-              [DIVIDER_U[1], EDGE_V],
-              [VOLTS_U - 0.4, EDGE_V],
-              [VOLTS_U, EDGE_V + 0.4],
-              down(voltsVia),
-              [VOLTS_U + 0.4, lane(2 * k)],
-              [root, lane(2 * k)],
-            ]}
-          />
+          {voltsLine}
 
           {/* VSUP: up the neck from the diode, behind the next nut, and down the next neck. */}
           <Route

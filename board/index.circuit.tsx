@@ -1,7 +1,7 @@
 // The yoke: one board for all 12 ways of a 12-way ST Blade. The outline, the holes and the
-// schematic: the arms and the chin are placed, each way's current path is poured, and nothing
-// is routed. Decisions behind
-// every part are in docs/design.md. Part codes are LCSC/JLCPCB.
+// schematic: the arms and the chin are placed, each way's current path is poured, and the arms
+// and the odd arm's root are routed. Decisions behind every part are in docs/design.md. Part
+// codes are LCSC/JLCPCB.
 //
 // Panel coordinates, in mm, as the research notes give them: `a` runs along the fuse panel from
 // its positive end, so the chin is at negative a, and `c` runs across from the centreline.
@@ -19,6 +19,7 @@ import { finger, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
 import { ExpansionPads, FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
 import { partsFace } from "./lib/parts-face"
 import { ringFace, type Yoke } from "./lib/ring-face"
+import { ODD_CHANNELS, OddRoot } from "./lib/root"
 import { Routes } from "./lib/routes"
 import { Face } from "./lib/silkscreen"
 import { Supply } from "./lib/supply"
@@ -169,6 +170,9 @@ const hole = (n: number) => (n % 2 ? 0 : 6) + 5 - Math.floor((n - 1) / 2)
 // the ground nut's, takes the mirror (#65), so its current runs the other way through its sensors.
 const mirrored = (n: number) => n % 2 === 0
 
+/** Mux 1, on the chin beside the odd arm's root. */
+const U2_AT = at(38.5, -3.6, 90)
+
 const R_10K = { resistance: "10k", footprint: FP_0402, supplierPartNumbers: { jlcpcb: ["C25744"] } }
 const C_100N = { capacitance: "100nF", footprint: FP_0402, supplierPartNumbers: { jlcpcb: ["C307331"] } }
 const C_10N = { capacitance: "10nF", footprint: FP_0402, supplierPartNumbers: { jlcpcb: ["C15195"] } }
@@ -220,16 +224,12 @@ const Temperature = ({
   </>
 )
 
-// One arm's 16:1 multiplexer. Channel k reads the arm's k-th way from the open end, so Y0 is way
-// 1 or 2 and Y5 way 11 or 12, and channel 8 + k reads that way's voltage. Y6 is the arm's
-// temperature and Y7 whatever `y7` gives it. Routing may reorder the channels; firmware follows
-// this schematic.
+// One arm's 16:1 multiplexer; `channels` is the net on each of Y0 to Y15. Mux 1's are in the
+// order its lines arrive (lib/root.tsx). Mux 2's are provisional until its lines are routed:
+// firmware follows this schematic.
 const Mux = ({
   name,
-  ways,
-  sense,
-  temperature,
-  y7,
+  channels,
   common,
   place,
   schX,
@@ -237,10 +237,7 @@ const Mux = ({
 }: {
   name: string
   place: Place
-  ways: number[]
-  sense: (n: number) => string
-  temperature: string
-  y7: string
+  channels: string[]
   common: string
   schX: number
   schY: number
@@ -252,16 +249,7 @@ const Mux = ({
     schY={schY}
     schSectionName="Adc"
     connections={{
-      ...Object.fromEntries(
-        ways.flatMap((n, k) => [
-          [`Y${k}`, sense(n)],
-          [`Y${8 + k}`, `net.S${n}_VOLTS`],
-        ]),
-      ),
-      Y6: temperature,
-      Y7: y7,
-      Y14: "net.GND",
-      Y15: "net.GND",
+      ...Object.fromEntries(channels.map((net, y) => [`Y${y}`, net])),
       Z: common,
       S0: "net.MUX_S0",
       S1: "net.MUX_S1",
@@ -311,6 +299,7 @@ export default () => (
       <WayCopper key={n} n={n} finger={CLAMPS[hole(n)]} nut={NUTS[hole(n)]} open={n < 3} />
     ))}
     <Routes ways={WAYS.map((n) => ({ n, finger: CLAMPS[hole(n)], nut: NUTS[hole(n)] }))} />
+    <OddRoot finger={CLAMPS[hole(11)]} mux={{ x: U2_AT.pcbX, y: U2_AT.pcbY }} />
 
 
     {/* Ground: a ring-terminated wire from this nut to the panel's negative bus. */}
@@ -336,11 +325,8 @@ export default () => (
     {/* Mux 1 reads the odd arm and the chin's temperature, on GPIO4. */}
     <Mux
       name="U2"
-      place={at(38.5, -3.6, 90)}
-      ways={ODD}
-      sense={(n) => `net.S${n}_SENSE`}
-      temperature="net.TEMP_ODD"
-      y7="net.TEMP_CHIN"
+      place={U2_AT}
+      channels={ODD_CHANNELS}
       common="net.ADC"
       schX={0}
       schY={2}
@@ -371,10 +357,14 @@ export default () => (
     <Mux
       name="U4"
       place={at(-51, 8.5, 90)}
-      ways={EVEN}
-      sense={(n) => `net.S${n}_MUX`}
-      temperature="net.TEMP_EVEN"
-      y7="net.GND"
+      channels={[
+        ...EVEN.map((n) => `net.S${n}_MUX`),
+        "net.TEMP_EVEN",
+        "net.GND",
+        ...EVEN.map((n) => `net.S${n}_VOLTS`),
+        "net.GND",
+        "net.GND",
+      ]}
       common="net.ADC2"
       schX={0}
       schY={-18}
