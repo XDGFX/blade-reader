@@ -40,8 +40,8 @@ const way = (yoke: Yoke, n: number): Art => {
     out(47.4),
     // The sensor's pin 1 is at its −X end on both arms: outboard on the odd arm, towards the panel on the even.
     s > 0 ? dot(48.63, y + 4.08, 0.46) : dot(-43.16, y + 4.08, 0.46),
-    // The way diode's cathode, between its pad and the sensor.
-    bar(s * 48.8, y + 5.75, s * 48.8, y + 7.61),
+    // The way diode's cathode, outboard of its pad.
+    bar(s * 56.0, y + 5.75, s * 56.0, y + 7.61),
   )
 }
 
@@ -58,8 +58,8 @@ const PIN1_DOTS: [number, number][] = [
 /** Cathode bars, 0.25 wide, alongside the cathode pad. */
 const CATHODE_BARS: [number, number, number, number][] = [
   [-36.25, 52.0, -36.25, 54.76], // D1
-  [-6.45, 55.2, -6.45, 57.05], // D2
-  [18.75, 55.2, 18.75, 57.05], // D3
+  [-6.45, 50.8, -6.45, 52.65], // D2
+  [18.75, 50.8, 18.75, 52.65], // D3
 ]
 /** Each LED's cathode: a tick under its pad, on the chin's edge side. */
 const LED_CATHODES: [number, number][][] = [
