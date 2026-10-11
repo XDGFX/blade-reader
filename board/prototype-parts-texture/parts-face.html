@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>PROTOTYPE: yoke parts-face silkscreen (#86 follow-up)</title>
+<style>
+body{margin:0;background:#1b1c1e;color:#eee;font:14px/1.4 system-ui}
+header{padding:10px 16px}header b{font-size:16px}#notes{color:#bbb;max-width:110ch}
+#stage{overflow:auto;height:calc(100vh - 150px);text-align:center}#stage img{width:var(--w,100%)}
+footer{position:fixed;bottom:0;left:0;right:0;background:#000c;padding:8px;display:flex;gap:8px;justify-content:center;align-items:center}
+button{font:inherit;padding:6px 14px;border-radius:6px;border:1px solid #666;background:#2a2b2e;color:#eee;cursor:pointer}
+button.on{background:#f4f3ee;color:#111}
+</style>
+<header><b>PROTOTYPE · a texture across the parts face, seen chin down</b> <span id="state"></span><div id="notes"></div></header>
+<div id="stage"><img id="img"></div>
+<footer><span id="bar"></span><span>|</span><button id="bodies"></button><button id="zoom"></button></footer>
+<script>
+const V=[{"key":"a","name":"A · Rain","notes":"The film's weather, and the quote's last word on the ring face: streaks falling 14° off vertical, broken into drops."},{"key":"b","name":"B · Iris","notes":"The Voight-Kampff eye. Fibres run out from the fuse panel, which is the pupil, with a broken collarette ring."},{"key":"c","name":"C · Creases","notes":"The sheet Gaff's unicorn is folded from: a crease pattern, mountain folds solid and valley folds dashed."},{"key":"d","name":"D · Field","notes":"What the board reads: contours of the field round the twelve ways' currents. Not from the film."}];const q=new URLSearchParams(location.search)
+let s={variant:q.get("variant")||"a",bodies:q.get("bodies")!=="0",zoom:q.get("zoom")==="1"}
+function draw(){const v=V.find(x=>x.key===s.variant)||V[0]
+img.src=v.key+(s.bodies?"":"-bare")+".svg";stage.style.setProperty("--w",s.zoom?"300%":"100%")
+notes.textContent=v.notes;state.textContent="· "+v.name+" · parts "+(s.bodies?"fitted":"off")+" · "+(s.zoom?"3×":"fit")
+bar.innerHTML="";for(const x of V){const b=document.createElement("button");b.textContent=x.name;b.className=x.key===v.key?"on":"";b.onclick=()=>{s.variant=x.key;draw()};bar.append(b," ")}
+bodies.textContent=s.bodies?"Hide parts":"Show parts";zoom.textContent=s.zoom?"Fit":"Zoom 3×"
+history.replaceState(0,"","?variant="+v.key+"&bodies="+(s.bodies?1:0)+"&zoom="+(s.zoom?1:0))}
+bodies.onclick=()=>{s.bodies=!s.bodies;draw()};zoom.onclick=()=>{s.zoom=!s.zoom;draw()};draw()
+</script>
