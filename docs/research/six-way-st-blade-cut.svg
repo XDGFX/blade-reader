@@ -1,0 +1,205 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 990" width="1040" height="990" font-family="Helvetica, Arial, sans-serif">
+<style>
+.board{fill:#1f3d2b}.pad{fill:#c9a227}.hole{fill:#fff}
+.part{fill:#e8e8e8;stroke:#333;stroke-width:.6}
+.hit{fill:#f5b7ae;stroke:#c0392b;stroke-width:1.6}
+.scrap{fill:#fff;fill-opacity:.55}
+.kerf{fill:#c0392b;fill-opacity:.55}
+.edge{stroke:#000;stroke-width:1.5}
+.h{font-size:19px;font-weight:bold}.s{font-size:13.5px;fill:#333}
+.l{font-size:12.5px;fill:#000}.mid{text-anchor:middle}.red{fill:#c0392b;font-weight:bold}.w{fill:#fff}
+</style>
+<rect width="1040" height="990" fill="#fff"/>
+<text x="30.0" y="84.0" class="h">As decided: every sensor on the chin side of its finger</text>
+<text x="30.0" y="104.0" class="s">The cut passes lengthways through way 4's sensor (S4) and diode. Way 4's caps, under finger 3, stay on the kept part.</text>
+<rect x="30.0" y="130.0" width="873.1" height="167.0" class="board"/>
+<rect x="120.8" y="297.0" width="95.0" height="133.0" class="board"/>
+<circle cx="168.3" cy="382.2" r="27.0" class="hole"/>
+<circle cx="168.3" cy="190.2" r="46.5" class="pad"/>
+<circle cx="168.3" cy="190.2" r="32.0" class="hole"/>
+<text x="168.3" y="446.0" class="l mid">way 1</text>
+<rect x="254.4" y="297.0" width="95.0" height="133.0" class="board"/>
+<circle cx="301.9" cy="382.2" r="27.0" class="hole"/>
+<circle cx="301.9" cy="190.2" r="46.5" class="pad"/>
+<circle cx="301.9" cy="190.2" r="32.0" class="hole"/>
+<text x="301.9" y="446.0" class="l mid">way 2</text>
+<rect x="388.0" y="297.0" width="95.0" height="133.0" class="board"/>
+<circle cx="435.5" cy="382.2" r="27.0" class="hole"/>
+<circle cx="435.5" cy="190.2" r="46.5" class="pad"/>
+<circle cx="435.5" cy="190.2" r="32.0" class="hole"/>
+<text x="435.5" y="446.0" class="l mid">way 3</text>
+<rect x="521.6" y="297.0" width="95.0" height="133.0" class="board"/>
+<circle cx="569.1" cy="382.2" r="27.0" class="hole"/>
+<circle cx="569.1" cy="190.2" r="46.5" class="pad"/>
+<circle cx="569.1" cy="190.2" r="32.0" class="hole"/>
+<text x="569.1" y="446.0" class="l mid">way 4</text>
+<rect x="655.2" y="297.0" width="95.0" height="133.0" class="board"/>
+<circle cx="702.7" cy="382.2" r="27.0" class="hole"/>
+<circle cx="702.7" cy="190.2" r="46.5" class="pad"/>
+<circle cx="702.7" cy="190.2" r="32.0" class="hole"/>
+<text x="702.7" y="446.0" class="l mid">way 5</text>
+<rect x="788.8" y="297.0" width="95.0" height="133.0" class="board"/>
+<circle cx="836.3" cy="382.2" r="27.0" class="hole"/>
+<circle cx="836.3" cy="190.2" r="46.5" class="pad"/>
+<circle cx="836.3" cy="190.2" r="32.0" class="hole"/>
+<text x="836.3" y="446.0" class="l mid">way 6</text>
+<rect x="64.0" y="229.3" width="75.0" height="55.4" class="part"/>
+<text x="101.5" y="261.5" class="l mid">S1</text>
+<rect x="86.0" y="159.5" width="31.0" height="69.0" class="part"/>
+<text x="101.5" y="198.5" class="l mid">D</text>
+<rect x="131.9" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="121.9" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="86.5" y="202.4" width="9.4" height="18.6" class="part"/>
+<rect x="96.5" y="202.4" width="9.4" height="18.6" class="part"/>
+<rect x="106.5" y="202.4" width="9.4" height="18.6" class="part"/>
+<rect x="197.6" y="229.3" width="75.0" height="55.4" class="part"/>
+<text x="235.1" y="261.5" class="l mid">S2</text>
+<rect x="219.6" y="159.5" width="31.0" height="69.0" class="part"/>
+<text x="235.1" y="198.5" class="l mid">D</text>
+<rect x="265.5" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="255.5" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="205.3" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="195.3" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="185.3" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="331.2" y="229.3" width="75.0" height="55.4" class="part"/>
+<text x="368.7" y="261.5" class="l mid">S3</text>
+<rect x="353.2" y="159.5" width="31.0" height="69.0" class="part"/>
+<text x="368.7" y="198.5" class="l mid">D</text>
+<rect x="399.1" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="389.1" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="338.9" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="328.9" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="318.9" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="464.8" y="229.3" width="75.0" height="55.4" class="hit"/>
+<text x="502.3" y="261.5" class="l mid">S4</text>
+<rect x="486.8" y="159.5" width="31.0" height="69.0" class="hit"/>
+<text x="502.3" y="198.5" class="l mid">D</text>
+<rect x="532.7" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="522.7" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="472.5" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="462.5" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="452.5" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="598.4" y="229.3" width="75.0" height="55.4" class="part"/>
+<text x="635.9" y="261.5" class="l mid">S5</text>
+<rect x="620.4" y="159.5" width="31.0" height="69.0" class="part"/>
+<text x="635.9" y="198.5" class="l mid">D</text>
+<rect x="666.3" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="656.3" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="606.1" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="596.1" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="586.1" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="732.0" y="229.3" width="75.0" height="55.4" class="part"/>
+<text x="769.5" y="261.5" class="l mid">S6</text>
+<rect x="754.0" y="159.5" width="31.0" height="69.0" class="part"/>
+<text x="769.5" y="198.5" class="l mid">D</text>
+<rect x="799.9" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="789.9" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="739.7" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="729.7" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="719.7" y="301.4" width="9.4" height="18.6" class="part"/>
+<rect x="502.3" y="127.0" width="403.8" height="306.0" class="scrap"/>
+<rect x="494.8" y="118.0" width="15.0" height="315.0" class="kerf"/>
+<text x="502.3" y="493.0" class="l mid red">cut, 61.2 from the positive end</text>
+<text x="35.0" y="158.5" class="l w">&#8592; chin</text>
+<text x="702.7" y="471.0" class="l mid">cut off for a 6-way panel</text>
+<text x="266.1" y="471.0" class="l mid">kept</text>
+<line x1="30.0" x2="933.1" y1="297.0" y2="297.0" class="edge"/>
+<text x="911.1" y="293.0" class="l">panel edge</text>
+<text x="30.0" y="544.0" class="h">Split: ways 4 to 6 flipped to the open-end side</text>
+<text x="30.0" y="564.0" class="s">The gap at the cut holds no parts. Way 6's sensor stands past the last finger, so each arm is about 4.3 mm longer.</text>
+<rect x="30.0" y="590.0" width="916.1" height="167.0" class="board"/>
+<rect x="120.8" y="757.0" width="95.0" height="133.0" class="board"/>
+<circle cx="168.3" cy="842.2" r="27.0" class="hole"/>
+<circle cx="168.3" cy="650.2" r="46.5" class="pad"/>
+<circle cx="168.3" cy="650.2" r="32.0" class="hole"/>
+<text x="168.3" y="906.0" class="l mid">way 1</text>
+<rect x="254.4" y="757.0" width="95.0" height="133.0" class="board"/>
+<circle cx="301.9" cy="842.2" r="27.0" class="hole"/>
+<circle cx="301.9" cy="650.2" r="46.5" class="pad"/>
+<circle cx="301.9" cy="650.2" r="32.0" class="hole"/>
+<text x="301.9" y="906.0" class="l mid">way 2</text>
+<rect x="388.0" y="757.0" width="95.0" height="133.0" class="board"/>
+<circle cx="435.5" cy="842.2" r="27.0" class="hole"/>
+<circle cx="435.5" cy="650.2" r="46.5" class="pad"/>
+<circle cx="435.5" cy="650.2" r="32.0" class="hole"/>
+<text x="435.5" y="906.0" class="l mid">way 3</text>
+<rect x="521.6" y="757.0" width="95.0" height="133.0" class="board"/>
+<circle cx="569.1" cy="842.2" r="27.0" class="hole"/>
+<circle cx="569.1" cy="650.2" r="46.5" class="pad"/>
+<circle cx="569.1" cy="650.2" r="32.0" class="hole"/>
+<text x="569.1" y="906.0" class="l mid">way 4</text>
+<rect x="655.2" y="757.0" width="95.0" height="133.0" class="board"/>
+<circle cx="702.7" cy="842.2" r="27.0" class="hole"/>
+<circle cx="702.7" cy="650.2" r="46.5" class="pad"/>
+<circle cx="702.7" cy="650.2" r="32.0" class="hole"/>
+<text x="702.7" y="906.0" class="l mid">way 5</text>
+<rect x="788.8" y="757.0" width="95.0" height="133.0" class="board"/>
+<circle cx="836.3" cy="842.2" r="27.0" class="hole"/>
+<circle cx="836.3" cy="650.2" r="46.5" class="pad"/>
+<circle cx="836.3" cy="650.2" r="32.0" class="hole"/>
+<text x="836.3" y="906.0" class="l mid">way 6</text>
+<rect x="64.0" y="689.3" width="75.0" height="55.4" class="part"/>
+<text x="101.5" y="721.5" class="l mid">S1</text>
+<rect x="86.0" y="619.5" width="31.0" height="69.0" class="part"/>
+<text x="101.5" y="658.5" class="l mid">D</text>
+<rect x="131.9" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="121.9" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="86.5" y="662.4" width="9.4" height="18.6" class="part"/>
+<rect x="96.5" y="662.4" width="9.4" height="18.6" class="part"/>
+<rect x="106.5" y="662.4" width="9.4" height="18.6" class="part"/>
+<rect x="197.6" y="689.3" width="75.0" height="55.4" class="part"/>
+<text x="235.1" y="721.5" class="l mid">S2</text>
+<rect x="219.6" y="619.5" width="31.0" height="69.0" class="part"/>
+<text x="235.1" y="658.5" class="l mid">D</text>
+<rect x="265.5" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="255.5" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="205.3" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="195.3" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="185.3" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="331.2" y="689.3" width="75.0" height="55.4" class="part"/>
+<text x="368.7" y="721.5" class="l mid">S3</text>
+<rect x="353.2" y="619.5" width="31.0" height="69.0" class="part"/>
+<text x="368.7" y="658.5" class="l mid">D</text>
+<rect x="399.1" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="389.1" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="338.9" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="328.9" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="318.9" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="598.4" y="689.3" width="75.0" height="55.4" class="part"/>
+<text x="635.9" y="721.5" class="l mid">S4</text>
+<rect x="620.4" y="619.5" width="31.0" height="69.0" class="part"/>
+<text x="635.9" y="658.5" class="l mid">D</text>
+<rect x="596.1" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="606.1" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="656.3" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="666.3" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="676.3" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="732.0" y="689.3" width="75.0" height="55.4" class="part"/>
+<text x="769.5" y="721.5" class="l mid">S5</text>
+<rect x="754.0" y="619.5" width="31.0" height="69.0" class="part"/>
+<text x="769.5" y="658.5" class="l mid">D</text>
+<rect x="729.7" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="739.7" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="789.9" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="799.9" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="809.9" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="865.6" y="689.3" width="75.0" height="55.4" class="part"/>
+<text x="903.1" y="721.5" class="l mid">S6</text>
+<rect x="887.6" y="619.5" width="31.0" height="69.0" class="part"/>
+<text x="903.1" y="658.5" class="l mid">D</text>
+<rect x="863.3" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="873.3" y="761.4" width="9.4" height="18.6" class="part"/>
+<rect x="888.1" y="662.4" width="9.4" height="18.6" class="part"/>
+<rect x="898.1" y="662.4" width="9.4" height="18.6" class="part"/>
+<rect x="908.1" y="662.4" width="9.4" height="18.6" class="part"/>
+<rect x="502.3" y="587.0" width="446.8" height="306.0" class="scrap"/>
+<rect x="494.8" y="578.0" width="15.0" height="315.0" class="kerf"/>
+<text x="502.3" y="953.0" class="l mid red">cut, 61.2 from the positive end</text>
+<text x="35.0" y="618.5" class="l w">&#8592; chin</text>
+<text x="724.2" y="931.0" class="l mid">cut off for a 6-way panel</text>
+<text x="266.1" y="931.0" class="l mid">kept</text>
+<line x1="30.0" x2="976.1" y1="757.0" y2="757.0" class="edge"/>
+<text x="954.1" y="753.0" class="l">panel edge</text>
+<text x="925.1" y="618.5" class="l mid w">+4.3</text>
+<text x="30" y="974" class="s">One arm at 10 px per mm, seen from the parts face. Gold: output nut pads. S: sensor. D: diode. Paper placement, not routed.</text>
+</svg>
