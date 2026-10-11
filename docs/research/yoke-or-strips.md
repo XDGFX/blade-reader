@@ -6,6 +6,16 @@ map: 40
 
 # Yoke or strips
 
+> **Superseded in part, 2026-10-11.** This note is kept as written, as the record of the choice.
+> Since then the chin was cut from 20 mm deep to 13.5, so the yoke is 117.6 × 115.8 mm
+> ([#79](https://github.com/XDGFX/blade-reader/issues/79)). The printed plate was fitted, and it
+> also fits a Blue Sea ST Blade 6 circuit with the three spare fingers a side cut off
+> ([#50](https://github.com/XDGFX/blade-reader/issues/50)): where this note says a yoke cannot
+> fit a 6-way panel, that is now unsupported but possible, as the README's Installing section
+> describes. The yoke is drawn, placed and routed, *yoke*, *arm* and *chin* are in `GLOSSARY.md`,
+> and other figures here have moved too, the mirrored arm's divider and the count of extended
+> parts among them. [`docs/design.md`](../design.md) is current.
+
 Gathers every answer from the map XDGFX/blade-reader#40 so Cal can choose the first order: one
 yoke per 12-way fuse panel, or two rev A strips. The choice Cal made is at the end of the summary.
 
