@@ -15,20 +15,20 @@ export const WAY_PITCH = 8
 
 // The sensor lies in the gap beside its finger, on the chin side, inboard of the nut row, with
 // its IP pins towards its own way. The diode stands above it in the neck between two nuts.
-const GAP = WAY_PITCH_PCB / 2
+export const GAP = WAY_PITCH_PCB / 2
 // 0.2 inboard of the gap's middle: at 4.0 its outboard pads are 0.8 from the nut's land but
 // inside the land's bounding square, which the build reads as an overlap.
-const SENSOR_V = 3.8
+export const SENSOR_V = 3.8
 const DIODE_V = 10.3
 // 0402s standing under a finger's root, over the pocket's lip: the divider under its own way's
 // finger, the sensor's caps under the next way's, 1 mm apart.
-const ROOT_V = -1.37
-const DIVIDER_U = [3.0, 4.0]
-const CAPS_U = [0, 1, 2].map((i) => WAY_PITCH_PCB - 4.0 + i)
+export const ROOT_V = -1.37
+export const DIVIDER_U = [3.0, 4.0]
+export const CAPS_U = [0, 1, 2].map((i) => WAY_PITCH_PCB - 4.0 + i)
 // The way nearest the chin has no next finger: its caps lie beside the sensor's signal pins.
-const CHIN_CAPS_U = GAP + 4.8
+export const CHIN_CAPS_U = GAP + 4.8
 /** The sensor's VREF, VOUT and VCC pins, across the arm from its centre, towards +X. */
-const PIN_X = { VREF: 0.635, VOUT: -0.635, VCC: -1.905 }
+export const PIN_X = { VREF: 0.635, VOUT: -0.635, VCC: -1.905 }
 
 /**
  * The column for sensor `n` (S1–S12). Net `Sn_LINE` is the fuse panel's side (the finger),

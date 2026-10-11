@@ -19,6 +19,7 @@ import { finger, CLAMP_Y, END, WAY_PITCH_PCB, type Pt } from "./lib/outline"
 import { ExpansionPads, FP_0402, FP_0603, FP_LED_0603, FP_SOT23, ProgPads } from "./lib/parts"
 import { partsFace } from "./lib/parts-face"
 import { ringFace, type Yoke } from "./lib/ring-face"
+import { Routes } from "./lib/routes"
 import { Face } from "./lib/silkscreen"
 import { Supply } from "./lib/supply"
 import { Way, WAY_PITCH } from "./lib/way"
@@ -279,7 +280,12 @@ export default () => (
     thickness="1.6mm"
     solderMaskColor="black"
     silkscreenColor="white"
-    routingDisabled
+    nominalTraceWidth="0.25mm"
+    minViaHoleDiameter="0.3mm"
+    minViaPadDiameter="0.6mm"
+    defaultViaTenting="top_and_bottom_tented"
+    pcbStyle={{ viaHoleDiameter: "0.3mm", viaPadDiameter: "0.6mm" }}
+    routeRemaining={false}
   >
     <schematicsection name="WaysOdd" displayName="Odd ways, 1–11" />
     <schematicsection name="WaysEven" displayName="Even ways, 2–12: the mirrored arm" />
@@ -304,6 +310,8 @@ export default () => (
     {WAYS.map((n) => (
       <WayCopper key={n} n={n} finger={CLAMPS[hole(n)]} nut={NUTS[hole(n)]} open={n < 3} />
     ))}
+    <Routes ways={WAYS.map((n) => ({ n, finger: CLAMPS[hole(n)], nut: NUTS[hole(n)] }))} />
+
 
     {/* Ground: a ring-terminated wire from this nut to the panel's negative bus. */}
     <SMTSO4040CTJ
