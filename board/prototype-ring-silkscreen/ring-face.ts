@@ -233,7 +233,7 @@ const ONE_LINE = [
   ...QUOTES.kept.slice(6).map((l) => l.join(" ")),
 ]
 
-type ArmStyle = "chevron-number" | "plate" | "plate-one" | "big"
+type ArmStyle = "chevron-number" | "plate" | "plate-one" | "plate-edge" | "big"
 const arm = (s: 1 | -1, style: ArmStyle, quote: string[][], order: Order): Art =>
   join(
     ...[0, 1, 2, 3, 4, 5].flatMap((i) => {
@@ -246,6 +246,18 @@ const arm = (s: 1 | -1, style: ArmStyle, quote: string[][], order: Order): Art =
       if (style === "big")
         // Nothing but the number, as large as the gap between the ring and the panel takes.
         return [number(s, way, 4, 5.0, x, 13.75, 0.4), fingerQuote(s, lines, x, false)]
+      if (style === "plate-edge")
+        // Round three: the one line set against the panel's side, where the fingers are.
+        return [
+          ...[11.4, 13.0, 14.6].map((y) => chevron(x, y, way === 1)),
+          number(s, way, 2.8, 3.6, x, EDGE + 2.3),
+          upright(
+            s,
+            text(0, 0.45, 1, ONE_LINE[fragment(order, s, rowOf(s, i))], { anchor: s > 0 ? "end" : "start" }),
+            s > 0 ? x - PITCH / 2 : x + PITCH / 2,
+            EDGE - 0.9,
+          ),
+        ]
       if (style === "plate-one")
         // Round two: as below, with the quote on one line, midway between two nuts.
         return [
@@ -565,6 +577,94 @@ VARIANTS.push(
   },
 )
 Object.assign(CHIN, ROUND2)
+
+// ── Round three: G, gridded, with the unicorn under the feed and the chin's inner edge drawn ─
+
+// The chin's inner edge, where it wraps the panel's end: from one arm's root round to the other's, in the chin's view.
+const WRAP = [...OUTLINE.slice(-16), ...OUTLINE.slice(0, 17)].map(yokeAt).map((p) => P(-p.x, -p.y + CHIN_SHIFT))
+/** The wrap moved t into the board, with each point's outward normal. */
+const wrap = (t: number) =>
+  WRAP.map((p, i) => {
+    const [a, b] = [WRAP[Math.max(i - 1, 0)], WRAP[Math.min(i + 1, WRAP.length - 1)]]
+    const len = Math.hypot(b.x - a.x, b.y - a.y)
+    const n = P((b.y - a.y) / len, -(b.x - a.x) / len)
+    return { p: P(p.x + n.x * t, p.y + n.y * t), n }
+  })
+const keyline = (t: number, w = 0.2) => art([{ pts: wrap(t).map((q) => q.p), w }])
+/** Graduations off the line at t, every `step` mm along it: short ones, and a long one every fifth. */
+const graduations = (t: number, step: number) => {
+  const pts = wrap(t)
+  const out: Art[] = []
+  let [run, next, count] = [0, 0, 0]
+  for (let i = 1; i < pts.length; i++) {
+    const [a, b] = [pts[i - 1], pts[i]]
+    const len = Math.hypot(b.p.x - a.p.x, b.p.y - a.p.y)
+    while (next <= run + len) {
+      const u = (next - run) / len
+      const [x, y] = [a.p.x + (b.p.x - a.p.x) * u, a.p.y + (b.p.y - a.p.y) * u]
+      const [nx, ny] = [a.n.x + (b.n.x - a.n.x) * u, a.n.y + (b.n.y - a.n.y) * u]
+      const l = count % 5 === 0 ? 0.85 : 0.45
+      out.push(line([[x, y], [x + nx * l, y + ny * l]]))
+      next += step
+      count++
+    }
+    run += len
+  }
+  return join(...out)
+}
+
+// The spec plate as a grid: three columns 12 apart and two rows, the USB socket's stakes one of its cells.
+const COLS = [-37, -25, -13]
+const ROWS = [10.7, 17.3]
+const gridCell = (col: number, row: number, label: string, a = "", b = "") => {
+  const [x, y] = [COLS[col], ROWS[row]]
+  return join(
+    text(x, y, 0.8, label, { anchor: "middle", ls: 0.06 }),
+    line([[x - 5, y + 0.55], [x + 5, y + 0.55]]),
+    text(x, y + 2.05, 1, a, { anchor: "middle" }),
+    text(x, y + 3.6, 1, b, { anchor: "middle" }),
+  )
+}
+const chinG = (edge: Art) => {
+  const { blade, reader, H, k } = words(67)
+  const put = (rs: Pt[][], dx: number, y: number) => rs.map((r) => r.map((p) => P(p.x + dx, p.y + y)))
+  const [x, y0, y1] = [10.3, 9.95, 21.5 - H]
+  return join(
+    edge,
+    art([], [put(blade.rings, x + k * (y1 - y0), y0), put(reader.rings, x, y1)]),
+    gridCell(0, 0, "REVISION", "B", "2026-10"),
+    gridCell(1, 0, "DERATE", "20 A PER WAY", "ABOVE 40 °C"),
+    gridCell(2, 0, "OUTPUT NUT", "M4", "1.0-1.2 Nm"),
+    gridCell(0, 1, "SOURCE", "XDGFX", "/BLADE-READER"),
+    gridCell(1, 1, "USB"),
+    line([[-25, 19.0], [-25, 21.0]]),
+    line([[-25.7, 20.3], [-25, 21.0], [-24.3, 20.3]]),
+    gridCell(2, 1, "LICENCE", "CERN-OHL", "-S-2.0"),
+    // Under a feed run down the chin; in view when it leaves to one side.
+    unicorn(-4.75, 11.45, 0.88),
+    SIGN,
+    text(g.x - 1.8, g.y - 8.6, 1.2, "GND"),
+    earth(g.x + 0.1, g.y - 7.3),
+    makers(46.6, -4),
+  )
+}
+Object.assign(CHIN, {
+  // Two lines round the panel's end, as the kana sign's frame has.
+  h: () => chinG(join(keyline(0.45), keyline(1.0))),
+  // A meter's scale round the panel's end.
+  i: () => chinG(join(keyline(0.45, 0.15), graduations(0.45, 1.9))),
+})
+const ROUND3: [string, string][] = [
+  ["Wordmark", "67 × 5.35 mm on two lines right of the feed: 0.55 mm shorter than G, which is what the edge treatment takes."],
+  ["Spec plate", "A grid of three columns 12 mm apart and two rows, every rule 10 mm. The USB stakes are the lower middle cell."],
+  ["Unicorn", "On the centreline, 9.5 × 10.6 mm: under a feed run down, in view when it leaves to a side."],
+  ["Shoulder", "No frame round the maker's mark, so GND is back above the ground nut."],
+  ["Arms", "The quote set against the panel's side: ranged right on the odd arm, left on the even."],
+]
+VARIANTS.push(
+  { key: "h", name: "H · Keyline", arm: "plate-edge", quote: "kept", order: "columns", notes: [["Inner edge", "Two lines 0.55 apart round the panel's end and up to each arm's root, echoing the kana sign's frame."], ...ROUND3] },
+  { key: "i", name: "I · Scale", arm: "plate-edge", quote: "kept", order: "columns", notes: [["Inner edge", "One line with a meter's graduations every 1.9 mm, each fifth longer: the chin as the dial of an ammeter."], ...ROUND3] },
+)
 
 // The USB socket's shell stakes and pegs come through the chin (chin view: x, y, half width, half height).
 const STAKES = [[-29.33, 15.74, 0.6, 1.0], [-20.67, 15.74, 0.6, 1.0], [-29.33, 19.92, 0.6, 0.9], [-20.67, 19.92, 0.6, 0.9]]
