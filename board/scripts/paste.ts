@@ -97,7 +97,8 @@ for (const pad of pads) {
   if (!placed(pad.pcb_component_id)) continue
   add(pad, outline(pad, INSET))
 }
-const nuts = of("pcb_plated_hole").filter((h) => placed(h.pcb_component_id))
+// A nut's land is round. The USB socket's stake slots are plated holes too, and take no paste.
+const nuts = of("pcb_plated_hole").filter((h) => h.shape === "circle" && placed(h.pcb_component_id))
 for (const nut of nuts) {
   const step = (2 * Math.PI) / NUT.segments
   for (let i = 0; i < NUT.segments; i++) {
@@ -137,8 +138,12 @@ const reach = (p: Pt, poly: Poly) =>
 for (const s of paste) if (s.layer !== "top") fails.push(`paste on the ${s.layer} layer at ${at(s.points[0])}`)
 
 // Paste stays out of every drilled hole, and off a land that takes no part (a way-screw hole).
+// A slot is taken as a circle of its length.
 const holes = [
-  ...of("pcb_plated_hole").map((h) => ({ ...h, r: (placed(h.pcb_component_id) ? h.hole_diameter : h.outer_diameter) / 2 })),
+  ...of("pcb_plated_hole").map((h) => ({
+    ...h,
+    r: (h.shape !== "circle" ? Math.max(h.hole_width, h.hole_height) : placed(h.pcb_component_id) ? h.hole_diameter : h.outer_diameter) / 2,
+  })),
   ...of("pcb_hole").map((h) => ({ ...h, r: h.hole_diameter / 2 })),
   ...of("pcb_via").map((h) => ({ ...h, r: h.hole_diameter / 2 })),
 ]

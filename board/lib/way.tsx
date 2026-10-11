@@ -91,7 +91,17 @@ export const Way = ({
         VOUT: `net.S${n}_SENSE`,
       }}
     />
-    <SMTSO4040CTJ name={`N${n}`} pcbX={nut.x} pcbY={nut.y} schX={schX + 14} schY={schY} schSectionName={section} />
+    {/* The build boxes the round land as a square, whose corner crosses the open end's chamfer
+        on ways 1 and 2; the land itself clears it by 1.45 mm. */}
+    <SMTSO4040CTJ
+      name={`N${n}`}
+      pcbX={nut.x}
+      pcbY={nut.y}
+      schX={schX + 14}
+      schY={schY}
+      schSectionName={section}
+      allowOffBoard={n <= 2}
+    />
     <trace from={`.W${n} > .LINE`} to={`net.S${n}_LINE`} />
     <trace from={`.N${n} > .pin1`} to={`net.S${n}_LOAD`} />
 
