@@ -20,10 +20,13 @@ import { CHIN_CAPS_U, PIN_X, SENSOR_V } from "./way"
 type Uv = [number, number]
 type Step = Uv | string | { via: Uv; to: "top" | "bottom" }
 
-/** Where the lanes have finished stepping outboard, and how far. */
-const STEPPED_U = ROOT_U + 1
+/** How far the lanes step outboard, and over what length. */
 const STEP = 0.2
+const STEP_RUN = 1
 const stepped = (i: number) => lane(i) + STEP
+// Each lane starts its step a little before the one inboard of it, which keeps them 0.16 apart
+// on the slope, so 2 oz copper stays open (#87).
+const stepFrom = (i: number) => ROOT_U + 0.4 - 0.32 * Math.tan(Math.atan2(STEP, STEP_RUN) / 2) * i
 /** Every corner is cut back this far. */
 const CUT = 0.3
 
@@ -108,7 +111,8 @@ export const OddRoot = ({ finger, mux }: { finger: Pt; mux: Pt }) => {
   }
   /** A lane's end at the root, where the arm's own route stops. */
   const toArm = (i: number): Step[] => [
-    [STEPPED_U, stepped(i)],
+    [stepFrom(i) + STEP_RUN, stepped(i)],
+    [stepFrom(i), lane(i)],
     [ROOT_U, lane(i)],
   ]
   /** Along the ring face at 45° from a lane out to a via outboard of it. */
