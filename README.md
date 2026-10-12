@@ -135,10 +135,10 @@ on each side. The plate fitted a Blue Sea ST Blade 6 circuit that way, and its c
 | [`docs/design.md`](docs/design.md) | The design as decided so far, with the reasoning and the numbers |
 | [`docs/research/`](docs/research/) | The research behind each decision: sensors, ADC, terminals and copper, power, JLC assembly, panel dimensions |
 | `docs/assets/` | The banner and renders of the board |
-| [`board/`](board/) | The yoke's [tscircuit](https://tscircuit.com) source: placed and routed, with every check passing. Its Gerbers, BOM and CPL are still to export |
+| [`board/`](board/) | The yoke's [tscircuit](https://tscircuit.com) source: placed and routed, with every check passing. Its Gerbers, BOM and CPL are in `board/fab/` |
 
-The board will be ordered assembled from JLCPCB. The fab files and an ESPHome configuration
-will land here as they are made.
+The first five yokes were ordered assembled from JLCPCB on 2026-10-12. An ESPHome configuration
+will land here when it is made.
 
 ## Licence
 
