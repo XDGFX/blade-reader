@@ -45,14 +45,17 @@ Readings Core::on_sweep(const Sweep &sweep) {
   Readings r{};
   for (int w = 0; w < WAYS; w++) {
     WayReading &way = r.way[w];
-    way.current_a = current_a(w, sensor_out_mv(w, sweep.sense_mv[w]), NOMINAL_ZERO_MV);
+    const Zero &zero = records_[w].zero;
+    float out_mv = sensor_out_mv(w, sweep.sense_mv[w]);
+    way.current_a = current_a(w, out_mv, zero.taken ? zero.mv : NOMINAL_ZERO_MV);
     way.voltage_v = sweep.voltage_mv[w] * VOLTAGE_DIVIDER / 1000.0f;
     way.power_w = way.voltage_v * way.current_a;
     live_[w] = still_live(live_[w], way.voltage_v);
+    way.new_zero = track_zero_(w, sweep, out_mv);
   }
   r.panel_voltage_v = median_live_voltage_v(r, live_);
   for (int d = 0; d < DIODES; d++) {
-    r.diode_c[d] = 25.0f + (sweep.vbe_mv[d] - VBE_AT_25C_MV) / VBE_MV_PER_C;
+    r.diode_c[d] = diode_c(sweep.vbe_mv[d]);
   }
   for (int i = 0; i < SPARES; i++) r.spare_mv[i] = sweep.spare_mv[i];
 
@@ -78,6 +81,56 @@ Readings Core::on_sweep(const Sweep &sweep) {
     for (int d = 0; d < DIODES; d++) board_published_.diode_c[d] = r.diode_c[d];
   }
   return r;
+}
+
+// One zero per dead spell: a way that stays dead isn't zeroed again until it has been live.
+// True on the sweep that takes a zero.
+bool Core::track_zero_(int w, const Sweep &sweep, float out_mv) {
+  Zeroing &z = zeroing_[w];
+  if (live_[w]) {
+    z = {};
+    return false;
+  }
+  if (!z.dead) {
+    z.dead = true;
+    z.since_ms = sweep.now_ms;
+  }
+  if (z.done) return false;
+  uint32_t dead_ms = sweep.now_ms - z.since_ms;
+  if (dead_ms < ZERO_DEAD_MS) return false;
+  if (dead_ms < ZERO_DEAD_MS + ZERO_MEAN_MS) {
+    z.samples++;
+    z.sum_mv += out_mv;
+    z.sum_vbe_mv += sweep.vbe_mv[DIODE_EVEN_ARM];
+    return false;
+  }
+  z.done = true;
+  if (z.samples == 0) return false;
+  records_[w].zero = {true, float(z.sum_mv / z.samples), float(z.sum_vbe_mv / z.samples),
+                      sweep.now_ms / 1000};
+  save_(w);
+  return true;
+}
+
+std::string Core::not_zeroed() const {
+  std::string ways;
+  for (int w = 0; w < WAYS; w++) {
+    if (records_[w].zero.taken) continue;
+    ways += (ways.empty() ? "" : ", ") + std::to_string(w + 1);
+  }
+  return ways.empty() ? "None" : "Not zeroed: " + ways;
+}
+
+void Core::start(Storage &storage) {
+  storage_ = &storage;
+  for (int w = 0; w < WAYS; w++) {
+    RecordBytes bytes;
+    records_[w] = storage.load({RECORD_WAY, w}, bytes) ? decode_way(bytes) : WayRecord{};
+  }
+}
+
+void Core::save_(int w) {
+  if (storage_ != nullptr) storage_->save({RECORD_WAY, w}, encode(records_[w]));
 }
 
 bool Core::due_(Published &last, uint32_t now_ms, bool changed) {

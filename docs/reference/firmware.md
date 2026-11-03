@@ -1,6 +1,6 @@
 # Firmware
 
-How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, reads every way against the nominal zero and gain, and follows the publish rule; zeroing, temperature tracking, trims, energy, faults and the red LED are still to come.
+How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, zeros each way when it is dead and keeps the zeros in flash, reads every way against its zero and the nominal gain, and follows the publish rule; install mode, temperature tracking, trims, energy, faults and the red LED are still to come.
 
 Terms are as in [`GLOSSARY.md`](../../GLOSSARY.md).
 
@@ -48,6 +48,7 @@ An unzeroed way uses the nominal 1.65 V zero with no tempco.
 - **Rule:** a way that is dead for 5 s, then the mean of the next 10 s (about 70 sweeps). If the way goes live part-way, the attempt is dropped and the old zero kept. The rule is the same at install and in service. ([#113](https://github.com/XDGFX/blade-reader/issues/113))
 - Ways re-zero only when dead, never when they merely sit steady near 0 A, which would hide a standby drain.
 - The new zero, the smoothed Vbe at that moment, and when it was taken replace the stored ones and are written to flash at once.
+- A way zeros once per dead spell: one that stays dead isn't zeroed again until it has been live, which spares the flash.
 - To redo one way, pull its fuse for 15 s.
 
 ### Install mode

@@ -5,14 +5,32 @@
 
 #include "esphome/components/output/binary_output.h"
 #include "esphome/components/sensor/sensor.h"
+#include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/voltage_sampler/voltage_sampler.h"
 #include "esphome/core/component.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
+#include "esphome/core/preferences.h"
 
 #include "core.h"
+#include "core_storage.h"
 
 namespace esphome::blade_reader {
+
+// The core's records in ESPHome's preferences, under fixed keys of the component's own rather
+// than name hashes, so they survive renames and updates. A save is synced to flash at once.
+class PreferenceStorage : public blade_core::Storage {
+ public:
+  bool load(blade_core::RecordKey key, blade_core::RecordBytes &bytes) override;
+  void save(blade_core::RecordKey key, const blade_core::RecordBytes &bytes) override;
+
+ protected:
+  ESPPreferenceObject &preference_(blade_core::RecordKey key);
+
+  // One per record kind and way, made on first use.
+  ESPPreferenceObject preferences_[blade_core::RECORD_KINDS][blade_core::WAYS];
+  bool made_[blade_core::RECORD_KINDS][blade_core::WAYS]{};
+};
 
 // Each arm has its own mux and ADC pin; the two muxes share one select.
 enum Arm : uint8_t { ODD_ARM, EVEN_ARM, ARMS };
@@ -37,8 +55,20 @@ class BladeReader : public Component {
   void set_diode(blade_core::Diode diode, Arm arm, uint8_t channel, sensor::Sensor *temperature);
   void set_spare(blade_core::Spare spare, Arm arm, uint8_t channel, sensor::Sensor *level);
   void set_panel_voltage_sensor(sensor::Sensor *s) { this->panel_voltage_ = s; }
+  void set_zero_sensors(uint8_t way, sensor::Sensor *offset, sensor::Sensor *temperature, sensor::Sensor *time) {
+    this->zeros_[way - 1] = {offset, temperature, time};
+  }
+  void set_not_zeroed_text_sensor(text_sensor::TextSensor *s) { this->not_zeroed_ = s; }
+
+  // Logs every way's stored record.
+  void dump_state();
 
  protected:
+  // A way's zero, as hidden diagnostics: mV from nominal, its temperature and when it was taken.
+  struct ZeroEntities {
+    sensor::Sensor *offset, *temperature, *time;
+  };
+
   struct Tap {
     Arm arm;
     uint8_t channel;
@@ -52,6 +82,7 @@ class BladeReader : public Component {
   float mv_(Tap tap) const { return this->mv_table_[tap.arm][tap.channel]; }
   blade_core::Sweep collect_(uint32_t now_ms) const;
   void publish_(const blade_core::Readings &r);
+  void publish_zero_(int way_index);
 
   GPIOPin *select_pins_[SELECT_BITS]{};
   voltage_sampler::VoltageSampler *adcs_[ARMS]{};
@@ -63,12 +94,15 @@ class BladeReader : public Component {
   Tap spare_taps_[blade_core::SPARES]{};
   sensor::Sensor *spares_[blade_core::SPARES]{};
   sensor::Sensor *panel_voltage_{nullptr};
+  ZeroEntities zeros_[blade_core::WAYS]{};
+  text_sensor::TextSensor *not_zeroed_{nullptr};
 
   // Each mux channel's last averaged reading, in mV at the ADC pin.
   float mv_table_[ARMS][MUX_CHANNELS]{};
   uint8_t channel_{0};
   uint32_t selected_at_us_{0};
   HighFrequencyLoopRequester high_freq_;
+  PreferenceStorage storage_;
   blade_core::Core core_;
 };
 

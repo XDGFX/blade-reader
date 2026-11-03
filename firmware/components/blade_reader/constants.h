@@ -36,4 +36,8 @@ constexpr float CURRENT_STEP_A = 0.05f;
 constexpr float VOLTAGE_STEP_V = 0.2f;
 constexpr float TEMPERATURE_STEP_C = 1.0f;
 
+// Zero rule: a way dead for ZERO_DEAD_MS takes the mean of the next ZERO_MEAN_MS as its zero.
+constexpr uint32_t ZERO_DEAD_MS = 5000;
+constexpr uint32_t ZERO_MEAN_MS = 10000;
+
 }  // namespace blade_core

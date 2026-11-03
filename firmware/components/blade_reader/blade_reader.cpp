@@ -6,6 +6,29 @@ namespace esphome::blade_reader {
 
 static const char *const TAG = "blade_reader";
 
+// Every record's preference key is this, plus its kind × 256, plus its way index. Changing it
+// loses every board's stored records.
+static constexpr uint32_t PREFERENCE_KEY_BASE = 0xB1AD0000;
+
+ESPPreferenceObject &PreferenceStorage::preference_(blade_core::RecordKey key) {
+  ESPPreferenceObject &pref = this->preferences_[key.kind][key.way_index];
+  if (!this->made_[key.kind][key.way_index]) {
+    uint32_t id = PREFERENCE_KEY_BASE + key.kind * 256u + key.way_index;
+    pref = global_preferences->make_preference(blade_core::RECORD_BYTES, id, true);
+    this->made_[key.kind][key.way_index] = true;
+  }
+  return pref;
+}
+
+bool PreferenceStorage::load(blade_core::RecordKey key, blade_core::RecordBytes &bytes) {
+  return this->preference_(key).load(bytes.data(), bytes.size());
+}
+
+void PreferenceStorage::save(blade_core::RecordKey key, const blade_core::RecordBytes &bytes) {
+  if (!this->preference_(key).save(bytes.data(), bytes.size()) || !global_preferences->sync())
+    ESP_LOGW(TAG, "Couldn't write record %u for way %d", key.kind, key.way_index + 1);
+}
+
 void BladeReader::set_way(uint8_t way, uint8_t sense_channel, uint8_t voltage_channel, sensor::Sensor *current,
                           sensor::Sensor *power, sensor::Sensor *voltage) {
   Arm arm = way % 2 == 1 ? ODD_ARM : EVEN_ARM;
@@ -25,6 +48,10 @@ void BladeReader::set_spare(blade_core::Spare spare, Arm arm, uint8_t channel, s
 void BladeReader::setup() {
   for (GPIOPin *pin : this->select_pins_) pin->setup();
   this->fault_led_->turn_off();
+  this->core_.start(this->storage_);
+  for (int w = 0; w < blade_core::WAYS; w++)
+    this->publish_zero_(w);
+  this->not_zeroed_->publish_state(this->core_.not_zeroed());
   this->select_(0);
   // The sweep runs continuously, one mux channel a loop, so the loop mustn't idle between them.
   this->high_freq_.start();
@@ -64,6 +91,19 @@ blade_core::Sweep BladeReader::collect_(uint32_t now_ms) const {
 }
 
 void BladeReader::publish_(const blade_core::Readings &r) {
+  bool new_zero = false;
+  for (int w = 0; w < blade_core::WAYS; w++) {
+    if (!r.way[w].new_zero)
+      continue;
+    new_zero = true;
+    const blade_core::Zero &zero = this->core_.record(w).zero;
+    ESP_LOGI(TAG, "Way %d zeroed: %+.1f mV from nominal at %.0f °C", w + 1, zero.mv - blade_core::NOMINAL_ZERO_MV,
+             blade_core::diode_c(zero.vbe_mv));
+    this->publish_zero_(w);
+  }
+  if (new_zero)
+    this->not_zeroed_->publish_state(this->core_.not_zeroed());
+
   for (int w = 0; w < blade_core::WAYS; w++) {
     const blade_core::WayReading &reading = r.way[w];
     if (!reading.publish)
@@ -80,6 +120,27 @@ void BladeReader::publish_(const blade_core::Readings &r) {
     this->diodes_[d]->publish_state(r.diode_c[d]);
   for (int i = 0; i < blade_core::SPARES; i++)
     this->spares_[i]->publish_state(r.spare_mv[i]);
+}
+
+void BladeReader::publish_zero_(int w) {
+  const blade_core::Zero &zero = this->core_.record(w).zero;
+  const ZeroEntities &entities = this->zeros_[w];
+  entities.offset->publish_state(zero.taken ? zero.mv - blade_core::NOMINAL_ZERO_MV : NAN);
+  entities.temperature->publish_state(zero.taken ? blade_core::diode_c(zero.vbe_mv) : NAN);
+  entities.time->publish_state(zero.taken ? zero.at_s : NAN);
+}
+
+void BladeReader::dump_state() {
+  for (int w = 0; w < blade_core::WAYS; w++) {
+    const blade_core::Zero &zero = this->core_.record(w).zero;
+    if (!zero.taken) {
+      ESP_LOGI(TAG, "Way %d: not zeroed", w + 1);
+      continue;
+    }
+    ESP_LOGI(TAG, "Way %d: zero %.2f mV (%+.2f from nominal), Vbe %.1f mV (%.0f °C), taken %" PRIu32 " s after boot",
+             w + 1, zero.mv, zero.mv - blade_core::NOMINAL_ZERO_MV, zero.vbe_mv, blade_core::diode_c(zero.vbe_mv),
+             zero.at_s);
+  }
 }
 
 void BladeReader::dump_config() {

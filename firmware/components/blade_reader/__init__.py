@@ -6,13 +6,14 @@ the component makes every entity itself, so the ways are numbered the same on ev
 
 from esphome import pins
 import esphome.codegen as cg
-from esphome.components import output, sensor, voltage_sampler
+from esphome.components import output, sensor, text_sensor, voltage_sampler
 import esphome.config_validation as cv
 from esphome.const import (
     CONF_DISABLED_BY_DEFAULT,
     CONF_ID,
     CONF_NAME,
     DEVICE_CLASS_CURRENT,
+    DEVICE_CLASS_DURATION,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
@@ -21,11 +22,12 @@ from esphome.const import (
     UNIT_AMPERE,
     UNIT_CELSIUS,
     UNIT_MILLIVOLT,
+    UNIT_SECOND,
     UNIT_VOLT,
     UNIT_WATT,
 )
 
-AUTO_LOAD = ["sensor", "voltage_sampler"]
+AUTO_LOAD = ["sensor", "text_sensor", "voltage_sampler"]
 DEPENDENCIES = ["output"]
 
 WAYS = 12
@@ -101,6 +103,27 @@ SPARE = sensor.sensor_schema(
     entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
 )
 
+ZERO_OFFSET = sensor.sensor_schema(
+    unit_of_measurement=UNIT_MILLIVOLT,
+    accuracy_decimals=1,
+    device_class=DEVICE_CLASS_VOLTAGE,
+    entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+)
+ZERO_TEMPERATURE = sensor.sensor_schema(
+    unit_of_measurement=UNIT_CELSIUS,
+    accuracy_decimals=0,
+    device_class=DEVICE_CLASS_TEMPERATURE,
+    entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+)
+# Seconds since the boot it was taken in, until there is a time source.
+ZERO_TIME = sensor.sensor_schema(
+    unit_of_measurement=UNIT_SECOND,
+    accuracy_decimals=0,
+    device_class=DEVICE_CLASS_DURATION,
+    entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+)
+NOT_ZEROED = text_sensor.text_sensor_schema()
+
 WAY_CHANNELS = cv.Schema(
     {cv.Required(CONF_SENSE): MUX_CHANNEL, cv.Required(CONF_VOLTAGE): MUX_CHANNEL}
 )
@@ -117,11 +140,21 @@ def _make_entities(config):
                 "voltage": WAY_VOLTAGE(
                     {CONF_NAME: f"Way {n} voltage", **HIDDEN_DIAGNOSTIC}
                 ),
+                "zero_offset": ZERO_OFFSET(
+                    {CONF_NAME: f"Way {n} zero", **HIDDEN_DIAGNOSTIC}
+                ),
+                "zero_temperature": ZERO_TEMPERATURE(
+                    {CONF_NAME: f"Way {n} zero temperature", **HIDDEN_DIAGNOSTIC}
+                ),
+                "zero_time": ZERO_TIME(
+                    {CONF_NAME: f"Way {n} zero time", **HIDDEN_DIAGNOSTIC}
+                ),
             }
         )
     config[CONF_ENTITIES] = {
         "ways": ways,
         "panel_voltage": VOLTAGE({CONF_NAME: "Panel voltage"}),
+        "not_zeroed": NOT_ZEROED({CONF_NAME: "Not zeroed"}),
         "diodes": {key: TEMPERATURE({CONF_NAME: name}) for key, _, _, name in DIODES},
         "spares": {
             key: SPARE({CONF_NAME: name, **HIDDEN_DIAGNOSTIC})
@@ -178,6 +211,14 @@ async def to_code(config):
                 await sensor.new_sensor(way["voltage"]),
             )
         )
+        cg.add(
+            var.set_zero_sensors(
+                n,
+                await sensor.new_sensor(way["zero_offset"]),
+                await sensor.new_sensor(way["zero_temperature"]),
+                await sensor.new_sensor(way["zero_time"]),
+            )
+        )
     for key, diode, arm, _ in DIODES:
         temperature = await sensor.new_sensor(entities["diodes"][key])
         cg.add(var.set_diode(diode, arm, config[CONF_DIODES][key], temperature))
@@ -187,5 +228,10 @@ async def to_code(config):
     cg.add(
         var.set_panel_voltage_sensor(
             await sensor.new_sensor(entities["panel_voltage"])
+        )
+    )
+    cg.add(
+        var.set_not_zeroed_text_sensor(
+            await text_sensor.new_text_sensor(entities["not_zeroed"])
         )
     )
