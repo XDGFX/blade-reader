@@ -55,9 +55,10 @@ ordered, and is kept at the tag [`rev-a-strip`](https://github.com/XDGFX/blade-r
 
 ## Installing
 
-No yoke has been built, so these notes come from the design and from a 1.6 mm printed plate of
-the outline. The plate was fitted to a Blue Sea ST Blade 12 circuit on 2026-10-11: it dropped on
-with all 12 holes lined up, cleared the + stud and the mounting screws, and the cover went on.
+These notes come from the design, from a 1.6 mm printed plate of the outline, and from yoke B,
+fitted live to a panel on the bench. The plate was fitted to a Blue Sea ST Blade 12 circuit on
+2026-10-11: it dropped on with all 12 holes lined up, cleared the + stud and the mounting screws,
+and the cover went on. No yoke has been installed in service yet.
 
 The yoke is drawn for a fuse panel mounted positive end down, as Blue Sea draws it. The chin is
 then below the panel, the odd ways are on the left with 11 and 12 nearest the chin, and the
