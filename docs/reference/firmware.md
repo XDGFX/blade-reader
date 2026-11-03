@@ -93,9 +93,9 @@ No fault latches. Each clears itself once its cause has cleared and held steady.
 
 - A pulled fuse counts as blown. Voltage alone decides.
 - A sensor stuck at a rail clips the ADC, so it shows as over range. A sensor stuck mid-range isn't detected.
-- **No supply:** no way is live, which is only possible on USB. No blown-fuse faults are raised, and the panel voltage reads 0 V. When a way comes back, the board starts afresh as if it had just booted.
+- **No supply:** no way is live, which is only possible on USB. It isn't a fault, so it doesn't light the red LED. No blown-fuse faults are raised, and the panel voltage reads 0 V. When a way comes back, the yoke starts afresh as if it had just booted.
 - **Clear faults** (button): clears every fault, and every dead way becomes an empty way. A fault whose cause is still present comes straight back.
-- **Fault text:** `OK`, `No supply`, or each fault joined by `; `, board faults first, then ways in ascending order. For example: `Over temperature 87 °C; Way 3 blown; Way 9 over range`. A fault shows under No supply too, such as a sensor stuck at a rail. It fits in 255 characters, ending in `; …` if every fault won't.
+- **Fault text:** `OK`, or its parts joined by `; `: `No supply` first, then over temperature, then each kind of way fault with every way that has it, in ascending order. One way reads `Way`, more read `Ways`. For example: `Over temperature 87 °C; Ways 3, 7 blown; Way 9 over range`, or `No supply; Way 9 over range` for a sensor stuck at a rail on USB. Even with every fault raised it fits in Home Assistant's 255 characters, so nothing is cut off. Cal chose the grouping and No supply's place after review of [#117](https://github.com/XDGFX/blade-reader/issues/117), replacing one part per way fault, a bare `No supply` that hid any faults, and a `; …` cut-off.
 
 There are no per-way over-current limits, no 20 A derating when hot, and no panel total on the board. Home Assistant does those.
 
@@ -107,6 +107,8 @@ The component owns the red LED. Highest priority first:
 2. Steady: any fault is active.
 3. Slow blink (about 1 Hz): install mode, and a live way is still unzeroed.
 4. Off.
+
+No supply isn't a fault and has no pattern of its own: on USB alone the red LED is off unless one of the above holds. Cal kept this after review of [#117](https://github.com/XDGFX/blade-reader/issues/117).
 
 Green is ESPHome's `status_led`. ([#113](https://github.com/XDGFX/blade-reader/issues/113))
 

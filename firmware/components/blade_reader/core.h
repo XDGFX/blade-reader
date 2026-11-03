@@ -51,7 +51,7 @@ struct WayReading {
   SelfCheck self_check;
 };
 
-// Each kind of way fault, in the order the fault text lists them within a way.
+// Each kind of way fault, in the order the fault text lists them.
 enum WayFault { WAY_BLOWN, WAY_OVER_RANGE, WAY_FAULT_KINDS };
 
 struct Faults {
@@ -66,7 +66,8 @@ struct Faults {
   bool any() const;
 };
 
-// `OK`, `No supply`, or every fault joined by `; `, board faults first, then ways ascending.
+// `OK`, or every part joined by `; `: No supply, over temperature, then each kind of way fault
+// with the ways that have it, e.g. `Ways 3, 7 blown`. The longest fits in FAULT_TEXT_MAX.
 std::string fault_text(const Faults &faults);
 
 enum Led { LED_OFF, LED_SLOW_BLINK, LED_STEADY, LED_FAST_BLINK };

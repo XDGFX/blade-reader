@@ -1,7 +1,6 @@
 #include "core.h"
 
 #include <cmath>
-#include <cstring>
 
 namespace blade_core {
 
@@ -40,7 +39,7 @@ float median_live_voltage_v(const Readings &r, const bool is_live[WAYS]) {
   return n % 2 == 1 ? live[n / 2] : (live[n / 2 - 1] + live[n / 2]) / 2.0f;
 }
 
-// How the fault text names each kind of way fault, after `Way n `.
+// How the fault text names each kind of way fault, after the ways that have it.
 constexpr const char *WAY_FAULT_TEXT[] = {"blown", "over range"};
 static_assert(sizeof(WAY_FAULT_TEXT) / sizeof(WAY_FAULT_TEXT[0]) == WAY_FAULT_KINDS,
               "every way fault needs its text");
@@ -57,28 +56,21 @@ bool Faults::any() const {
 
 std::string fault_text(const Faults &faults) {
   std::string text;
-  bool full = false;
-  // Home Assistant drops a text state over 255 characters, so a list that won't fit ends in `…`.
-  auto add = [&text, &full](const std::string &fault) {
-    if (full) return;
-    std::string next = text + (text.empty() ? "" : "; ") + fault;
-    if (next.size() + std::strlen("; …") > FAULT_TEXT_MAX) {
-      text += "; …";
-      full = true;
-    } else {
-      text = next;
-    }
-  };
+  auto add = [&text](const std::string &part) { text += (text.empty() ? "" : "; ") + part; };
+  if (faults.no_supply) add("No supply");
   if (faults.over_temperature) {
     add("Over temperature " + std::to_string(static_cast<int>(std::lround(faults.hottest_c))) + " °C");
   }
-  for (int w = 0; w < WAYS; w++) {
-    for (int kind = 0; kind < WAY_FAULT_KINDS; kind++) {
-      if (faults.way[w][kind]) add("Way " + std::to_string(w + 1) + " " + WAY_FAULT_TEXT[kind]);
+  for (int kind = 0; kind < WAY_FAULT_KINDS; kind++) {
+    std::string ways;
+    int count = 0;
+    for (int w = 0; w < WAYS; w++) {
+      if (!faults.way[w][kind]) continue;
+      ways += (count++ == 0 ? "" : ", ") + std::to_string(w + 1);
     }
+    if (count > 0) add((count == 1 ? "Way " : "Ways ") + ways + " " + WAY_FAULT_TEXT[kind]);
   }
-  if (!text.empty()) return text;
-  return faults.no_supply ? "No supply" : "OK";
+  return text.empty() ? "OK" : text;
 }
 
 Led led_for(const LedCauses &causes) {

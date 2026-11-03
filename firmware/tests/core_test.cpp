@@ -217,24 +217,36 @@ TEST_CASE("the fault text reads OK with no fault, and No supply with no way live
   CHECK_FALSE(f.any());
 }
 
-TEST_CASE("the fault text joins the faults with '; ', ways in ascending order") {
+TEST_CASE("the fault text names ways that share a fault together, in ascending order") {
   Faults f{};
   f.way[8][WAY_BLOWN] = true;
   f.way[2][WAY_BLOWN] = true;
-  CHECK(fault_text(f) == "Way 3 blown; Way 9 blown");
+  f.way[6][WAY_BLOWN] = true;
+  f.way[8][WAY_OVER_RANGE] = true;
+  CHECK(fault_text(f) == "Ways 3, 7, 9 blown; Way 9 over range");
   CHECK(f.any());
 }
 
-TEST_CASE("the fault text fits in 255 characters with every fault raised") {
+TEST_CASE("under No supply the fault text shows No supply first, then any faults") {
   Faults f{};
+  f.no_supply = true;
+  f.way[8][WAY_OVER_RANGE] = true;
+  CHECK(fault_text(f) == "No supply; Way 9 over range");
+}
+
+TEST_CASE("the fault text fits in FAULT_TEXT_MAX with every fault raised, cutting nothing off") {
+  Faults f{};
+  f.no_supply = true;
   f.over_temperature = true;
-  f.hottest_c = 120.0f;
+  // The longest temperature a diode can read: its Vbe at the ADC's top, 3.3 V.
+  f.hottest_c = diode_c(3300.0f);
   for (auto &way : f.way)
     for (bool &fault : way) fault = true;
   std::string text = fault_text(f);
-  CHECK(text.size() <= 255);
-  CHECK(text.rfind("Over temperature 120 °C; Way 1 blown; Way 1 over range; ", 0) == 0);
-  CHECK(text.substr(text.size() - std::string("; …").size()) == "; …");
+  CHECK(text.size() <= FAULT_TEXT_MAX);
+  std::string last = "Ways 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 over range";
+  CHECK(text.size() >= last.size());
+  CHECK(text.substr(text.size() - last.size()) == last);
 }
 
 namespace {
@@ -326,7 +338,7 @@ TEST_CASE("under No supply, a sensor stuck at a rail still shows over range") {
   s.sense_clipped[4] = true;
   Readings r = core.on_sweep(s);
   CHECK(r.faults.no_supply);
-  CHECK(fault_text(r.faults) == "Way 5 over range");
+  CHECK(fault_text(r.faults) == "No supply; Way 5 over range");
 }
 
 TEST_CASE("Clear faults clears over range and over temperature, and both come back if still present") {
