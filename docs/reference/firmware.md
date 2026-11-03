@@ -1,6 +1,6 @@
 # Firmware
 
-How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). Until those tickets land, the first-flash config in [`firmware/`](../../firmware/) does none of this: it reads every way against the nominal zero and gain.
+How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, reads every way against the nominal zero and gain, and follows the publish rule; zeroing, temperature tracking, trims, energy, faults and the red LED are still to come.
 
 Terms are as in [`GLOSSARY.md`](../../GLOSSARY.md).
 

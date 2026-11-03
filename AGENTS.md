@@ -34,6 +34,15 @@ by `board/bun.lock`. Run it through `bun run` or `bunx tsci` in `board/`, so the
 used: read every bare `tsci` in the `tscircuit` skill that way. Known caveats are in
 `docs/design.md` under Tooling.
 
+The firmware is ESPHome with one external component, `blade_reader`, in
+`firmware/components/blade_reader/`. Its hardware-free core (`core.*`, `constants.h`) holds every
+calculation and takes no ESPHome or ESP-IDF include; the rest is glue. Firmware gates, both run
+from the repo root:
+
+- `make -C firmware test`: the core's tests, on the Mac.
+- `esphome compile firmware/blade-reader.yaml`: the glue builds. It needs a
+  `firmware/secrets.yaml`; a copy of `secrets.example.yaml` with any base64 `api_key` will do.
+
 ## Issue tracker
 
 GitHub Issues on this repo. Conventions, including how `/wayfinder` maps and tickets work here, are in `docs/agents/issue-tracker.md`.
