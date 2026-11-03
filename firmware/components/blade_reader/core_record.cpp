@@ -89,6 +89,7 @@ RecordBytes encode(const WayRecord &record) {
   if (record.zero.taken) {
     out.field(WAY_FIELD_ZERO, ZERO_FIELD_VERSION, record.zero.mv, record.zero.vbe_mv, record.zero.at_s);
   }
+  out.field(WAY_FIELD_GAIN_TRIM, GAIN_TRIM_FIELD_VERSION, record.gain_trim);
   return bytes;
 }
 
@@ -106,6 +107,10 @@ WayRecord decode_way(const RecordBytes &bytes) {
       Zero zero;
       zero.taken = payload.read(zero.mv, zero.vbe_mv, zero.at_s);
       if (zero.taken) record.zero = zero;
+    }
+    if (id == WAY_FIELD_GAIN_TRIM && version == GAIN_TRIM_FIELD_VERSION) {
+      float trim;
+      if (payload.read(trim)) record.gain_trim = trim;
     }
     at = start + length;
   }

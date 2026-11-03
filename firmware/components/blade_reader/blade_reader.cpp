@@ -56,10 +56,20 @@ void BladeReader::setup() {
   this->core_.start(this->storage_);
   for (int w = 0; w < blade_core::WAYS; w++)
     this->publish_zero_(w);
+  for (int w = 0; w < blade_core::WAYS; w++)
+    this->gain_trims_[w]->publish_state(this->core_.record(w).gain_trim);
   this->not_zeroed_->publish_state(this->core_.not_zeroed());
   this->select_(0);
   // The sweep runs continuously, one mux channel a loop, so the loop mustn't idle between them.
   this->high_freq_.start();
+}
+
+void BladeReader::update_fault_led_() {
+  bool lit = blade_core::led_lit(this->led_, millis());
+  if (lit == this->led_lit_)
+    return;
+  this->led_lit_ = lit;
+  this->fault_led_->set_state(lit);
 }
 
 void BladeReader::select_(uint8_t channel) {
@@ -70,6 +80,7 @@ void BladeReader::select_(uint8_t channel) {
 
 // One step a call: once the muxes have settled on a channel, average each arm's ADC and move on.
 void BladeReader::loop() {
+  this->update_fault_led_();
   if (micros() - this->selected_at_us_ < SETTLE_US)
     return;
   for (uint8_t arm = 0; arm < ARMS; arm++)
@@ -126,7 +137,11 @@ void BladeReader::publish_(const blade_core::Readings &r) {
   std::string text = blade_core::fault_text(r.faults);
   if (!this->fault_text_->has_state() || this->fault_text_->state != text)
     this->fault_text_->publish_state(text);
-  this->fault_led_->set_state(r.faults.any());
+  this->led_ = r.led;
+  if (this->core_.install_mode() != this->install_mode_) {
+    this->install_mode_ = this->core_.install_mode();
+    ESP_LOGI(TAG, "Install mode %s", this->install_mode_ ? "on" : "ended");
+  }
 
   if (!r.publish_board)
     return;
@@ -145,9 +160,24 @@ void BladeReader::publish_zero_(int w) {
   entities.time->publish_state(zero.taken ? zero.at_s : NAN);
 }
 
+void BladeReader::set_gain_trim(int way, float trim) {
+  if (way < 1 || way > blade_core::WAYS) {
+    ESP_LOGW(TAG, "set_gain_trim: no way %d; ways are 1 to %d", way, blade_core::WAYS);
+    return;
+  }
+  if (!this->core_.set_gain_trim(way - 1, trim)) {
+    ESP_LOGW(TAG, "set_gain_trim: way %d trim %.4f rejected, outside %.2f to %.2f", way, trim,
+             blade_core::GAIN_TRIM_MIN, blade_core::GAIN_TRIM_MAX);
+    return;
+  }
+  ESP_LOGI(TAG, "Way %d gain trim set to %.4f", way, trim);
+  this->gain_trims_[way - 1]->publish_state(trim);
+}
+
 void BladeReader::dump_state() {
   for (int w = 0; w < blade_core::WAYS; w++) {
     ESP_LOGI(TAG, "Way %d: energy %" PRId64 " mWs", w + 1, this->core_.energy(w).mws);
+    ESP_LOGI(TAG, "Way %d: gain trim %.4f", w + 1, this->core_.record(w).gain_trim);
     const blade_core::Zero &zero = this->core_.record(w).zero;
     if (!zero.taken) {
       ESP_LOGI(TAG, "Way %d: not zeroed", w + 1);

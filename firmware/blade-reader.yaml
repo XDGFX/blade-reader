@@ -54,6 +54,13 @@ api:
     - action: dump_state
       then:
         - lambda: id(blade).dump_state();
+    # Sets a way's (1 to 12) gain trim, within 0.90 to 1.10, and stores it at once.
+    - action: set_gain_trim
+      variables:
+        way: int
+        trim: float
+      then:
+        - lambda: id(blade).set_gain_trim(way, trim);
 
 # Updates over Wi-Fi, encrypted with the api key above.
 ota:

@@ -151,3 +151,61 @@ TEST_CASE("the sweep that takes a zero flags it, and only that sweep") {
   CHECK(core.record(2).zero.taken);
   CHECK_FALSE(core.on_sweep(dead_sweep(ZERO_DONE_MS)).way[2].new_zero);
 }
+
+TEST_CASE("an accepted gain trim is saved at once, and a rejected one isn't") {
+  FakeStorage storage;
+  Core core;
+  core.start(storage);
+  REQUIRE(core.set_gain_trim(4, 1.05f));
+  REQUIRE(storage.has_way(5));
+  CHECK(storage.way(5).gain_trim == 1.05f);
+  CHECK(storage.saves == 1);
+
+  CHECK_FALSE(core.set_gain_trim(4, GAIN_TRIM_MAX + 0.01f));
+  CHECK(storage.saves == 1);
+  CHECK(storage.way(5).gain_trim == 1.05f);
+}
+
+TEST_CASE("a way keeps its zero when its gain trim is set") {
+  FakeStorage storage;
+  WayRecord stored;
+  stored.zero = {true, NOMINAL_ZERO_MV + 10.0f, 570.0f, 15};
+  storage.put_way(3, stored);
+  Core core;
+  core.start(storage);
+  REQUIRE(core.set_gain_trim(2, 0.95f));
+  CHECK(storage.way(3).zero.taken);
+  CHECK(storage.way(3).zero.mv == NOMINAL_ZERO_MV + 10.0f);
+}
+
+TEST_CASE("a way reads with the gain trim it was started with") {
+  FakeStorage storage;
+  WayRecord stored;
+  stored.gain_trim = 1.05f;
+  storage.put_way(3, stored);
+  Core core;
+  core.start(storage);
+  Sweep s = dead_sweep(0);
+  s.sense_mv[2] = NOMINAL_ZERO_MV - 440.0f;  // 10 A at the nominal gain
+  CHECK(core.on_sweep(s).way[2].current_a == doctest::Approx(10.5f));
+}
+
+TEST_CASE("a gain trim round-trips through the way's stored form, alongside its zero") {
+  WayRecord record;
+  record.zero = {true, 1661.5f, 572.25f, 15};
+  record.gain_trim = 0.97f;
+  WayRecord read = decode_way(encode(record));
+  CHECK(read.gain_trim == 0.97f);
+  CHECK(read.zero.mv == 1661.5f);
+}
+
+TEST_CASE("a way without a stored gain trim, or with one of another format version, reads 1.0") {
+  CHECK(decode_way(RecordBytes{}).gain_trim == 1.0f);
+
+  WayRecord record;
+  record.gain_trim = 0.97f;
+  RecordBytes bytes = encode(record);
+  REQUIRE(bytes[FIELD_ID_AT] == WAY_FIELD_GAIN_TRIM);
+  bytes[FIELD_VERSION_AT] = GAIN_TRIM_FIELD_VERSION + 1;
+  CHECK(decode_way(bytes).gain_trim == 1.0f);
+}

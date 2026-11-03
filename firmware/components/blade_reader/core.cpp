@@ -65,13 +65,34 @@ std::string fault_text(const Faults &faults) {
   return text.empty() ? "OK" : text;
 }
 
+Led led_for(const LedCauses &causes) {
+  if (causes.zeroing) return LED_FAST_BLINK;
+  if (causes.fault) return LED_STEADY;
+  if (causes.install_blink) return LED_SLOW_BLINK;
+  return LED_OFF;
+}
+
+bool led_lit(Led led, uint32_t now_ms) {
+  switch (led) {
+    case LED_FAST_BLINK:
+      return now_ms % FAST_BLINK_MS < FAST_BLINK_MS / 2;
+    case LED_SLOW_BLINK:
+      return now_ms % SLOW_BLINK_MS < SLOW_BLINK_MS / 2;
+    case LED_STEADY:
+      return true;
+    case LED_OFF:
+      break;
+  }
+  return false;
+}
+
 Readings Core::on_sweep(const Sweep &sweep) {
   Readings r{};
   for (int w = 0; w < WAYS; w++) {
     WayReading &way = r.way[w];
     const Zero &zero = records_[w].zero;
     float out_mv = sensor_out_mv(w, sweep.sense_mv[w]);
-    way.current_a = current_a(w, out_mv, zero.taken ? zero.mv : NOMINAL_ZERO_MV);
+    way.current_a = current_a(w, out_mv, zero.taken ? zero.mv : NOMINAL_ZERO_MV) * records_[w].gain_trim;
     way.voltage_v = sweep.voltage_mv[w] * VOLTAGE_DIVIDER / 1000.0f;
     way.power_w = way.voltage_v * way.current_a;
     bool live = still_live(live_[w], way.voltage_v);
@@ -82,6 +103,13 @@ Readings Core::on_sweep(const Sweep &sweep) {
   integrate_energy_(r, sweep.now_ms);
   update_faults_(sweep.now_ms);
   r.faults = faults_;
+  update_install_mode_(sweep.now_ms);
+  LedCauses causes{false, faults_.any(), false};
+  for (int w = 0; w < WAYS; w++) {
+    causes.zeroing |= zeroing_[w].samples > 0 && !zeroing_[w].done;
+    causes.install_blink |= install_mode_ && live_[w] && !records_[w].zero.taken;
+  }
+  r.led = led_for(causes);
   r.panel_voltage_v = median_live_voltage_v(r, live_);
   for (int d = 0; d < DIODES; d++) {
     r.diode_c[d] = diode_c(sweep.vbe_mv[d]);
@@ -181,6 +209,14 @@ void Core::save_(int w) {
   if (storage_ != nullptr) storage_->save({RECORD_WAY, w}, encode(records_[w]));
 }
 
+bool Core::set_gain_trim(int w, float trim) {
+  // Written so NaN fails too.
+  if (!(trim >= GAIN_TRIM_MIN && trim <= GAIN_TRIM_MAX)) return false;
+  records_[w].gain_trim = trim;
+  save_(w);
+  return true;
+}
+
 void Core::clear_faults() {
   for (int w = 0; w < WAYS; w++) {
     for (bool &fault : faults_.way[w]) fault = false;
@@ -209,6 +245,14 @@ void Core::update_faults_(uint32_t now_ms) {
       faults_.way[w][WAY_BLOWN] = true;
     }
   }
+}
+
+// Once ended it stays ended until the next boot, even when the millisecond clock wraps.
+void Core::update_install_mode_(uint32_t now_ms) {
+  bool any_unzeroed = false;
+  for (const WayRecord &record : records_) any_unzeroed |= !record.zero.taken;
+  if (!any_unzeroed || now_ms >= INSTALL_MODE_MS) install_mode_ended_ = true;
+  install_mode_ = !install_mode_ended_;
 }
 
 bool Core::due_(Published &last, uint32_t now_ms, bool changed) {

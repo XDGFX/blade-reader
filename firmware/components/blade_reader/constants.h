@@ -12,6 +12,10 @@ constexpr int WAYS = 12;
 constexpr float NOMINAL_ZERO_MV = 1650.0f;
 constexpr float GAIN_MV_PER_A = 44.0f;
 
+// Each way's gain trim, set over the API, must lie within these.
+constexpr float GAIN_TRIM_MIN = 0.90f;
+constexpr float GAIN_TRIM_MAX = 1.10f;
+
 // The even arm's sense lines are divided by 0.820 to fit the ADC's 12 dB range.
 constexpr float EVEN_ARM_DIVIDER = 0.820f;
 
@@ -47,5 +51,11 @@ constexpr uint32_t ZERO_MEAN_MS = 10000;
 
 // Energy totals are kept in mWs and published in Wh.
 constexpr double MWS_PER_WH = 3600.0 * 1000.0;
+// Install mode lasts at most this long after boot.
+constexpr uint32_t INSTALL_MODE_MS = 3600000;
+
+// The red LED's blink periods: about 4 Hz and 1 Hz, lit for the first half of each.
+constexpr uint32_t FAST_BLINK_MS = 250;
+constexpr uint32_t SLOW_BLINK_MS = 1000;
 
 }  // namespace blade_core

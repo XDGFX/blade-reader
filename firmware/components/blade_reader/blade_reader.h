@@ -69,6 +69,10 @@ class BladeReader : public Component {
   // Logs every way's stored record.
   void dump_state();
 
+  void set_gain_trim_sensor(uint8_t way, sensor::Sensor *s) { this->gain_trims_[way - 1] = s; }
+  // The set_gain_trim API action: stores the trim at once, or logs why it didn't.
+  void set_gain_trim(int way, float trim);
+
   void set_blown_sensor(uint8_t way, binary_sensor::BinarySensor *s) { this->blown_[way - 1] = s; }
   void set_fault_text_sensor(text_sensor::TextSensor *s) { this->fault_text_ = s; }
   void set_energy_sensor(uint8_t way, sensor::Sensor *s) { this->energy_[way - 1] = s; }
@@ -95,10 +99,14 @@ class BladeReader : public Component {
   blade_core::Sweep collect_(uint32_t now_ms) const;
   void publish_(const blade_core::Readings &r);
   void publish_zero_(int way_index);
+  void update_fault_led_();
 
   GPIOPin *select_pins_[SELECT_BITS]{};
   voltage_sampler::VoltageSampler *adcs_[ARMS]{};
   output::BinaryOutput *fault_led_{nullptr};
+  blade_core::Led led_{blade_core::LED_OFF};
+  bool led_lit_{false};
+  bool install_mode_{false};
 
   WayEntities ways_[blade_core::WAYS]{};
   Tap diode_taps_[blade_core::DIODES]{};
@@ -107,6 +115,7 @@ class BladeReader : public Component {
   sensor::Sensor *spares_[blade_core::SPARES]{};
   sensor::Sensor *panel_voltage_{nullptr};
   ZeroEntities zeros_[blade_core::WAYS]{};
+  sensor::Sensor *gain_trims_[blade_core::WAYS]{};
   text_sensor::TextSensor *not_zeroed_{nullptr};
   binary_sensor::BinarySensor *blown_[blade_core::WAYS]{};
   text_sensor::TextSensor *fault_text_{nullptr};

@@ -143,6 +143,10 @@ ZERO_TIME = sensor.sensor_schema(
     device_class=DEVICE_CLASS_DURATION,
     entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
 )
+GAIN_TRIM = sensor.sensor_schema(
+    accuracy_decimals=4,
+    entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+)
 NOT_ZEROED = text_sensor.text_sensor_schema()
 BLOWN = binary_sensor.binary_sensor_schema(device_class=DEVICE_CLASS_PROBLEM)
 FAULT_TEXT = text_sensor.text_sensor_schema()
@@ -175,6 +179,9 @@ def _make_entities(config):
                 ),
                 "blown": BLOWN({CONF_NAME: f"Way {n} blown fuse"}),
                 "energy": ENERGY({CONF_NAME: f"Way {n} energy"}),
+                "gain_trim": GAIN_TRIM(
+                    {CONF_NAME: f"Way {n} gain trim", **HIDDEN_DIAGNOSTIC}
+                ),
             }
         )
     config[CONF_ENTITIES] = {
@@ -251,6 +258,9 @@ async def to_code(config):
             var.set_blown_sensor(n, await binary_sensor.new_binary_sensor(way["blown"]))
         )
         cg.add(var.set_energy_sensor(n, await sensor.new_sensor(way["energy"])))
+        cg.add(
+            var.set_gain_trim_sensor(n, await sensor.new_sensor(way["gain_trim"]))
+        )
     for key, diode, arm, _ in DIODES:
         temperature = await sensor.new_sensor(entities["diodes"][key])
         cg.add(var.set_diode(diode, arm, config[CONF_DIODES][key], temperature))

@@ -51,6 +51,25 @@ struct Faults {
 // `OK`, `No supply`, or every fault joined by `; `, board faults first, then ways ascending.
 std::string fault_text(const Faults &faults);
 
+enum Led { LED_OFF, LED_SLOW_BLINK, LED_STEADY, LED_FAST_BLINK };
+
+// What can light the red LED.
+struct LedCauses {
+  // A zero is being taken on some way.
+  bool zeroing;
+  // Any fault is active.
+  bool fault;
+  // Install mode, and a live way is still unzeroed.
+  bool install_blink;
+};
+
+// The red LED's pattern: the highest-priority cause wins.
+Led led_for(const LedCauses &causes);
+
+// Whether the red LED is lit at now_ms under its pattern. The glue calls it every loop, as a
+// sweep is too slow to time a blink.
+bool led_lit(Led led, uint32_t now_ms);
+
 struct Readings {
   WayReading way[WAYS];
   Faults faults;
@@ -58,6 +77,8 @@ struct Readings {
   float panel_voltage_v;
   float diode_c[DIODES];
   float spare_mv[SPARES];
+  // The red LED's pattern.
+  Led led;
 };
 
 // A diode's temperature from its Vbe.
@@ -72,11 +93,16 @@ class Core {
   // The Clear faults button: clears every fault, and every dead way becomes empty. A fault whose
   // cause is still present comes back on the next sweep.
   void clear_faults();
+  // Sets a way's gain trim and saves it at once. False, keeping the old trim, if it is outside
+  // GAIN_TRIM_MIN to GAIN_TRIM_MAX.
+  bool set_gain_trim(int way_index, float trim);
 
   const WayRecord &record(int way_index) const { return records_[way_index]; }
   const EnergyRecord &energy(int way_index) const { return energy_[way_index]; }
   // "None", or the unzeroed ways, e.g. "Not zeroed: 3, 7".
   std::string not_zeroed() const;
+  // Install mode: from boot while any way has no zero, for INSTALL_MODE_MS at most.
+  bool install_mode() const { return install_mode_; }
 
  private:
   // When a group of readings was last published, and the values that decide the next.
@@ -101,6 +127,7 @@ class Core {
   void save_(int way_index);
   void integrate_energy_(Readings &r, uint32_t now_ms);
   void update_faults_(uint32_t now_ms);
+  void update_install_mode_(uint32_t now_ms);
 
   Storage *storage_{nullptr};
   bool live_[WAYS]{};
@@ -119,6 +146,8 @@ class Core {
   Faults faults_{};
   Published way_published_[WAYS];
   Published board_published_;
+  bool install_mode_{false};
+  bool install_mode_ended_{false};
 };
 
 }  // namespace blade_core
