@@ -95,6 +95,9 @@ class Core {
 
   bool due_(Published &last, uint32_t now_ms, bool changed);
   bool track_zero_(int way_index, const Sweep &sweep, float out_mv);
+  void learn_tempco_(int way_index, const Zero &taken);
+  void track_vbe_(const Sweep &sweep);
+  float zero_now_mv_(int way_index) const;
   void save_(int way_index);
   void update_faults_(uint32_t now_ms);
 
@@ -102,6 +105,10 @@ class Core {
   bool live_[WAYS]{};
   Zeroing zeroing_[WAYS];
   WayRecord records_[WAYS];
+  // The smoothed Vbe that temperature tracking follows.
+  double vbe_mv_{0};
+  bool vbe_tracked_{false};
+  uint32_t vbe_at_ms_{0};
   // When each way last turned live or dead.
   uint32_t changed_at_ms_[WAYS]{};
   // Whether each way has been live since boot, Clear faults or a No supply period. A dead way

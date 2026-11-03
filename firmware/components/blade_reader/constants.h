@@ -45,4 +45,20 @@ constexpr float TEMPERATURE_STEP_C = 1.0f;
 constexpr uint32_t ZERO_DEAD_MS = 5000;
 constexpr uint32_t ZERO_MEAN_MS = 10000;
 
+// Temperature tracking of the zero. The Vbe it follows is smoothed with this time constant.
+constexpr uint32_t VBE_SMOOTHING_MS = 60000;
+// It follows the even arm's diode, or the chin's while the even arm's Vbe is outside this range,
+// which spans about −130 °C to 170 °C: anything beyond is a shorted or open diode.
+constexpr float VBE_PLAUSIBLE_MIN_MV = 300.0f;
+constexpr float VBE_PLAUSIBLE_MAX_MV = 900.0f;
+// A re-zero this far from the stored zero's temperature is a tempco sample, blended in at this
+// weight. The tempco is in mA/K of zero drift, clamped to ±TEMPCO_LIMIT_MA_PER_K.
+constexpr float TEMPCO_SAMPLE_MIN_K = 10.0f;
+constexpr float TEMPCO_BLEND = 0.25f;
+constexpr float TEMPCO_LIMIT_MA_PER_K = 5.0f;
+// The tempco is applied once this many latest samples agree in sign and lie within
+// TEMPCO_AGREE_MA_PER_K of each other; until then 0 is.
+constexpr int TEMPCO_CONFIDENT_SAMPLES = 3;
+constexpr float TEMPCO_AGREE_MA_PER_K = 2.0f;
+
 }  // namespace blade_core

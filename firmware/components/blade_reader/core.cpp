@@ -67,11 +67,11 @@ std::string fault_text(const Faults &faults) {
 
 Readings Core::on_sweep(const Sweep &sweep) {
   Readings r{};
+  track_vbe_(sweep);
   for (int w = 0; w < WAYS; w++) {
     WayReading &way = r.way[w];
-    const Zero &zero = records_[w].zero;
     float out_mv = sensor_out_mv(w, sweep.sense_mv[w]);
-    way.current_a = current_a(w, out_mv, zero.taken ? zero.mv : NOMINAL_ZERO_MV);
+    way.current_a = current_a(w, out_mv, zero_now_mv_(w));
     way.voltage_v = sweep.voltage_mv[w] * VOLTAGE_DIVIDER / 1000.0f;
     way.power_w = way.voltage_v * way.current_a;
     bool live = still_live(live_[w], way.voltage_v);
@@ -129,15 +129,65 @@ bool Core::track_zero_(int w, const Sweep &sweep, float out_mv) {
   if (dead_ms < ZERO_DEAD_MS + ZERO_MEAN_MS) {
     z.samples++;
     z.sum_mv += out_mv;
-    z.sum_vbe_mv += sweep.vbe_mv[DIODE_EVEN_ARM];
+    z.sum_vbe_mv += vbe_mv_;
     return false;
   }
   z.done = true;
   if (z.samples == 0) return false;
-  records_[w].zero = {true, float(z.sum_mv / z.samples), float(z.sum_vbe_mv / z.samples),
-                      sweep.now_ms / 1000};
+  Zero taken{true, float(z.sum_mv / z.samples), float(z.sum_vbe_mv / z.samples), sweep.now_ms / 1000};
+  learn_tempco_(w, taken);
+  records_[w].zero = taken;
   save_(w);
   return true;
+}
+
+// Smooths the Vbe that temperature tracking follows, starting from the first sweep's.
+void Core::track_vbe_(const Sweep &sweep) {
+  float raw_mv = sweep.vbe_mv[DIODE_EVEN_ARM];
+  if (raw_mv < VBE_PLAUSIBLE_MIN_MV || raw_mv > VBE_PLAUSIBLE_MAX_MV) raw_mv = sweep.vbe_mv[DIODE_CHIN];
+  if (!vbe_tracked_) {
+    vbe_mv_ = raw_mv;
+    vbe_tracked_ = true;
+  } else {
+    float dt_ms = float(sweep.now_ms - vbe_at_ms_);
+    vbe_mv_ += (raw_mv - vbe_mv_) * (1.0 - std::exp(-double(dt_ms) / VBE_SMOOTHING_MS));
+  }
+  vbe_at_ms_ = sweep.now_ms;
+}
+
+// zero_now = zero + tempco × ΔT, with ΔT from the Vbe now and at the zero. An unzeroed way reads
+// against the nominal zero.
+float Core::zero_now_mv_(int w) const {
+  const WayRecord &record = records_[w];
+  if (!record.zero.taken) return NOMINAL_ZERO_MV;
+  float k = (vbe_mv_ - record.zero.vbe_mv) / VBE_MV_PER_C;
+  return record.zero.mv + record.tempco.applied_ma_per_k() * k * GAIN_MV_PER_A / 1000.0f;
+}
+
+// A re-zero far enough in temperature from the stored zero is a sample of the way's tempco.
+void Core::learn_tempco_(int w, const Zero &taken) {
+  const Zero &stored = records_[w].zero;
+  if (!stored.taken) return;
+  float k = (taken.vbe_mv - stored.vbe_mv) / VBE_MV_PER_C;
+  if (std::fabs(k) < TEMPCO_SAMPLE_MIN_K) return;
+  Tempco &tempco = records_[w].tempco;
+  float sample = (taken.mv - stored.mv) / k / GAIN_MV_PER_A * 1000.0f;
+  float blended = tempco.ma_per_k + TEMPCO_BLEND * (sample - tempco.ma_per_k);
+  tempco.ma_per_k = std::fmax(-TEMPCO_LIMIT_MA_PER_K, std::fmin(TEMPCO_LIMIT_MA_PER_K, blended));
+  for (int i = TEMPCO_CONFIDENT_SAMPLES - 1; i > 0; i--) tempco.recent[i] = tempco.recent[i - 1];
+  tempco.recent[0] = sample;
+  if (tempco.samples < UINT8_MAX) tempco.samples++;
+}
+
+float Tempco::applied_ma_per_k() const {
+  if (samples < TEMPCO_CONFIDENT_SAMPLES) return 0.0f;
+  float lowest = recent[0], highest = recent[0];
+  for (float sample : recent) {
+    lowest = std::fmin(lowest, sample);
+    highest = std::fmax(highest, sample);
+  }
+  bool one_sign = lowest > 0.0f || highest < 0.0f;
+  return one_sign && highest - lowest <= TEMPCO_AGREE_MA_PER_K ? ma_per_k : 0.0f;
 }
 
 std::string Core::not_zeroed() const {

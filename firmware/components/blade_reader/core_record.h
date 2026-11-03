@@ -4,6 +4,7 @@
 
 #include <cstdint>
 
+#include "constants.h"
 #include "core_storage.h"
 
 namespace blade_core {
@@ -17,8 +18,21 @@ struct Zero {
   uint32_t at_s{0};
 };
 
+// How a way's zero drifts with temperature, learnt from its own re-zeros: mA/K of zero drift,
+// read as the sensor's output over the nominal gain.
+struct Tempco {
+  float ma_per_k{0};
+  uint8_t samples{0};
+  // The latest samples, newest first; only the first `samples` of them are real.
+  float recent[TEMPCO_CONFIDENT_SAMPLES]{};
+
+  // The tempco once its latest samples agree, otherwise 0.
+  float applied_ma_per_k() const;
+};
+
 struct WayRecord {
   Zero zero;
+  Tempco tempco;
 };
 
 // A stored record is a run of fields, each [id][version][payload length][payload], ended by id 0
