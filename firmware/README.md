@@ -19,9 +19,14 @@ re-zeroing come later, over Wi-Fi.
 ### 1. Install ESPHome
 
 ```sh
-brew install esphome
+brew install uv
+uv tool install --python 3.13 esphome
+uv tool update-shell     # then open a new Terminal window
 esphome version
 ```
+
+Not `brew install esphome`: Homebrew's runs on Python 3.15, which ESPHome doesn't support yet,
+and the first build fails installing ESP-IDF's Python dependencies.
 
 No USB driver is needed: the ESP32-C3's own USB shows up as `/dev/cu.usbmodem…`.
 
