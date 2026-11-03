@@ -37,6 +37,8 @@ captive_portal:
 api:
   encryption:
     key: !secret api_key
+  # The board runs on its own until Home Assistant connects, so it mustn't reboot without one.
+  reboot_timeout: 0s
 
 # Updates over Wi-Fi, encrypted with the api key above.
 ota:
