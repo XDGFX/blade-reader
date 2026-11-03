@@ -28,18 +28,30 @@ bool still_live(bool was_live, float voltage_v) {
   return was_live;
 }
 
-float median_live_voltage_v(const Readings &r, const bool is_live[WAYS]) {
-  // Kept sorted as it fills: std::sort here trips a false -Warray-bounds in the ESP32's GCC.
-  float live[WAYS];
-  int n = 0;
-  for (int w = 0; w < WAYS; w++) {
-    if (!is_live[w]) continue;
-    int i = n++;
-    for (; i > 0 && live[i - 1] > r.way[w].voltage_v; i--) live[i] = live[i - 1];
-    live[i] = r.way[w].voltage_v;
+// Gathers values to take their median, kept sorted as they come: std::sort here trips a false
+// -Warray-bounds in the ESP32's GCC.
+class Median {
+ public:
+  void add(float value) {
+    int i = n_++;
+    for (; i > 0 && values_[i - 1] > value; i--) values_[i] = values_[i - 1];
+    values_[i] = value;
   }
-  if (n == 0) return 0.0f;
-  return n % 2 == 1 ? live[n / 2] : (live[n / 2 - 1] + live[n / 2]) / 2.0f;
+  bool empty() const { return n_ == 0; }
+  // The middle value, or the mean of the middle two.
+  float value() const { return n_ % 2 == 1 ? values_[n_ / 2] : (values_[n_ / 2 - 1] + values_[n_ / 2]) / 2.0f; }
+
+ private:
+  float values_[WAYS];
+  int n_{0};
+};
+
+float median_live_voltage_v(const Readings &r, const bool is_live[WAYS]) {
+  Median live;
+  for (int w = 0; w < WAYS; w++) {
+    if (is_live[w]) live.add(r.way[w].voltage_v);
+  }
+  return live.empty() ? 0.0f : live.value();
 }
 
 // How the fault text names each kind of way fault, after the ways that have it.
@@ -100,10 +112,8 @@ bool led_lit(Led led, uint32_t now_ms) {
 Readings Core::on_sweep(const Sweep &sweep) {
   Readings r{};
   track_vbe_(sweep);
-  bool zeroed[WAYS];
   for (int w = 0; w < WAYS; w++) {
     WayReading &way = r.way[w];
-    zeroed[w] = records_[w].zero.taken;
     float out_mv = sensor_out_mv(w, sweep.sense_mv[w]);
     way.current_a = current_a(w, out_mv, zero_now_mv_(w)) * records_[w].gain_trim;
     way.voltage_v = sweep.voltage_mv[w] * VOLTAGE_DIVIDER / 1000.0f;
@@ -115,7 +125,7 @@ Readings Core::on_sweep(const Sweep &sweep) {
     way.new_zero = track_zero_(w, sweep, out_mv);
     if (way.new_zero) way.self_check = self_checks_[w];
   }
-  integrate_energy_(r, zeroed, sweep.now_ms);
+  integrate_energy_(r, sweep.now_ms);
   for (int d = 0; d < DIODES; d++) {
     r.diode_c[d] = diode_c(sweep.vbe_mv[d]);
   }
@@ -205,12 +215,22 @@ void Core::track_vbe_(const Sweep &sweep) {
 }
 
 // zero_now = zero + tempco × ΔT, with ΔT from the Vbe now and at the zero. An unzeroed way reads
-// against the nominal zero.
+// against its borrowed zero.
 float Core::zero_now_mv_(int w) const {
   const WayRecord &record = records_[w];
-  if (!record.zero.taken) return NOMINAL_ZERO_MV;
+  if (!record.zero.taken) return borrowed_zero_mv_(w);
   float k = (vbe_mv_ - record.zero.vbe_mv) / VBE_MV_PER_C;
   return record.zero.mv + record.tempco.applied_ma_per_k() * k * GAIN_MV_PER_A / 1000.0f;
+}
+
+// The median of the stored zeros on the way's arm, with no tempco, or the nominal zero if none of
+// them has one.
+float Core::borrowed_zero_mv_(int w) const {
+  Median zeros;
+  for (int other = w % 2; other < WAYS; other += 2) {
+    if (records_[other].zero.taken) zeros.add(records_[other].zero.mv);
+  }
+  return zeros.empty() ? NOMINAL_ZERO_MV : zeros.value();
 }
 
 bool SelfCheck::worse() const {
@@ -252,15 +272,14 @@ float Tempco::applied_ma_per_k() const {
   return one_sign && highest - lowest <= TEMPCO_AGREE_MA_PER_K ? ma_per_k : 0.0f;
 }
 
-// Each way's power over the time since the last sweep. The first sweep has nothing to span, and
-// a way that read against the nominal zero adds nothing.
-void Core::integrate_energy_(Readings &r, const bool zeroed[WAYS], uint32_t now_ms) {
+// Each way's power over the time since the last sweep. The first sweep has nothing to span.
+void Core::integrate_energy_(Readings &r, uint32_t now_ms) {
   uint32_t span_ms = now_ms - last_sweep_ms_;
   bool first = !swept_;
   swept_ = true;
   last_sweep_ms_ = now_ms;
   for (int w = 0; w < WAYS; w++) {
-    if (!first && zeroed[w]) {
+    if (!first) {
       double mws = energy_carry_mws_[w] + double(r.way[w].power_w) * span_ms;
       int64_t whole = std::llround(mws);
       energy_[w].mws += whole;

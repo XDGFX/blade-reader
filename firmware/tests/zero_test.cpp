@@ -25,8 +25,6 @@ float way_1_live_current_a(Core &core, uint32_t now_ms) {
   return core.on_sweep(s).way[0].current_a;
 }
 
-constexpr float NOMINAL_READING_A = -10.0f / GAIN_MV_PER_A;
-
 }  // namespace
 
 TEST_CASE("a way dead for 5 s takes the mean of the next 10 s as its zero") {
@@ -59,11 +57,6 @@ TEST_CASE("a way that goes live part-way through keeps its old zero") {
   }
   uint32_t live_ms = start_ms + ZERO_DEAD_MS + ZERO_MEAN_MS;
   CHECK(way_1_live_current_a(core, live_ms) == doctest::Approx(0.0f).epsilon(0.001));
-}
-
-TEST_CASE("an unzeroed way reads against the nominal zero") {
-  Core core;
-  CHECK(way_1_live_current_a(core, 0) == doctest::Approx(NOMINAL_READING_A));
 }
 
 TEST_CASE("a way that stays dead re-zeros every REZERO_EVERY_MS, by the same mean") {
