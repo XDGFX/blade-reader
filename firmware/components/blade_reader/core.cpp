@@ -1,6 +1,7 @@
 #include "core.h"
 
 #include <cmath>
+#include <cstring>
 
 namespace blade_core {
 
@@ -40,13 +41,14 @@ float median_live_voltage_v(const Readings &r, const bool is_live[WAYS]) {
 }
 
 // How the fault text names each kind of way fault, after `Way n `.
-constexpr const char *WAY_FAULT_TEXT[] = {"blown"};
+constexpr const char *WAY_FAULT_TEXT[] = {"blown", "over range"};
 static_assert(sizeof(WAY_FAULT_TEXT) / sizeof(WAY_FAULT_TEXT[0]) == WAY_FAULT_KINDS,
               "every way fault needs its text");
 
 }  // namespace
 
 bool Faults::any() const {
+  if (over_temperature) return true;
   for (const auto &kinds : way)
     for (bool fault : kinds)
       if (fault) return true;
@@ -54,15 +56,50 @@ bool Faults::any() const {
 }
 
 std::string fault_text(const Faults &faults) {
-  if (faults.no_supply) return "No supply";
   std::string text;
-  auto add = [&text](const std::string &fault) { text += (text.empty() ? "" : "; ") + fault; };
+  bool full = false;
+  // Home Assistant drops a text state over 255 characters, so a list that won't fit ends in `…`.
+  auto add = [&text, &full](const std::string &fault) {
+    if (full) return;
+    std::string next = text + (text.empty() ? "" : "; ") + fault;
+    if (next.size() + std::strlen("; …") > FAULT_TEXT_MAX) {
+      text += "; …";
+      full = true;
+    } else {
+      text = next;
+    }
+  };
+  if (faults.over_temperature) {
+    add("Over temperature " + std::to_string(static_cast<int>(std::lround(faults.hottest_c))) + " °C");
+  }
   for (int w = 0; w < WAYS; w++) {
     for (int kind = 0; kind < WAY_FAULT_KINDS; kind++) {
       if (faults.way[w][kind]) add("Way " + std::to_string(w + 1) + " " + WAY_FAULT_TEXT[kind]);
     }
   }
-  return text.empty() ? "OK" : text;
+  if (!text.empty()) return text;
+  return faults.no_supply ? "No supply" : "OK";
+}
+
+Led led_for(const LedCauses &causes) {
+  if (causes.zeroing) return LED_FAST_BLINK;
+  if (causes.fault) return LED_STEADY;
+  if (causes.install_blink) return LED_SLOW_BLINK;
+  return LED_OFF;
+}
+
+bool led_lit(Led led, uint32_t now_ms) {
+  switch (led) {
+    case LED_FAST_BLINK:
+      return now_ms % FAST_BLINK_MS < FAST_BLINK_MS / 2;
+    case LED_SLOW_BLINK:
+      return now_ms % SLOW_BLINK_MS < SLOW_BLINK_MS / 2;
+    case LED_STEADY:
+      return true;
+    case LED_OFF:
+      break;
+  }
+  return false;
 }
 
 Readings Core::on_sweep(const Sweep &sweep) {
@@ -71,7 +108,7 @@ Readings Core::on_sweep(const Sweep &sweep) {
   for (int w = 0; w < WAYS; w++) {
     WayReading &way = r.way[w];
     float out_mv = sensor_out_mv(w, sweep.sense_mv[w]);
-    way.current_a = current_a(w, out_mv, zero_now_mv_(w));
+    way.current_a = current_a(w, out_mv, zero_now_mv_(w)) * records_[w].gain_trim;
     way.voltage_v = sweep.voltage_mv[w] * VOLTAGE_DIVIDER / 1000.0f;
     way.power_w = way.voltage_v * way.current_a;
     bool live = still_live(live_[w], way.voltage_v);
@@ -80,12 +117,20 @@ Readings Core::on_sweep(const Sweep &sweep) {
     way.new_zero = track_zero_(w, sweep, out_mv);
     if (way.new_zero) way.self_check = self_checks_[w];
   }
-  update_faults_(sweep.now_ms);
-  r.faults = faults_;
-  r.panel_voltage_v = median_live_voltage_v(r, live_);
+  integrate_energy_(r, sweep.now_ms);
   for (int d = 0; d < DIODES; d++) {
     r.diode_c[d] = diode_c(sweep.vbe_mv[d]);
   }
+  update_faults_(sweep, r);
+  r.faults = faults_;
+  update_install_mode_(sweep.now_ms);
+  LedCauses causes{false, faults_.any(), false};
+  for (int w = 0; w < WAYS; w++) {
+    causes.zeroing |= zeroing_[w].samples > 0 && !zeroing_[w].done;
+    causes.install_blink |= install_mode_ && live_[w] && !records_[w].zero.taken;
+  }
+  r.led = led_for(causes);
+  r.panel_voltage_v = median_live_voltage_v(r, live_);
   for (int i = 0; i < SPARES; i++) r.spare_mv[i] = sweep.spare_mv[i];
 
   for (int w = 0; w < WAYS; w++) {
@@ -204,6 +249,24 @@ float Tempco::applied_ma_per_k() const {
   return one_sign && highest - lowest <= TEMPCO_AGREE_MA_PER_K ? ma_per_k : 0.0f;
 }
 
+// Each way's power over the time since the last sweep. The first sweep has nothing to span.
+void Core::integrate_energy_(Readings &r, uint32_t now_ms) {
+  uint32_t span_ms = now_ms - last_sweep_ms_;
+  bool first = !swept_;
+  swept_ = true;
+  last_sweep_ms_ = now_ms;
+  for (int w = 0; w < WAYS; w++) {
+    if (!first) {
+      double mws = energy_carry_mws_[w] + double(r.way[w].power_w) * span_ms;
+      int64_t whole = std::llround(mws);
+      energy_[w].mws += whole;
+      energy_carry_mws_[w] = mws - double(whole);
+      if (whole != 0 && storage_ != nullptr) storage_->stage({RECORD_ENERGY, w}, encode(energy_[w]));
+    }
+    r.way[w].energy_wh = float(double(energy_[w].mws) / MWS_PER_WH);
+  }
+}
+
 std::string Core::not_zeroed() const {
   std::string ways;
   for (int w = 0; w < WAYS; w++) {
@@ -218,6 +281,7 @@ void Core::start(Storage &storage) {
   for (int w = 0; w < WAYS; w++) {
     RecordBytes bytes;
     records_[w] = storage.load({RECORD_WAY, w}, bytes) ? decode_way(bytes) : WayRecord{};
+    energy_[w] = storage.load({RECORD_ENERGY, w}, bytes) ? decode_energy(bytes) : EnergyRecord{};
   }
 }
 
@@ -225,14 +289,46 @@ void Core::save_(int w) {
   if (storage_ != nullptr) storage_->save({RECORD_WAY, w}, encode(records_[w]));
 }
 
+bool Core::set_gain_trim(int w, float trim) {
+  // Written so NaN fails too.
+  if (!(trim >= GAIN_TRIM_MIN && trim <= GAIN_TRIM_MAX)) return false;
+  records_[w].gain_trim = trim;
+  save_(w);
+  return true;
+}
+
 void Core::clear_faults() {
+  faults_.over_temperature = false;
   for (int w = 0; w < WAYS; w++) {
     for (bool &fault : faults_.way[w]) fault = false;
     if (!live_[w]) been_live_[w] = false;
   }
 }
 
-void Core::update_faults_(uint32_t now_ms) {
+void Core::update_faults_(const Sweep &sweep, const Readings &r) {
+  uint32_t now_ms = sweep.now_ms;
+  float hottest_c = r.diode_c[0];
+  for (float c : r.diode_c) hottest_c = std::fmax(hottest_c, c);
+  faults_.hottest_c = hottest_c;
+  if (hottest_c >= over_temperature_c_) {
+    faults_.over_temperature = true;
+  } else if (hottest_c <= over_temperature_c_ - OVER_TEMPERATURE_CLEARS_K) {
+    faults_.over_temperature = false;
+  }
+
+  for (int w = 0; w < WAYS; w++) {
+    bool over = std::fabs(r.way[w].current_a) > OVER_RANGE_A;
+    bool clipped = sweep.sense_clipped[w];
+    if (over && !over_[w]) over_since_ms_[w] = now_ms;
+    over_[w] = over;
+    if (over || clipped) out_of_range_at_ms_[w] = now_ms;
+    if (clipped || (over && now_ms - over_since_ms_[w] >= OVER_RANGE_AFTER_MS)) {
+      faults_.way[w][WAY_OVER_RANGE] = true;
+    } else if (now_ms - out_of_range_at_ms_[w] >= OVER_RANGE_CLEARS_AFTER_MS) {
+      faults_.way[w][WAY_OVER_RANGE] = false;
+    }
+  }
+
   bool any_live = false;
   for (bool live : live_) any_live |= live;
   faults_.no_supply = !any_live;
@@ -253,6 +349,14 @@ void Core::update_faults_(uint32_t now_ms) {
       faults_.way[w][WAY_BLOWN] = true;
     }
   }
+}
+
+// Once ended it stays ended until the next boot, even when the millisecond clock wraps.
+void Core::update_install_mode_(uint32_t now_ms) {
+  bool any_unzeroed = false;
+  for (const WayRecord &record : records_) any_unzeroed |= !record.zero.taken;
+  if (!any_unzeroed || now_ms >= INSTALL_MODE_MS) install_mode_ended_ = true;
+  install_mode_ = !install_mode_ended_;
 }
 
 bool Core::due_(Published &last, uint32_t now_ms, bool changed) {

@@ -1,6 +1,6 @@
 # Firmware
 
-How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, zeros each way when it is dead and keeps the zeros in flash, tracks each zero with temperature, reads every way against its zero and the nominal gain, follows the publish rule, and raises blown fuses and No supply with the fault text and a steady red LED; install mode, trims, energy, the other faults and the LED's blinks are still to come.
+How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, zeros each way when it is dead and keeps the zeros in flash, reads every way against its zero and the nominal gain times its trim, tracks each zero with temperature, takes trims over the API, keeps each way's energy total, follows the publish rule, and raises every fault and No supply with the fault text, and runs install mode and the red LED in full.
 
 Terms are as in [`GLOSSARY.md`](../../GLOSSARY.md).
 
@@ -79,7 +79,7 @@ The gain is nominal: 44 mV/A. Each way has a trim, which starts at 1.0. The API 
 
 ## Energy
 
-Each way keeps a signed 64-bit integer total, integrated from V × I on every sweep. It's published in Wh, with `device_class: energy` and `state_class: total`. Being signed, noise around 0 A cancels rather than piling up. ([#111](https://github.com/XDGFX/blade-reader/issues/111))
+Each way keeps a signed 64-bit integer total in mWs, integrated from V × I on every sweep. It's published in Wh, with `device_class: energy` and `state_class: total`, alongside the way's current and power. Being signed, noise around 0 A cancels rather than piling up; being an integer, a large total still gains a standby-sized sweep. `dump_state` logs each total in mWs. ([#111](https://github.com/XDGFX/blade-reader/issues/111))
 
 ## Faults
 
@@ -95,7 +95,7 @@ No fault latches. Each clears itself once its cause has cleared and held steady.
 - A sensor stuck at a rail clips the ADC, so it shows as over range. A sensor stuck mid-range isn't detected.
 - **No supply:** no way is live, which is only possible on USB. No blown-fuse faults are raised, and the panel voltage reads 0 V. When a way comes back, the board starts afresh as if it had just booted.
 - **Clear faults** (button): clears every fault, and every dead way becomes an empty way. A fault whose cause is still present comes straight back.
-- **Fault text:** `OK`, `No supply`, or each fault joined by `; `, board faults first, then ways in ascending order. For example: `Over temperature 87 °C; Way 3 blown; Way 9 over range`. It fits in 255 characters.
+- **Fault text:** `OK`, `No supply`, or each fault joined by `; `, board faults first, then ways in ascending order. For example: `Over temperature 87 °C; Way 3 blown; Way 9 over range`. A fault shows under No supply too, such as a sensor stuck at a rail. It fits in 255 characters, ending in `; …` if every fault won't.
 
 There are no per-way over-current limits, no 20 A derating when hot, and no panel total on the board. Home Assistant does those.
 

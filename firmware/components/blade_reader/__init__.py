@@ -12,30 +12,39 @@ from esphome.components import (
     output,
     sensor,
     text_sensor,
-    voltage_sampler,
 )
+from esphome.components.adc.sensor import CONF_SAMPLES, ADCSensor
 import esphome.config_validation as cv
+from esphome.core import CORE
+import esphome.final_validate as fv
 from esphome.const import (
+    CONF_ATTENUATION,
     CONF_DISABLED_BY_DEFAULT,
     CONF_ID,
+    CONF_NUMBER,
+    CONF_PIN,
+    CONF_RAW,
     CONF_NAME,
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_DURATION,
+    DEVICE_CLASS_ENERGY,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_PROBLEM,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
     ENTITY_CATEGORY_DIAGNOSTIC,
     STATE_CLASS_MEASUREMENT,
+    STATE_CLASS_TOTAL,
     UNIT_AMPERE,
     UNIT_CELSIUS,
     UNIT_MILLIVOLT,
     UNIT_SECOND,
     UNIT_VOLT,
     UNIT_WATT,
+    UNIT_WATT_HOURS,
 )
 
-AUTO_LOAD = ["binary_sensor", "button", "sensor", "text_sensor", "voltage_sampler"]
+AUTO_LOAD = ["binary_sensor", "button", "sensor", "text_sensor"]
 DEPENDENCIES = ["output"]
 
 WAYS = 12
@@ -43,6 +52,7 @@ WAYS = 12
 CONF_SELECT_PINS = "select_pins"
 CONF_ODD_ARM_ADC = "odd_arm_adc"
 CONF_EVEN_ARM_ADC = "even_arm_adc"
+CONF_OVER_TEMPERATURE = "over_temperature"
 CONF_FAULT_LED = "fault_led"
 CONF_WAYS = "ways"
 CONF_SENSE = "sense"
@@ -93,6 +103,13 @@ VOLTAGE = sensor.sensor_schema(
     device_class=DEVICE_CLASS_VOLTAGE,
     state_class=STATE_CLASS_MEASUREMENT,
 )
+# Signed, so it can fall: `total`, not `total_increasing`.
+ENERGY = sensor.sensor_schema(
+    unit_of_measurement=UNIT_WATT_HOURS,
+    accuracy_decimals=3,
+    device_class=DEVICE_CLASS_ENERGY,
+    state_class=STATE_CLASS_TOTAL,
+)
 WAY_VOLTAGE = sensor.sensor_schema(
     unit_of_measurement=UNIT_VOLT,
     accuracy_decimals=2,
@@ -133,6 +150,10 @@ ZERO_TIME = sensor.sensor_schema(
     device_class=DEVICE_CLASS_DURATION,
     entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
 )
+GAIN_TRIM = sensor.sensor_schema(
+    accuracy_decimals=4,
+    entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+)
 NOT_ZEROED = text_sensor.text_sensor_schema()
 BLOWN = binary_sensor.binary_sensor_schema(device_class=DEVICE_CLASS_PROBLEM)
 FAULT_TEXT = text_sensor.text_sensor_schema()
@@ -164,6 +185,10 @@ def _make_entities(config):
                     {CONF_NAME: f"Way {n} zero time", **HIDDEN_DIAGNOSTIC}
                 ),
                 "blown": BLOWN({CONF_NAME: f"Way {n} blown fuse"}),
+                "energy": ENERGY({CONF_NAME: f"Way {n} energy"}),
+                "gain_trim": GAIN_TRIM(
+                    {CONF_NAME: f"Way {n} gain trim", **HIDDEN_DIAGNOSTIC}
+                ),
             }
         )
     config[CONF_ENTITIES] = {
@@ -188,9 +213,10 @@ CONFIG_SCHEMA = cv.All(
             cv.Required(CONF_SELECT_PINS): cv.All(
                 cv.ensure_list(pins.gpio_output_pin_schema), cv.Length(min=4, max=4)
             ),
-            cv.Required(CONF_ODD_ARM_ADC): cv.use_id(voltage_sampler.VoltageSampler),
-            cv.Required(CONF_EVEN_ARM_ADC): cv.use_id(voltage_sampler.VoltageSampler),
+            cv.Required(CONF_ODD_ARM_ADC): cv.use_id(ADCSensor),
+            cv.Required(CONF_EVEN_ARM_ADC): cv.use_id(ADCSensor),
             cv.Required(CONF_FAULT_LED): cv.use_id(output.BinaryOutput),
+            cv.Required(CONF_OVER_TEMPERATURE): cv.temperature,
             cv.Required(CONF_WAYS): cv.All(
                 cv.ensure_list(WAY_CHANNELS), cv.Length(min=WAYS, max=WAYS)
             ),
@@ -206,15 +232,40 @@ CONFIG_SCHEMA = cv.All(
 )
 
 
+def _adc_config(full_config, adc_id):
+    return next(c for c in full_config["sensor"] if c[CONF_ID] == adc_id)
+
+
+def _validate_adcs(config):
+    """The glue reads raw samples one at a time and calibrates them for the 12 dB range."""
+    full_config = fv.full_config.get()
+    for key in (CONF_ODD_ARM_ADC, CONF_EVEN_ARM_ADC):
+        adc_config = _adc_config(full_config, config[key])
+        if (
+            not adc_config[CONF_RAW]
+            or adc_config[CONF_SAMPLES] != 1
+            or adc_config.get(CONF_ATTENUATION) != "12db"
+        ):
+            raise cv.Invalid(
+                f"{key} needs raw: true, samples: 1 and attenuation: 12db", [key]
+            )
+    return config
+
+
+FINAL_VALIDATE_SCHEMA = _validate_adcs
+
+
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
 
     for bit, pin_config in enumerate(config[CONF_SELECT_PINS]):
         cg.add(var.set_select_pin(bit, await cg.gpio_pin_expression(pin_config)))
-    cg.add(var.set_adc(Arm.ODD_ARM, await cg.get_variable(config[CONF_ODD_ARM_ADC])))
-    cg.add(var.set_adc(Arm.EVEN_ARM, await cg.get_variable(config[CONF_EVEN_ARM_ADC])))
+    for arm, key in ((Arm.ODD_ARM, CONF_ODD_ARM_ADC), (Arm.EVEN_ARM, CONF_EVEN_ARM_ADC)):
+        gpio = _adc_config(CORE.config, config[key])[CONF_PIN][CONF_NUMBER]
+        cg.add(var.set_adc(arm, await cg.get_variable(config[key]), gpio))
     cg.add(var.set_fault_led(await cg.get_variable(config[CONF_FAULT_LED])))
+    cg.add(var.set_over_temperature_c(config[CONF_OVER_TEMPERATURE]))
 
     entities = config[CONF_ENTITIES]
     for n, (channels, way) in enumerate(zip(config[CONF_WAYS], entities["ways"]), 1):
@@ -238,6 +289,10 @@ async def to_code(config):
         )
         cg.add(
             var.set_blown_sensor(n, await binary_sensor.new_binary_sensor(way["blown"]))
+        )
+        cg.add(var.set_energy_sensor(n, await sensor.new_sensor(way["energy"])))
+        cg.add(
+            var.set_gain_trim_sensor(n, await sensor.new_sensor(way["gain_trim"]))
         )
     for key, diode, arm, _ in DIODES:
         temperature = await sensor.new_sensor(entities["diodes"][key])

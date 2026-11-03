@@ -34,7 +34,9 @@ struct Tempco {
 
 struct WayRecord {
   Zero zero;
-  Tempco tempco;
+  Tempco tempco{};
+  // What the way's current is multiplied by, set over the API.
+  float gain_trim{1.0f};
 };
 
 // A stored record is a run of fields, each [id][version][payload length][payload], ended by id 0
@@ -52,13 +54,29 @@ enum WayField : uint8_t {
   WAY_FIELD_TEMPCO = 2,
   WAY_FIELD_TEMPCO_SAMPLES = 3,
   WAY_FIELD_SELF_CHECK = 4,
+  WAY_FIELD_GAIN_TRIM = 5,
 };
 constexpr uint8_t ZERO_FIELD_VERSION = 1;
 constexpr uint8_t TEMPCO_FIELD_VERSION = 1;
 constexpr uint8_t TEMPCO_SAMPLES_FIELD_VERSION = 1;
 constexpr uint8_t SELF_CHECK_FIELD_VERSION = 1;
+constexpr uint8_t GAIN_TRIM_FIELD_VERSION = 1;
 
 RecordBytes encode(const WayRecord &record);
 WayRecord decode_way(const RecordBytes &bytes);
+
+// A way's energy total in mWs, signed so noise around 0 A cancels. A 64-bit integer, so a large
+// total still gains a standby-sized sweep.
+struct EnergyRecord {
+  int64_t mws{0};
+};
+
+// Stored as fields like a way record, but its own record, so a format change to the way record
+// leaves it untouched.
+enum EnergyField : uint8_t { ENERGY_FIELD_END = 0, ENERGY_FIELD_TOTAL = 1 };
+constexpr uint8_t ENERGY_TOTAL_FIELD_VERSION = 1;
+
+RecordBytes encode(const EnergyRecord &record);
+EnergyRecord decode_energy(const RecordBytes &bytes);
 
 }  // namespace blade_core

@@ -21,6 +21,11 @@ esp32:
   framework:
     type: esp-idf
 
+# Energy totals are written on this batch and before a reboot or OTA update, so power loss or a
+# crash loses up to 5 minutes of energy. Zeros are written as soon as they change.
+preferences:
+  flash_write_interval: 5min
+
 external_components:
   - source:
       type: local
@@ -49,6 +54,13 @@ api:
     - action: dump_state
       then:
         - lambda: id(blade).dump_state();
+    # Sets a way's (1 to 12) gain trim, within 0.90 to 1.10, and stores it at once.
+    - action: set_gain_trim
+      variables:
+        way: int
+        trim: float
+      then:
+        - lambda: id(blade).set_gain_trim(way, trim);
 
 # Updates over Wi-Fi, encrypted with the api key above.
 ota:
@@ -79,21 +91,21 @@ output:
       inverted: true
       ignore_strapping_warning: true
 
-# Each arm's mux common, read at the 12 dB range. blade_reader reads them in turn, averaging 64
-# samples a channel.
+# Each arm's mux common, read at the 12 dB range. blade_reader reads them in turn, a raw sample at
+# a time: it averages 64 a channel and flags any at the rail as clipped.
 sensor:
   - platform: adc
     id: adc_odd
     pin: GPIO4
     attenuation: 12db
-    samples: 64
+    raw: true
     update_interval: never
     internal: true
   - platform: adc
     id: adc_even
     pin: GPIO3
     attenuation: 12db
-    samples: 64
+    raw: true
     update_interval: never
     internal: true
   - platform: internal_temperature
@@ -112,6 +124,8 @@ blade_reader:
   odd_arm_adc: adc_odd
   even_arm_adc: adc_even
   fault_led: fault_led
+  # The hottest diode at this is Over temperature, cleared 5 K below.
+  over_temperature: 85°C
   ways:  # ways 1 to 12, in order
     - { sense: 6, voltage: 7 }
     - { sense: 6, voltage: 9 }
