@@ -3,8 +3,13 @@
 // The glue round the core: drives the muxes and ADCs, hands the core each finished sweep and
 // publishes what it returns.
 
+#include <string>
+
+#include "esphome/components/binary_sensor/binary_sensor.h"
+#include "esphome/components/button/button.h"
 #include "esphome/components/output/binary_output.h"
 #include "esphome/components/sensor/sensor.h"
+#include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/voltage_sampler/voltage_sampler.h"
 #include "esphome/core/component.h"
 #include "esphome/core/hal.h"
@@ -37,6 +42,10 @@ class BladeReader : public Component {
   void set_diode(blade_core::Diode diode, Arm arm, uint8_t channel, sensor::Sensor *temperature);
   void set_spare(blade_core::Spare spare, Arm arm, uint8_t channel, sensor::Sensor *level);
   void set_panel_voltage_sensor(sensor::Sensor *s) { this->panel_voltage_ = s; }
+  void set_blown_sensor(uint8_t way, binary_sensor::BinarySensor *s) { this->blown_[way - 1] = s; }
+  void set_fault_text_sensor(text_sensor::TextSensor *s) { this->fault_text_ = s; }
+
+  void clear_faults() { this->core_.clear_faults(); }
 
  protected:
   struct Tap {
@@ -63,6 +72,8 @@ class BladeReader : public Component {
   Tap spare_taps_[blade_core::SPARES]{};
   sensor::Sensor *spares_[blade_core::SPARES]{};
   sensor::Sensor *panel_voltage_{nullptr};
+  binary_sensor::BinarySensor *blown_[blade_core::WAYS]{};
+  text_sensor::TextSensor *fault_text_{nullptr};
 
   // Each mux channel's last averaged reading, in mV at the ADC pin.
   float mv_table_[ARMS][MUX_CHANNELS]{};
@@ -70,6 +81,11 @@ class BladeReader : public Component {
   uint32_t selected_at_us_{0};
   HighFrequencyLoopRequester high_freq_;
   blade_core::Core core_;
+};
+
+class ClearFaultsButton : public button::Button, public Parented<BladeReader> {
+ protected:
+  void press_action() override { this->parent_->clear_faults(); }
 };
 
 }  // namespace esphome::blade_reader

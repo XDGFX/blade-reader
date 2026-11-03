@@ -149,3 +149,131 @@ TEST_CASE("the board's readings publish on a meaningful change in panel voltage 
   s.now_ms = 2 * PUBLISH_MIN_MS;
   CHECK(core.on_sweep(s).publish_board);
 }
+
+namespace {
+
+constexpr uint32_t SWEEP_MS = 140;
+
+// Feeds the same sweep every SWEEP_MS from `from_ms`, the last at `until_ms`, and returns what the
+// last one worked out.
+Readings run(Core &core, Sweep s, uint32_t from_ms, uint32_t until_ms) {
+  for (uint32_t t = from_ms; t < until_ms; t += SWEEP_MS) {
+    s.now_ms = t;
+    core.on_sweep(s);
+  }
+  s.now_ms = until_ms;
+  return core.on_sweep(s);
+}
+
+// Ways 1 and 2 live at 12 V, the rest dead since boot.
+Sweep two_live_ways() {
+  Sweep s = quiet_sweep(0);
+  set_volts(s, 1, 12.0f);
+  set_volts(s, 2, 12.0f);
+  return s;
+}
+
+}  // namespace
+
+TEST_CASE("a live way that stays dead while another stays live is blown after BLOWN_AFTER_MS") {
+  Core core;
+  Sweep s = two_live_ways();
+  run(core, s, 0, 1000);
+  set_volts(s, 1, 0.0f);
+  CHECK_FALSE(run(core, s, 2000, 2000 + BLOWN_AFTER_MS - SWEEP_MS).faults.way[0][WAY_BLOWN]);
+  Readings r = run(core, s, 2000 + BLOWN_AFTER_MS, 2000 + BLOWN_AFTER_MS);
+  CHECK(r.faults.way[0][WAY_BLOWN]);
+  CHECK_FALSE(r.faults.way[1][WAY_BLOWN]);
+  CHECK_FALSE(r.faults.way[2][WAY_BLOWN]);  // empty since boot
+}
+
+TEST_CASE("with no way live there's No supply: no blown fuse and a panel voltage of 0 V") {
+  Core core;
+  Sweep s = quiet_sweep(0);
+  set_volts(s, 1, 12.0f);
+  run(core, s, 0, 1000);
+  set_volts(s, 1, 0.0f);  // the only live way
+  Readings r = run(core, s, 2000, 2000 + 10 * BLOWN_AFTER_MS);
+  CHECK(r.faults.no_supply);
+  CHECK_FALSE(r.faults.way[0][WAY_BLOWN]);
+  CHECK(r.panel_voltage_v == 0.0f);
+}
+
+TEST_CASE("after No supply, a way that stays dead when the others come back is empty") {
+  Core core;
+  Sweep s = two_live_ways();
+  run(core, s, 0, 1000);
+  Sweep off = quiet_sweep(0);
+  CHECK(run(core, off, 2000, 3000).faults.no_supply);
+  set_volts(s, 1, 0.0f);
+  Readings r = run(core, s, 4000, 4000 + 10 * BLOWN_AFTER_MS);
+  CHECK_FALSE(r.faults.no_supply);
+  CHECK_FALSE(r.faults.way[0][WAY_BLOWN]);
+}
+
+TEST_CASE("a way between dead and live keeps its state for a blown fuse") {
+  Core core;
+  Sweep s = two_live_ways();
+  run(core, s, 0, 1000);
+  set_volts(s, 1, 4.0f);  // was live, so still live
+  CHECK_FALSE(run(core, s, 2000, 2000 + 2 * BLOWN_AFTER_MS).faults.way[0][WAY_BLOWN]);
+  set_volts(s, 1, 1.0f);
+  run(core, s, 5000, 5000);
+  set_volts(s, 1, 4.0f);  // dead, so still dead
+  CHECK(run(core, s, 5000 + BLOWN_AFTER_MS, 5000 + BLOWN_AFTER_MS).faults.way[0][WAY_BLOWN]);
+}
+
+TEST_CASE("a blown fuse clears once its way has been live for BLOWN_CLEARS_AFTER_MS") {
+  Core core;
+  Sweep s = two_live_ways();
+  run(core, s, 0, 1000);
+  set_volts(s, 1, 0.0f);
+  REQUIRE(run(core, s, 2000, 2000 + BLOWN_AFTER_MS).faults.way[0][WAY_BLOWN]);
+  set_volts(s, 1, 12.0f);
+  CHECK(run(core, s, 5000, 5000 + BLOWN_CLEARS_AFTER_MS - 1).faults.way[0][WAY_BLOWN]);
+  CHECK_FALSE(run(core, s, 5000 + BLOWN_CLEARS_AFTER_MS, 5000 + BLOWN_CLEARS_AFTER_MS)
+                  .faults.way[0][WAY_BLOWN]);
+}
+
+TEST_CASE("Clear faults clears a blown fuse, and its way stays clear while it's dead") {
+  Core core;
+  Sweep s = two_live_ways();
+  run(core, s, 0, 1000);
+  set_volts(s, 1, 0.0f);
+  REQUIRE(run(core, s, 2000, 2000 + BLOWN_AFTER_MS).faults.way[0][WAY_BLOWN]);
+  core.clear_faults();
+  CHECK_FALSE(run(core, s, 4000, 4000 + 10 * BLOWN_AFTER_MS).faults.way[0][WAY_BLOWN]);
+}
+
+TEST_CASE("Clear faults leaves live ways able to blow") {
+  Core core;
+  Sweep s = two_live_ways();
+  run(core, s, 0, 1000);
+  core.clear_faults();
+  set_volts(s, 1, 0.0f);
+  CHECK(run(core, s, 2000, 2000 + BLOWN_AFTER_MS).faults.way[0][WAY_BLOWN]);
+}
+
+TEST_CASE("the fault text reads OK with no fault, and No supply with no way live") {
+  Faults f{};
+  CHECK(fault_text(f) == "OK");
+  CHECK_FALSE(f.any());
+  f.no_supply = true;
+  CHECK(fault_text(f) == "No supply");
+  CHECK_FALSE(f.any());
+}
+
+TEST_CASE("the fault text joins the faults with '; ', ways in ascending order") {
+  Faults f{};
+  f.way[8][WAY_BLOWN] = true;
+  f.way[2][WAY_BLOWN] = true;
+  CHECK(fault_text(f) == "Way 3 blown; Way 9 blown");
+  CHECK(f.any());
+}
+
+TEST_CASE("the fault text fits in 255 characters with every fault raised") {
+  Faults f{};
+  for (auto &way : f.way)
+    for (bool &fault : way) fault = true;
+  CHECK(fault_text(f).size() <= 255);
+}

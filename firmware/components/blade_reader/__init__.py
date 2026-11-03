@@ -6,7 +6,14 @@ the component makes every entity itself, so the ways are numbered the same on ev
 
 from esphome import pins
 import esphome.codegen as cg
-from esphome.components import output, sensor, voltage_sampler
+from esphome.components import (
+    binary_sensor,
+    button,
+    output,
+    sensor,
+    text_sensor,
+    voltage_sampler,
+)
 import esphome.config_validation as cv
 from esphome.const import (
     CONF_DISABLED_BY_DEFAULT,
@@ -14,6 +21,7 @@ from esphome.const import (
     CONF_NAME,
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_POWER,
+    DEVICE_CLASS_PROBLEM,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
     ENTITY_CATEGORY_DIAGNOSTIC,
@@ -25,7 +33,7 @@ from esphome.const import (
     UNIT_WATT,
 )
 
-AUTO_LOAD = ["sensor", "voltage_sampler"]
+AUTO_LOAD = ["binary_sensor", "button", "sensor", "text_sensor", "voltage_sampler"]
 DEPENDENCIES = ["output"]
 
 WAYS = 12
@@ -43,6 +51,9 @@ CONF_ENTITIES = "entities"
 
 blade_reader_ns = cg.esphome_ns.namespace("blade_reader")
 BladeReader = blade_reader_ns.class_("BladeReader", cg.Component)
+ClearFaultsButton = blade_reader_ns.class_(
+    "ClearFaultsButton", button.Button, cg.Parented.template(BladeReader)
+)
 Arm = blade_reader_ns.enum("Arm")
 blade_core_ns = cg.global_ns.namespace("blade_core")
 Diode = blade_core_ns.enum("Diode")
@@ -101,6 +112,10 @@ SPARE = sensor.sensor_schema(
     entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
 )
 
+BLOWN = binary_sensor.binary_sensor_schema(device_class=DEVICE_CLASS_PROBLEM)
+FAULT_TEXT = text_sensor.text_sensor_schema()
+CLEAR_FAULTS = button.button_schema(ClearFaultsButton)
+
 WAY_CHANNELS = cv.Schema(
     {cv.Required(CONF_SENSE): MUX_CHANNEL, cv.Required(CONF_VOLTAGE): MUX_CHANNEL}
 )
@@ -117,11 +132,14 @@ def _make_entities(config):
                 "voltage": WAY_VOLTAGE(
                     {CONF_NAME: f"Way {n} voltage", **HIDDEN_DIAGNOSTIC}
                 ),
+                "blown": BLOWN({CONF_NAME: f"Way {n} blown fuse"}),
             }
         )
     config[CONF_ENTITIES] = {
         "ways": ways,
         "panel_voltage": VOLTAGE({CONF_NAME: "Panel voltage"}),
+        "fault_text": FAULT_TEXT({CONF_NAME: "Fault text"}),
+        "clear_faults": CLEAR_FAULTS({CONF_NAME: "Clear faults"}),
         "diodes": {key: TEMPERATURE({CONF_NAME: name}) for key, _, _, name in DIODES},
         "spares": {
             key: SPARE({CONF_NAME: name, **HIDDEN_DIAGNOSTIC})
@@ -178,6 +196,9 @@ async def to_code(config):
                 await sensor.new_sensor(way["voltage"]),
             )
         )
+        cg.add(
+            var.set_blown_sensor(n, await binary_sensor.new_binary_sensor(way["blown"]))
+        )
     for key, diode, arm, _ in DIODES:
         temperature = await sensor.new_sensor(entities["diodes"][key])
         cg.add(var.set_diode(diode, arm, config[CONF_DIODES][key], temperature))
@@ -189,3 +210,10 @@ async def to_code(config):
             await sensor.new_sensor(entities["panel_voltage"])
         )
     )
+    cg.add(
+        var.set_fault_text_sensor(
+            await text_sensor.new_text_sensor(entities["fault_text"])
+        )
+    )
+    clear_faults = await button.new_button(entities["clear_faults"])
+    await cg.register_parented(clear_faults, var)

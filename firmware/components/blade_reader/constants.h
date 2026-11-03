@@ -23,6 +23,11 @@ constexpr float VOLTAGE_DIVIDER = (100.0f + 6.8f) / 6.8f;
 constexpr float LIVE_V = 6.0f;
 constexpr float DEAD_V = 2.0f;
 
+// A blown fuse is a live way dead this long while another way stays live, cleared once the way
+// has been live for BLOWN_CLEARS_AFTER_MS.
+constexpr uint32_t BLOWN_AFTER_MS = 1000;
+constexpr uint32_t BLOWN_CLEARS_AFTER_MS = 5000;
+
 // Diode-connected MMBT3904s, read through the ADC on yoke B. Absolute to ±5–10 °C.
 constexpr float VBE_AT_25C_MV = 590.0f;
 constexpr float VBE_MV_PER_C = -2.0f;
