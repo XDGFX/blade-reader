@@ -16,6 +16,20 @@ _Avoid_: Channel, slot
 **Pocket**:
 The space between two barriers of the fuse panel where a way's output screw sits on its pad.
 
+**Live way**:
+A way with supply voltage on the load side of its fuse.
+
+**Dead way**:
+A way with no voltage on the load side of its fuse: blown, pulled or never fitted.
+
+**Blown fuse**:
+A way that was live and has gone dead while other ways stayed live. A pulled fuse counts as
+blown until its fault is cleared.
+
+**Empty way**:
+A dead way that is not a fault: dead since start-up, or when faults were last cleared.
+_Avoid_: Unused way, spare
+
 ## The yoke
 
 **Yoke**:
