@@ -19,6 +19,8 @@ struct Zero {
 
 struct WayRecord {
   Zero zero;
+  // What the way's current is multiplied by, set over the API.
+  float gain_trim{1.0f};
 };
 
 // A stored record is a run of fields, each [id][version][payload length][payload], ended by id 0
@@ -30,8 +32,9 @@ constexpr size_t FIELD_VERSION_AT = 1;
 constexpr size_t FIELD_LENGTH_AT = 2;
 constexpr size_t FIELD_HEADER_BYTES = 3;
 
-enum WayField : uint8_t { WAY_FIELD_END = 0, WAY_FIELD_ZERO = 1 };
+enum WayField : uint8_t { WAY_FIELD_END = 0, WAY_FIELD_ZERO = 1, WAY_FIELD_GAIN_TRIM = 5 };
 constexpr uint8_t ZERO_FIELD_VERSION = 1;
+constexpr uint8_t GAIN_TRIM_FIELD_VERSION = 1;
 
 RecordBytes encode(const WayRecord &record);
 WayRecord decode_way(const RecordBytes &bytes);

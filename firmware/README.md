@@ -13,7 +13,8 @@
 
 Each way zeros itself once it has been dead for 15 s and keeps the zero in flash; until then it
 reads against a nominal 1.65 V zero, a few tenths of an amp off at no load. Gain is the CC6905's
-nominal 44 mV/A. The full firmware also tracks the zero with temperature, counts energy and
+nominal 44 mV/A times each way's gain trim, which starts at 1.0 and is set with the
+`set_gain_trim` API action. The full firmware also tracks the zero with temperature, counts energy and
 raises faults.
 It's specified in [`docs/reference/firmware.md`](../docs/reference/firmware.md) and is built by
 the tickets under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117).

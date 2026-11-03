@@ -12,6 +12,10 @@ constexpr int WAYS = 12;
 constexpr float NOMINAL_ZERO_MV = 1650.0f;
 constexpr float GAIN_MV_PER_A = 44.0f;
 
+// Each way's gain trim, set over the API, must lie within these.
+constexpr float GAIN_TRIM_MIN = 0.90f;
+constexpr float GAIN_TRIM_MAX = 1.10f;
+
 // The even arm's sense lines are divided by 0.820 to fit the ADC's 12 dB range.
 constexpr float EVEN_ARM_DIVIDER = 0.820f;
 
