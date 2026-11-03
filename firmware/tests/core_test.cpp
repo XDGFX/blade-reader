@@ -273,7 +273,143 @@ TEST_CASE("the fault text joins the faults with '; ', ways in ascending order") 
 
 TEST_CASE("the fault text fits in 255 characters with every fault raised") {
   Faults f{};
+  f.over_temperature = true;
+  f.hottest_c = 120.0f;
   for (auto &way : f.way)
     for (bool &fault : way) fault = true;
-  CHECK(fault_text(f).size() <= 255);
+  std::string text = fault_text(f);
+  CHECK(text.size() <= 255);
+  CHECK(text.rfind("Over temperature 120 °C; Way 1 blown; Way 1 over range; ", 0) == 0);
+  CHECK(text.substr(text.size() - std::string("; …").size()) == "; …");
+}
+
+namespace {
+
+// Way `way`'s sense line at the reading for `amps`, on whichever arm it sits.
+void set_amps(Sweep &s, int way, float amps) {
+  bool even_arm = way % 2 == 0;
+  float out_mv = NOMINAL_ZERO_MV + (even_arm ? amps : -amps) * GAIN_MV_PER_A;
+  s.sense_mv[way - 1] = even_arm ? out_mv * EVEN_ARM_DIVIDER : out_mv;
+}
+
+}  // namespace
+
+TEST_CASE("a way over 30 A for a second is over range") {
+  Core core;
+  Sweep s = two_live_ways();
+  set_amps(s, 2, -31.0f);
+  CHECK_FALSE(run(core, s, 0, 1000 - SWEEP_MS).faults.way[1][WAY_OVER_RANGE]);
+  Readings r = run(core, s, 1000, 1000);
+  CHECK(r.faults.way[1][WAY_OVER_RANGE]);
+  CHECK_FALSE(r.faults.way[0][WAY_OVER_RANGE]);
+}
+
+TEST_CASE("a clipped reading is over range straight away, whatever the current") {
+  Core core;
+  Sweep s = two_live_ways();
+  run(core, s, 0, 1000);
+  s.sense_clipped[2] = true;
+  CHECK(run(core, s, 1140, 1140).faults.way[2][WAY_OVER_RANGE]);
+}
+
+TEST_CASE("over range clears after 5 s at 30 A or less with no clipping") {
+  Core core;
+  Sweep s = two_live_ways();
+  set_amps(s, 1, 31.0f);
+  REQUIRE(run(core, s, 0, 1000).faults.way[0][WAY_OVER_RANGE]);
+  set_amps(s, 1, 30.0f);
+  s.sense_clipped[0] = true;
+  run(core, s, 2000, 2000);  // clipped, though within 30 A
+  s.sense_clipped[0] = false;
+  CHECK(run(core, s, 2140, 2000 + OVER_RANGE_CLEARS_AFTER_MS - 1).faults.way[0][WAY_OVER_RANGE]);
+  CHECK_FALSE(run(core, s, 2000 + OVER_RANGE_CLEARS_AFTER_MS, 2000 + OVER_RANGE_CLEARS_AFTER_MS)
+                  .faults.way[0][WAY_OVER_RANGE]);
+}
+
+namespace {
+
+void set_diode_c(Sweep &s, Diode diode, float c) {
+  s.vbe_mv[diode] = VBE_AT_25C_MV + (c - 25.0f) * VBE_MV_PER_C;
+}
+
+}  // namespace
+
+TEST_CASE("the board is over temperature when its hottest diode reaches the threshold") {
+  Core core;
+  core.set_over_temperature_c(70.0f);
+  Sweep s = two_live_ways();
+  set_diode_c(s, DIODE_CHIN, 40.0f);
+  set_diode_c(s, DIODE_ODD_ARM, 69.5f);
+  CHECK_FALSE(core.on_sweep(s).faults.over_temperature);
+  set_diode_c(s, DIODE_EVEN_ARM, 70.0f);
+  Readings r = core.on_sweep(s);
+  CHECK(r.faults.over_temperature);
+  CHECK(r.faults.hottest_c == doctest::Approx(70.0f));
+}
+
+TEST_CASE("over temperature clears 5 K below the threshold") {
+  Core core;
+  core.set_over_temperature_c(85.0f);
+  Sweep s = two_live_ways();
+  set_diode_c(s, DIODE_CHIN, 86.0f);
+  REQUIRE(core.on_sweep(s).faults.over_temperature);
+  set_diode_c(s, DIODE_CHIN, 80.5f);
+  CHECK(core.on_sweep(s).faults.over_temperature);
+  set_diode_c(s, DIODE_CHIN, 80.0f);
+  CHECK_FALSE(core.on_sweep(s).faults.over_temperature);
+}
+
+TEST_CASE("the fault text puts over temperature first, then each way's faults in order") {
+  Faults f{};
+  f.over_temperature = true;
+  f.hottest_c = 87.4f;
+  f.way[8][WAY_OVER_RANGE] = true;
+  f.way[2][WAY_BLOWN] = true;
+  CHECK(fault_text(f) == "Over temperature 87 °C; Way 3 blown; Way 9 over range");
+}
+
+TEST_CASE("over temperature alone lights the red LED") {
+  Faults f{};
+  f.over_temperature = true;
+  CHECK(f.any());
+}
+
+TEST_CASE("under No supply, a sensor stuck at a rail still shows over range") {
+  Core core;
+  Sweep s = quiet_sweep(0);
+  s.sense_clipped[4] = true;
+  Readings r = core.on_sweep(s);
+  CHECK(r.faults.no_supply);
+  CHECK(fault_text(r.faults) == "Way 5 over range");
+}
+
+TEST_CASE("Clear faults clears over range and over temperature, and both come back if still present") {
+  Core core;
+  Sweep s = two_live_ways();
+  set_amps(s, 1, 31.0f);
+  set_diode_c(s, DIODE_CHIN, 90.0f);
+  REQUIRE(run(core, s, 0, 1000).faults.any());
+  core.clear_faults();
+  Readings r = run(core, s, 1140, 1140);
+  CHECK(r.faults.way[0][WAY_OVER_RANGE]);
+  CHECK(r.faults.over_temperature);
+}
+
+TEST_CASE("Clear faults clears over temperature once the board is below the threshold") {
+  Core core;
+  core.set_over_temperature_c(85.0f);
+  Sweep s = two_live_ways();
+  set_diode_c(s, DIODE_CHIN, 86.0f);
+  REQUIRE(core.on_sweep(s).faults.over_temperature);
+  set_diode_c(s, DIODE_CHIN, 82.0f);
+  core.clear_faults();
+  CHECK_FALSE(core.on_sweep(s).faults.over_temperature);
+}
+
+TEST_CASE("a way over 30 A from its first sweep still waits a second for over range") {
+  Core core;
+  Sweep s = two_live_ways();
+  set_amps(s, 1, 31.0f);
+  CHECK_FALSE(run(core, s, 60000, 60000).faults.way[0][WAY_OVER_RANGE]);
+  CHECK(run(core, s, 60140, 61000).faults.way[0][WAY_OVER_RANGE]);
 }

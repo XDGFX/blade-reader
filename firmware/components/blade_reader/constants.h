@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 // The core's fixed figures, shared with its tests. Behaviour: docs/reference/firmware.md.
@@ -28,9 +29,23 @@ constexpr float DEAD_V = 2.0f;
 constexpr uint32_t BLOWN_AFTER_MS = 1000;
 constexpr uint32_t BLOWN_CLEARS_AFTER_MS = 5000;
 
+// A way is over range above OVER_RANGE_A for OVER_RANGE_AFTER_MS, or straight away on a clipped
+// reading, and clears after OVER_RANGE_CLEARS_AFTER_MS at OVER_RANGE_A or less with no clipping.
+constexpr float OVER_RANGE_A = 30.0f;
+constexpr uint32_t OVER_RANGE_AFTER_MS = 1000;
+constexpr uint32_t OVER_RANGE_CLEARS_AFTER_MS = 5000;
+
 // Diode-connected MMBT3904s, read through the ADC on yoke B. Absolute to ±5–10 °C.
 constexpr float VBE_AT_25C_MV = 590.0f;
 constexpr float VBE_MV_PER_C = -2.0f;
+
+// The board is over temperature once its hottest diode reaches the threshold, which the YAML sets
+// and which is OVER_TEMPERATURE_C until it does, and clears OVER_TEMPERATURE_CLEARS_K below it.
+constexpr float OVER_TEMPERATURE_C = 85.0f;
+constexpr float OVER_TEMPERATURE_CLEARS_K = 5.0f;
+
+// The longest fault text, in bytes, that Home Assistant keeps.
+constexpr size_t FAULT_TEXT_MAX = 255;
 
 // Publish rule: a reading that moves by more than its step is published once at least
 // PUBLISH_MIN_MS has passed since the last, so within about 1 s; otherwise every

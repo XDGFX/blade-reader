@@ -17,6 +17,8 @@ enum Spare { SPARE_ODD_ARM, SPARE_EVEN_ARM, SPARES };
 struct Sweep {
   uint32_t now_ms;
   float sense_mv[WAYS];
+  // A sample of the way's sense line was at the ADC rail.
+  bool sense_clipped[WAYS];
   float voltage_mv[WAYS];
   float vbe_mv[DIODES];
   float spare_mv[SPARES];
@@ -32,11 +34,14 @@ struct WayReading {
 };
 
 // Each kind of way fault, in the order the fault text lists them within a way.
-enum WayFault { WAY_BLOWN, WAY_FAULT_KINDS };
+enum WayFault { WAY_BLOWN, WAY_OVER_RANGE, WAY_FAULT_KINDS };
 
 struct Faults {
   // No way is live, so the board is on USB alone. It is not a fault in itself.
   bool no_supply;
+  // The hottest diode has reached the over-temperature threshold.
+  bool over_temperature;
+  float hottest_c;
   bool way[WAYS][WAY_FAULT_KINDS];
 
   // Any fault active, which lights the red LED steady.
@@ -57,6 +62,8 @@ struct Readings {
 
 class Core {
  public:
+  // Set from the YAML.
+  void set_over_temperature_c(float c) { over_temperature_c_ = c; }
   Readings on_sweep(const Sweep &sweep);
   // The Clear faults button: clears every fault, and every dead way becomes empty. A fault whose
   // cause is still present comes back on the next sweep.
@@ -73,14 +80,20 @@ class Core {
 
   bool due_(Published &last, uint32_t now_ms, bool changed);
 
-  void update_faults_(uint32_t now_ms);
+  void update_faults_(const Sweep &sweep, const Readings &r);
 
+  float over_temperature_c_{OVER_TEMPERATURE_C};
   bool live_[WAYS]{};
   // When each way last turned live or dead.
   uint32_t changed_at_ms_[WAYS]{};
   // Whether each way has been live since boot, Clear faults or a No supply period. A dead way
   // that hasn't is an empty way, which never raises a fault.
   bool been_live_[WAYS]{};
+  // Whether each way reads over OVER_RANGE_A and since when, and when it last read over range or
+  // clipped.
+  bool over_[WAYS]{};
+  uint32_t over_since_ms_[WAYS]{};
+  uint32_t out_of_range_at_ms_[WAYS]{};
   Faults faults_{};
   Published way_published_[WAYS];
   Published board_published_;

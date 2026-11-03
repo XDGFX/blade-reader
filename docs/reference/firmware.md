@@ -94,7 +94,7 @@ No fault latches. Each clears itself once its cause has cleared and held steady.
 - A sensor stuck at a rail clips the ADC, so it shows as over range. A sensor stuck mid-range isn't detected.
 - **No supply:** no way is live, which is only possible on USB. No blown-fuse faults are raised, and the panel voltage reads 0 V. When a way comes back, the board starts afresh as if it had just booted.
 - **Clear faults** (button): clears every fault, and every dead way becomes an empty way. A fault whose cause is still present comes straight back.
-- **Fault text:** `OK`, `No supply`, or each fault joined by `; `, board faults first, then ways in ascending order. For example: `Over temperature 87 °C; Way 3 blown; Way 9 over range`. It fits in 255 characters.
+- **Fault text:** `OK`, `No supply`, or each fault joined by `; `, board faults first, then ways in ascending order. For example: `Over temperature 87 °C; Way 3 blown; Way 9 over range`. A fault shows under No supply too, such as a sensor stuck at a rail. It fits in 255 characters, ending in `; …` if every fault won't.
 
 There are no per-way over-current limits, no 20 A derating when hot, and no panel total on the board. Home Assistant does those.
 

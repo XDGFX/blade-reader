@@ -1,6 +1,7 @@
 #include "core.h"
 
 #include <cmath>
+#include <cstring>
 
 namespace blade_core {
 
@@ -40,13 +41,14 @@ float median_live_voltage_v(const Readings &r, const bool is_live[WAYS]) {
 }
 
 // How the fault text names each kind of way fault, after `Way n `.
-constexpr const char *WAY_FAULT_TEXT[] = {"blown"};
+constexpr const char *WAY_FAULT_TEXT[] = {"blown", "over range"};
 static_assert(sizeof(WAY_FAULT_TEXT) / sizeof(WAY_FAULT_TEXT[0]) == WAY_FAULT_KINDS,
               "every way fault needs its text");
 
 }  // namespace
 
 bool Faults::any() const {
+  if (over_temperature) return true;
   for (const auto &kinds : way)
     for (bool fault : kinds)
       if (fault) return true;
@@ -54,15 +56,29 @@ bool Faults::any() const {
 }
 
 std::string fault_text(const Faults &faults) {
-  if (faults.no_supply) return "No supply";
   std::string text;
-  auto add = [&text](const std::string &fault) { text += (text.empty() ? "" : "; ") + fault; };
+  bool full = false;
+  // Home Assistant drops a text state over 255 characters, so a list that won't fit ends in `…`.
+  auto add = [&text, &full](const std::string &fault) {
+    if (full) return;
+    std::string next = text + (text.empty() ? "" : "; ") + fault;
+    if (next.size() + std::strlen("; …") > FAULT_TEXT_MAX) {
+      text += "; …";
+      full = true;
+    } else {
+      text = next;
+    }
+  };
+  if (faults.over_temperature) {
+    add("Over temperature " + std::to_string(static_cast<int>(std::lround(faults.hottest_c))) + " °C");
+  }
   for (int w = 0; w < WAYS; w++) {
     for (int kind = 0; kind < WAY_FAULT_KINDS; kind++) {
       if (faults.way[w][kind]) add("Way " + std::to_string(w + 1) + " " + WAY_FAULT_TEXT[kind]);
     }
   }
-  return text.empty() ? "OK" : text;
+  if (!text.empty()) return text;
+  return faults.no_supply ? "No supply" : "OK";
 }
 
 Readings Core::on_sweep(const Sweep &sweep) {
@@ -76,12 +92,12 @@ Readings Core::on_sweep(const Sweep &sweep) {
     if (live != live_[w]) changed_at_ms_[w] = sweep.now_ms;
     live_[w] = live;
   }
-  update_faults_(sweep.now_ms);
-  r.faults = faults_;
-  r.panel_voltage_v = median_live_voltage_v(r, live_);
   for (int d = 0; d < DIODES; d++) {
     r.diode_c[d] = 25.0f + (sweep.vbe_mv[d] - VBE_AT_25C_MV) / VBE_MV_PER_C;
   }
+  update_faults_(sweep, r);
+  r.faults = faults_;
+  r.panel_voltage_v = median_live_voltage_v(r, live_);
   for (int i = 0; i < SPARES; i++) r.spare_mv[i] = sweep.spare_mv[i];
 
   for (int w = 0; w < WAYS; w++) {
@@ -109,13 +125,37 @@ Readings Core::on_sweep(const Sweep &sweep) {
 }
 
 void Core::clear_faults() {
+  faults_.over_temperature = false;
   for (int w = 0; w < WAYS; w++) {
     for (bool &fault : faults_.way[w]) fault = false;
     if (!live_[w]) been_live_[w] = false;
   }
 }
 
-void Core::update_faults_(uint32_t now_ms) {
+void Core::update_faults_(const Sweep &sweep, const Readings &r) {
+  uint32_t now_ms = sweep.now_ms;
+  float hottest_c = r.diode_c[0];
+  for (float c : r.diode_c) hottest_c = std::fmax(hottest_c, c);
+  faults_.hottest_c = hottest_c;
+  if (hottest_c >= over_temperature_c_) {
+    faults_.over_temperature = true;
+  } else if (hottest_c <= over_temperature_c_ - OVER_TEMPERATURE_CLEARS_K) {
+    faults_.over_temperature = false;
+  }
+
+  for (int w = 0; w < WAYS; w++) {
+    bool over = std::fabs(r.way[w].current_a) > OVER_RANGE_A;
+    bool clipped = sweep.sense_clipped[w];
+    if (over && !over_[w]) over_since_ms_[w] = now_ms;
+    over_[w] = over;
+    if (over || clipped) out_of_range_at_ms_[w] = now_ms;
+    if (clipped || (over && now_ms - over_since_ms_[w] >= OVER_RANGE_AFTER_MS)) {
+      faults_.way[w][WAY_OVER_RANGE] = true;
+    } else if (now_ms - out_of_range_at_ms_[w] >= OVER_RANGE_CLEARS_AFTER_MS) {
+      faults_.way[w][WAY_OVER_RANGE] = false;
+    }
+  }
+
   bool any_live = false;
   for (bool live : live_) any_live |= live;
   faults_.no_supply = !any_live;

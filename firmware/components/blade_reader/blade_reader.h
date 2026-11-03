@@ -5,12 +5,14 @@
 
 #include <string>
 
+#include "esp_adc/adc_cali.h"
+
+#include "esphome/components/adc/adc_sensor.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/button/button.h"
 #include "esphome/components/output/binary_output.h"
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/text_sensor/text_sensor.h"
-#include "esphome/components/voltage_sampler/voltage_sampler.h"
 #include "esphome/core/component.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
@@ -26,6 +28,9 @@ constexpr uint8_t MUX_CHANNELS = 16;
 constexpr uint8_t SELECT_BITS = 4;
 // How long a mux is left to settle after a change of select.
 constexpr uint32_t SETTLE_US = 2000;
+// Samples averaged per channel; any one at either end of the 12-bit ADC flags the channel clipped.
+constexpr uint8_t SAMPLES = 64;
+constexpr int RAW_MAX = 4095;
 
 class BladeReader : public Component {
  public:
@@ -35,7 +40,11 @@ class BladeReader : public Component {
   float get_setup_priority() const override { return setup_priority::DATA; }
 
   void set_select_pin(uint8_t bit, GPIOPin *pin) { this->select_pins_[bit] = pin; }
-  void set_adc(Arm arm, voltage_sampler::VoltageSampler *adc) { this->adcs_[arm] = adc; }
+  void set_adc(Arm arm, adc::ADCSensor *adc, uint8_t gpio) {
+    this->adcs_[arm] = adc;
+    this->adc_gpios_[arm] = gpio;
+  }
+  void set_over_temperature_c(float c) { this->core_.set_over_temperature_c(c); }
   void set_fault_led(output::BinaryOutput *led) { this->fault_led_ = led; }
   void set_way(uint8_t way, uint8_t sense_channel, uint8_t voltage_channel, sensor::Sensor *current,
                sensor::Sensor *power, sensor::Sensor *voltage);
@@ -58,12 +67,18 @@ class BladeReader : public Component {
   };
 
   void select_(uint8_t channel);
+  bool calibrate_(Arm arm);
+  void read_(Arm arm);
   float mv_(Tap tap) const { return this->mv_table_[tap.arm][tap.channel]; }
   blade_core::Sweep collect_(uint32_t now_ms) const;
   void publish_(const blade_core::Readings &r);
 
   GPIOPin *select_pins_[SELECT_BITS]{};
-  voltage_sampler::VoltageSampler *adcs_[ARMS]{};
+  // The ADC sensors give raw counts one at a time (the YAML checks raw: true, samples: 1); the
+  // glue averages and calibrates them itself, because ESPHome's averaging hides a clipped sample.
+  adc::ADCSensor *adcs_[ARMS]{};
+  uint8_t adc_gpios_[ARMS]{};
+  adc_cali_handle_t calibration_[ARMS]{};
   output::BinaryOutput *fault_led_{nullptr};
 
   WayEntities ways_[blade_core::WAYS]{};
@@ -77,6 +92,7 @@ class BladeReader : public Component {
 
   // Each mux channel's last averaged reading, in mV at the ADC pin.
   float mv_table_[ARMS][MUX_CHANNELS]{};
+  bool clipped_table_[ARMS][MUX_CHANNELS]{};
   uint8_t channel_{0};
   uint32_t selected_at_us_{0};
   HighFrequencyLoopRequester high_freq_;

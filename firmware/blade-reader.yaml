@@ -74,21 +74,21 @@ output:
       inverted: true
       ignore_strapping_warning: true
 
-# Each arm's mux common, read at the 12 dB range. blade_reader reads them in turn, averaging 64
-# samples a channel.
+# Each arm's mux common, read at the 12 dB range. blade_reader reads them in turn, a raw sample at
+# a time: it averages 64 a channel and flags any at the rail as clipped.
 sensor:
   - platform: adc
     id: adc_odd
     pin: GPIO4
     attenuation: 12db
-    samples: 64
+    raw: true
     update_interval: never
     internal: true
   - platform: adc
     id: adc_even
     pin: GPIO3
     attenuation: 12db
-    samples: 64
+    raw: true
     update_interval: never
     internal: true
   - platform: internal_temperature
@@ -106,6 +106,8 @@ blade_reader:
   odd_arm_adc: adc_odd
   even_arm_adc: adc_even
   fault_led: fault_led
+  # The hottest diode at this is Over temperature, cleared 5 K below.
+  over_temperature: 85°C
   ways:  # ways 1 to 12, in order
     - { sense: 6, voltage: 7 }
     - { sense: 6, voltage: 9 }
