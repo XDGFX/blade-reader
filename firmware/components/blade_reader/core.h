@@ -126,7 +126,7 @@ class Core {
   // replaced with 1.0; NaN if there was none. The glue logs it.
   float rejected_gain_trim(int way_index) const { return gain_trim_rejected_[way_index] ? rejected_gain_trims_[way_index] : NAN; }
   const EnergyRecord &energy(int way_index) const { return energy_[way_index]; }
-  // "None", or the unzeroed ways, e.g. "Not zeroed: 3, 7".
+  // "None", or the unzeroed ways, e.g. "3, 7".
   std::string not_zeroed() const;
   // Install mode: from boot while any way has no zero, for INSTALL_MODE_MS at most.
   bool install_mode() const { return install_mode_; }

@@ -85,7 +85,7 @@ TEST_CASE("an empty record is an unzeroed way") {
   CHECK_FALSE(decode_way(RecordBytes{}).zero.taken);
 }
 
-TEST_CASE("Not zeroed lists the ways without a zero, or says None") {
+TEST_CASE("Not Zeroed lists the ways without a zero, or says None") {
   FakeStorage storage;
   WayRecord zeroed;
   zeroed.zero = {true, NOMINAL_ZERO_MV, VBE_AT_25C_MV, 15};
@@ -94,7 +94,7 @@ TEST_CASE("Not zeroed lists the ways without a zero, or says None") {
   }
   Core core;
   core.start(storage);
-  CHECK(core.not_zeroed() == "Not zeroed: 3, 7");
+  CHECK(core.not_zeroed() == "3, 7");
 
   storage.put_way(3, zeroed);
   storage.put_way(7, zeroed);

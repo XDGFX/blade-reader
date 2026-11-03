@@ -56,7 +56,7 @@ An unzeroed way uses the nominal 1.65 V zero with no tempco.
 
 ### Install mode
 
-Install mode starts at boot if any way has no zero. It ends when all 12 have one or 1 h after boot, and returns at the next boot if any are still missing. It changes only the LED. The README's install steps give the fuse swaps. The board-level **Not zeroed** reading says `None` or, for example, `Not zeroed: 3, 7`. It's never a fault.
+Install mode starts at boot if any way has no zero. It ends when all 12 have one or 1 h after boot, and returns at the next boot if any are still missing. It changes only the LED. The README's install steps give the fuse swaps. The board-level **Not Zeroed** reading lists the ways without a zero, for example `3, 4, 7, 11`, or says `None`. It's never a fault.
 
 ## Temperature tracking
 
@@ -117,21 +117,24 @@ Green is ESPHome's `status_led`. ([#113](https://github.com/XDGFX/blade-reader/i
 
 ## What is published
 
+Names are grouped as `Group: Item`, so a way's entities sort together in Home Assistant.
+
 | Entity | Per | Notes |
 | --- | --- | --- |
-| Current (A) | way | |
-| Power (W) | way | from the same sweep's V and I |
-| Energy (Wh) | way | `state_class: total` |
-| Blown fuse | way | binary sensor |
-| Live | way | binary sensor, `device_class: power`; the way's live state |
-| Panel voltage | board | median of live ways; 0 V under No supply |
-| Fault text | board | |
-| Not zeroed | board | |
-| Diode temperatures | board | chin, odd arm, even arm |
-| Voltage | way | hidden diagnostic |
-| Gain trim | way | hidden diagnostic |
-| Zero (mV from nominal), its temperature and time | way | hidden diagnostics |
-| Grounded spares | board | hidden diagnostics, to watch the radio-related zero shift |
+| `Way n: Current` (A) | way | |
+| `Way n: Power` (W) | way | from the same sweep's V and I |
+| `Way n: Energy` (Wh) | way | `state_class: total` |
+| `Way n: Blown Fuse` | way | binary sensor |
+| `Way n: Live` | way | binary sensor, `device_class: power`; the way's live state |
+| `Panel Voltage` | board | median of live ways; 0 V under No supply |
+| `Fault Text` | board | |
+| `Not Zeroed` | board | the ways without a zero, e.g. `3, 4, 7, 11`, or `None` |
+| `Temperature: Chin`, `Temperature: Odd Arm`, `Temperature: Even Arm` | board | the diodes |
+| `Temperature: ESP32`, `Wi-Fi Signal`, `Firmware` | board | ESPHome's own |
+| `Way n: Voltage` | way | hidden diagnostic |
+| `Way n: Gain Trim` | way | hidden diagnostic |
+| `Way n: Zero` (mV from nominal), `Way n: Zero Temperature`, `Way n: Zero Time` | way | hidden diagnostics |
+| `Spare: Odd Arm`, `Spare: Even Arm` | board | grounded spares; hidden diagnostics, to watch the radio-related zero shift |
 
 - **Publish rule:** within about 1 s of a meaningful change (a threshold above the arm's noise), otherwise every 30 s. Current and power are always sent together. Blown fuse and Live go out on the sweep they change, with no heartbeat.
 - **Blown fuse and Live together** tell what is in a way. Cal added Live after testing on yoke B. Under No supply every way reads off on both.
@@ -142,7 +145,7 @@ Green is ESPHome's `status_led`. ([#113](https://github.com/XDGFX/blade-reader/i
   | off | off | empty way |
   | off | on | blown, or pulled until Clear faults |
 - **Actions:** `set_gain_trim(way, trim)`, and `dump_state`, which logs every way's stored record.
-- **Buttons:** Clear faults, factory reset, restart.
+- **Buttons:** `Clear Faults`, `Factory Reset`, `Restart`.
 - The web page is ESPHome's stock one. It's the install and fault-finding aid. ([#116](https://github.com/XDGFX/blade-reader/issues/116) is future work.)
 
 ## Flash

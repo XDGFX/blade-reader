@@ -98,7 +98,7 @@ antenna overhangs, and 13.5 mm below the positive end.
       LED steady, until it has been back for 5 s. Or move that one fuse to another way, which
       turns the board off while it's out, so the way it left zeroes at the next boot; then refit
       the rest.
-   3. It's done when the board's "Not zeroed" reading says `None` and the red LED stops blinking.
+   3. It's done when the board's "Not Zeroed" reading says `None` and the red LED stops blinking.
 
    On the bench, a board on USB with every fuse out zeroes all 12 at once. Zeros survive updates
    and a move to another panel. To redo one way, pull its fuse for 15 s.

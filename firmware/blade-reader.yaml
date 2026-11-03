@@ -109,9 +109,9 @@ sensor:
     update_interval: never
     internal: true
   - platform: internal_temperature
-    name: "ESP32 temperature"
+    name: "Temperature: ESP32"
   - platform: wifi_signal
-    name: "Wi-Fi signal"
+    name: "Wi-Fi Signal"
     update_interval: 60s
 
 # Two 74HC4067s share their selects: S0 to S3 on GPIO7, 10, 5 and 6. Mux 1 reads the odd arm,
@@ -154,4 +154,4 @@ button:
   - platform: restart
     name: "Restart"
   - platform: factory_reset
-    name: "Factory reset"
+    name: "Factory Reset"

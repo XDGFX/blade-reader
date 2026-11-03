@@ -73,13 +73,13 @@ Spare = blade_core_ns.enum("Spare")
 
 # (config key, core enum, arm whose mux reads it, entity name)
 DIODES = [
-    ("chin", Diode.DIODE_CHIN, Arm.ODD_ARM, "Chin temperature"),
-    ("odd_arm", Diode.DIODE_ODD_ARM, Arm.ODD_ARM, "Odd arm temperature"),
-    ("even_arm", Diode.DIODE_EVEN_ARM, Arm.EVEN_ARM, "Even arm temperature"),
+    ("chin", Diode.DIODE_CHIN, Arm.ODD_ARM, "Temperature: Chin"),
+    ("odd_arm", Diode.DIODE_ODD_ARM, Arm.ODD_ARM, "Temperature: Odd Arm"),
+    ("even_arm", Diode.DIODE_EVEN_ARM, Arm.EVEN_ARM, "Temperature: Even Arm"),
 ]
 SPARES = [
-    ("odd_arm", Spare.SPARE_ODD_ARM, Arm.ODD_ARM, "Odd arm spare"),
-    ("even_arm", Spare.SPARE_EVEN_ARM, Arm.EVEN_ARM, "Even arm spare"),
+    ("odd_arm", Spare.SPARE_ODD_ARM, Arm.ODD_ARM, "Spare: Odd Arm"),
+    ("even_arm", Spare.SPARE_EVEN_ARM, Arm.EVEN_ARM, "Spare: Even Arm"),
 ]
 
 MUX_CHANNEL = cv.int_range(min=0, max=15)
@@ -171,34 +171,34 @@ def _make_entities(config):
     for n in range(1, WAYS + 1):
         ways.append(
             {
-                "current": CURRENT({CONF_NAME: f"Way {n} current"}),
-                "power": POWER({CONF_NAME: f"Way {n} power"}),
+                "current": CURRENT({CONF_NAME: f"Way {n}: Current"}),
+                "power": POWER({CONF_NAME: f"Way {n}: Power"}),
                 "voltage": WAY_VOLTAGE(
-                    {CONF_NAME: f"Way {n} voltage", **HIDDEN_DIAGNOSTIC}
+                    {CONF_NAME: f"Way {n}: Voltage", **HIDDEN_DIAGNOSTIC}
                 ),
                 "zero": ZERO(
-                    {CONF_NAME: f"Way {n} zero", **HIDDEN_DIAGNOSTIC}
+                    {CONF_NAME: f"Way {n}: Zero", **HIDDEN_DIAGNOSTIC}
                 ),
                 "zero_temperature": ZERO_TEMPERATURE(
-                    {CONF_NAME: f"Way {n} zero temperature", **HIDDEN_DIAGNOSTIC}
+                    {CONF_NAME: f"Way {n}: Zero Temperature", **HIDDEN_DIAGNOSTIC}
                 ),
                 "zero_time": ZERO_TIME(
-                    {CONF_NAME: f"Way {n} zero time", **HIDDEN_DIAGNOSTIC}
+                    {CONF_NAME: f"Way {n}: Zero Time", **HIDDEN_DIAGNOSTIC}
                 ),
-                "blown": BLOWN({CONF_NAME: f"Way {n} blown fuse"}),
-                "live": LIVE({CONF_NAME: f"Way {n} live"}),
-                "energy": ENERGY({CONF_NAME: f"Way {n} energy"}),
+                "blown": BLOWN({CONF_NAME: f"Way {n}: Blown Fuse"}),
+                "live": LIVE({CONF_NAME: f"Way {n}: Live"}),
+                "energy": ENERGY({CONF_NAME: f"Way {n}: Energy"}),
                 "gain_trim": GAIN_TRIM(
-                    {CONF_NAME: f"Way {n} gain trim", **HIDDEN_DIAGNOSTIC}
+                    {CONF_NAME: f"Way {n}: Gain Trim", **HIDDEN_DIAGNOSTIC}
                 ),
             }
         )
     config[CONF_ENTITIES] = {
         "ways": ways,
-        "panel_voltage": VOLTAGE({CONF_NAME: "Panel voltage"}),
-        "not_zeroed": NOT_ZEROED({CONF_NAME: "Not zeroed"}),
-        "fault_text": FAULT_TEXT({CONF_NAME: "Fault text"}),
-        "clear_faults": CLEAR_FAULTS({CONF_NAME: "Clear faults"}),
+        "panel_voltage": VOLTAGE({CONF_NAME: "Panel Voltage"}),
+        "not_zeroed": NOT_ZEROED({CONF_NAME: "Not Zeroed"}),
+        "fault_text": FAULT_TEXT({CONF_NAME: "Fault Text"}),
+        "clear_faults": CLEAR_FAULTS({CONF_NAME: "Clear Faults"}),
         "diodes": {key: TEMPERATURE({CONF_NAME: name}) for key, _, _, name in DIODES},
         "spares": {
             key: SPARE({CONF_NAME: name, **HIDDEN_DIAGNOSTIC})

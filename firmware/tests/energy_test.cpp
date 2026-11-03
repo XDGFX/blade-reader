@@ -114,7 +114,7 @@ TEST_CASE("a format change to the way record leaves the energy total untouched")
   storage.put_energy(1, 123456789);
   Core core;
   core.start(storage);
-  CHECK(core.not_zeroed().find("Not zeroed: 1,") == 0);
+  CHECK(core.not_zeroed().find("1,") == 0);
   CHECK(core.energy(0).mws == 123456789);
 }
 

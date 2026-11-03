@@ -277,7 +277,7 @@ std::string Core::not_zeroed() const {
     if (records_[w].zero.taken) continue;
     ways += (ways.empty() ? "" : ", ") + std::to_string(w + 1);
   }
-  return ways.empty() ? "None" : "Not zeroed: " + ways;
+  return ways.empty() ? "None" : ways;
 }
 
 void Core::start(Storage &storage) {
