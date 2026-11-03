@@ -57,6 +57,14 @@ void BladeReader::setup() {
   this->high_freq_.start();
 }
 
+void BladeReader::update_fault_led_() {
+  bool lit = blade_core::led_lit(this->led_, millis());
+  if (lit == this->led_lit_)
+    return;
+  this->led_lit_ = lit;
+  this->fault_led_->set_state(lit);
+}
+
 void BladeReader::select_(uint8_t channel) {
   for (uint8_t bit = 0; bit < SELECT_BITS; bit++) this->select_pins_[bit]->digital_write((channel >> bit) & 1);
   this->channel_ = channel;
@@ -65,6 +73,7 @@ void BladeReader::select_(uint8_t channel) {
 
 // One step a call: once the muxes have settled on a channel, average each arm's ADC and move on.
 void BladeReader::loop() {
+  this->update_fault_led_();
   if (micros() - this->selected_at_us_ < SETTLE_US)
     return;
   for (uint8_t arm = 0; arm < ARMS; arm++)
@@ -120,7 +129,11 @@ void BladeReader::publish_(const blade_core::Readings &r) {
   std::string text = blade_core::fault_text(r.faults);
   if (!this->fault_text_->has_state() || this->fault_text_->state != text)
     this->fault_text_->publish_state(text);
-  this->fault_led_->set_state(r.faults.any());
+  this->led_ = r.led;
+  if (this->core_.install_mode() != this->install_mode_) {
+    this->install_mode_ = this->core_.install_mode();
+    ESP_LOGI(TAG, "Install mode %s", this->install_mode_ ? "on" : "ended");
+  }
 
   if (!r.publish_board)
     return;

@@ -45,4 +45,11 @@ constexpr float TEMPERATURE_STEP_C = 1.0f;
 constexpr uint32_t ZERO_DEAD_MS = 5000;
 constexpr uint32_t ZERO_MEAN_MS = 10000;
 
+// Install mode lasts at most this long after boot.
+constexpr uint32_t INSTALL_MODE_MS = 3600000;
+
+// The red LED's blink periods: about 4 Hz and 1 Hz, lit for the first half of each.
+constexpr uint32_t FAST_BLINK_MS = 250;
+constexpr uint32_t SLOW_BLINK_MS = 1000;
+
 }  // namespace blade_core

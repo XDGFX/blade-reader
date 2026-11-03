@@ -92,10 +92,14 @@ class BladeReader : public Component {
   blade_core::Sweep collect_(uint32_t now_ms) const;
   void publish_(const blade_core::Readings &r);
   void publish_zero_(int way_index);
+  void update_fault_led_();
 
   GPIOPin *select_pins_[SELECT_BITS]{};
   voltage_sampler::VoltageSampler *adcs_[ARMS]{};
   output::BinaryOutput *fault_led_{nullptr};
+  blade_core::Led led_{blade_core::LED_OFF};
+  bool led_lit_{false};
+  bool install_mode_{false};
 
   WayEntities ways_[blade_core::WAYS]{};
   Tap diode_taps_[blade_core::DIODES]{};
