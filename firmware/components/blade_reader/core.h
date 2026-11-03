@@ -44,6 +44,8 @@ struct WayReading {
   float current_a;
   float power_w;
   float voltage_v;
+  // The way is live, by LIVE_V and DEAD_V. The glue publishes it on change, whatever `publish` says.
+  bool live;
   // The way's energy total, published with the group.
   float energy_wh;
   // This sweep took a new zero, now in the way's record and saved.

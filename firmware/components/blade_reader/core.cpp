@@ -111,6 +111,7 @@ Readings Core::on_sweep(const Sweep &sweep) {
     bool live = still_live(live_[w], way.voltage_v);
     if (live != live_[w]) changed_at_ms_[w] = sweep.now_ms;
     live_[w] = live;
+    way.live = live;
     way.new_zero = track_zero_(w, sweep, out_mv);
     if (way.new_zero) way.self_check = self_checks_[w];
   }

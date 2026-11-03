@@ -83,6 +83,7 @@ class BladeReader : public Component {
   void set_gain_trim(int way, float trim);
 
   void set_blown_sensor(uint8_t way, binary_sensor::BinarySensor *s) { this->blown_[way - 1] = s; }
+  void set_live_sensor(uint8_t way, binary_sensor::BinarySensor *s) { this->live_[way - 1] = s; }
   void set_fault_text_sensor(text_sensor::TextSensor *s) { this->fault_text_ = s; }
   void set_energy_sensor(uint8_t way, sensor::Sensor *s) { this->energy_[way - 1] = s; }
 
@@ -134,6 +135,7 @@ class BladeReader : public Component {
   sensor::Sensor *gain_trims_[blade_core::WAYS]{};
   text_sensor::TextSensor *not_zeroed_{nullptr};
   binary_sensor::BinarySensor *blown_[blade_core::WAYS]{};
+  binary_sensor::BinarySensor *live_[blade_core::WAYS]{};
   text_sensor::TextSensor *fault_text_{nullptr};
   // Each way's tempco as last logged, to log it again only when it changes.
   blade_core::Tempco logged_tempco_[blade_core::WAYS]{};

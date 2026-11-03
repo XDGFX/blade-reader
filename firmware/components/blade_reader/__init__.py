@@ -156,6 +156,7 @@ GAIN_TRIM = sensor.sensor_schema(
 )
 NOT_ZEROED = text_sensor.text_sensor_schema()
 BLOWN = binary_sensor.binary_sensor_schema(device_class=DEVICE_CLASS_PROBLEM)
+LIVE = binary_sensor.binary_sensor_schema(device_class=DEVICE_CLASS_POWER)
 FAULT_TEXT = text_sensor.text_sensor_schema()
 CLEAR_FAULTS = button.button_schema(ClearFaultsButton)
 
@@ -185,6 +186,7 @@ def _make_entities(config):
                     {CONF_NAME: f"Way {n} zero time", **HIDDEN_DIAGNOSTIC}
                 ),
                 "blown": BLOWN({CONF_NAME: f"Way {n} blown fuse"}),
+                "live": LIVE({CONF_NAME: f"Way {n} live"}),
                 "energy": ENERGY({CONF_NAME: f"Way {n} energy"}),
                 "gain_trim": GAIN_TRIM(
                     {CONF_NAME: f"Way {n} gain trim", **HIDDEN_DIAGNOSTIC}
@@ -289,6 +291,9 @@ async def to_code(config):
         )
         cg.add(
             var.set_blown_sensor(n, await binary_sensor.new_binary_sensor(way["blown"]))
+        )
+        cg.add(
+            var.set_live_sensor(n, await binary_sensor.new_binary_sensor(way["live"]))
         )
         cg.add(var.set_energy_sensor(n, await sensor.new_sensor(way["energy"])))
         cg.add(

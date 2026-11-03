@@ -129,6 +129,22 @@ TEST_CASE("the yoke-level readings publish on a meaningful change in panel volta
 }
 
 
+TEST_CASE("a way reads live from LIVE_V and dead below DEAD_V, keeping its state in between") {
+  Core core;
+  Sweep s = quiet_sweep(0);
+  const float between_v = (LIVE_V + DEAD_V) / 2;
+  set_volts(s, 1, between_v);
+  CHECK_FALSE(run(core, s, 0, 0).way[0].live);  // dead since boot
+  set_volts(s, 1, LIVE_V + 1.0f);
+  CHECK(run(core, s, 1000, 1000).way[0].live);
+  set_volts(s, 1, between_v);
+  CHECK(run(core, s, 2000, 2000).way[0].live);
+  set_volts(s, 1, DEAD_V - 1.0f);
+  CHECK_FALSE(run(core, s, 3000, 3000).way[0].live);
+  set_volts(s, 1, between_v);
+  CHECK_FALSE(run(core, s, 4000, 4000).way[0].live);
+}
+
 TEST_CASE("a live way that stays dead while another stays live is blown after BLOWN_AFTER_MS") {
   Core core;
   Sweep s = two_live_ways();

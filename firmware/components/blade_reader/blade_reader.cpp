@@ -186,9 +186,11 @@ void BladeReader::publish_(const blade_core::Readings &r) {
     this->energy_[w]->publish_state(reading.energy_wh);
   }
 
-  // Faults go out as soon as they change; the binary sensors drop repeats themselves.
-  for (int w = 0; w < blade_core::WAYS; w++)
+  // Faults and live ways go out as soon as they change; the binary sensors drop repeats themselves.
+  for (int w = 0; w < blade_core::WAYS; w++) {
     this->blown_[w]->publish_state(r.faults.way[w][blade_core::WAY_BLOWN]);
+    this->live_[w]->publish_state(r.way[w].live);
+  }
   std::string text = blade_core::fault_text(r.faults);
   if (!this->fault_text_->has_state() || this->fault_text_->state != text)
     this->fault_text_->publish_state(text);

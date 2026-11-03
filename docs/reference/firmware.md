@@ -123,6 +123,7 @@ Green is ESPHome's `status_led`. ([#113](https://github.com/XDGFX/blade-reader/i
 | Power (W) | way | from the same sweep's V and I |
 | Energy (Wh) | way | `state_class: total` |
 | Blown fuse | way | binary sensor |
+| Live | way | binary sensor, `device_class: power`; the way's live state |
 | Panel voltage | board | median of live ways; 0 V under No supply |
 | Fault text | board | |
 | Not zeroed | board | |
@@ -132,7 +133,14 @@ Green is ESPHome's `status_led`. ([#113](https://github.com/XDGFX/blade-reader/i
 | Zero (mV from nominal), its temperature and time | way | hidden diagnostics |
 | Grounded spares | board | hidden diagnostics, to watch the radio-related zero shift |
 
-- **Publish rule:** within about 1 s of a meaningful change (a threshold above the arm's noise), otherwise every 30 s. Current and power are always sent together.
+- **Publish rule:** within about 1 s of a meaningful change (a threshold above the arm's noise), otherwise every 30 s. Current and power are always sent together. Blown fuse and Live go out on the sweep they change, with no heartbeat.
+- **Blown fuse and Live together** tell what is in a way. Cal added Live after testing on yoke B. Under No supply every way reads off on both.
+
+  | Live | Blown fuse | The way |
+  | --- | --- | --- |
+  | on | off | fuse in |
+  | off | off | empty way |
+  | off | on | blown, or pulled until Clear faults |
 - **Actions:** `set_gain_trim(way, trim)`, and `dump_state`, which logs every way's stored record.
 - **Buttons:** Clear faults, factory reset, restart.
 - The web page is ESPHome's stock one. It's the install and fault-finding aid. ([#116](https://github.com/XDGFX/blade-reader/issues/116) is future work.)
