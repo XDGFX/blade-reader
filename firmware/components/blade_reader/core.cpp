@@ -79,6 +79,7 @@ Readings Core::on_sweep(const Sweep &sweep) {
     live_[w] = live;
     way.new_zero = track_zero_(w, sweep, out_mv);
   }
+  integrate_energy_(r, sweep.now_ms);
   update_faults_(sweep.now_ms);
   r.faults = faults_;
   r.panel_voltage_v = median_live_voltage_v(r, live_);
@@ -140,6 +141,24 @@ bool Core::track_zero_(int w, const Sweep &sweep, float out_mv) {
   return true;
 }
 
+// Each way's power over the time since the last sweep. The first sweep has nothing to span.
+void Core::integrate_energy_(Readings &r, uint32_t now_ms) {
+  uint32_t span_ms = now_ms - last_sweep_ms_;
+  bool first = !swept_;
+  swept_ = true;
+  last_sweep_ms_ = now_ms;
+  for (int w = 0; w < WAYS; w++) {
+    if (!first) {
+      double mws = energy_carry_mws_[w] + double(r.way[w].power_w) * span_ms;
+      int64_t whole = std::llround(mws);
+      energy_[w].mws += whole;
+      energy_carry_mws_[w] = mws - double(whole);
+      if (whole != 0 && storage_ != nullptr) storage_->stage({RECORD_ENERGY, w}, encode(energy_[w]));
+    }
+    r.way[w].energy_wh = float(double(energy_[w].mws) / MWS_PER_WH);
+  }
+}
+
 std::string Core::not_zeroed() const {
   std::string ways;
   for (int w = 0; w < WAYS; w++) {
@@ -154,6 +173,7 @@ void Core::start(Storage &storage) {
   for (int w = 0; w < WAYS; w++) {
     RecordBytes bytes;
     records_[w] = storage.load({RECORD_WAY, w}, bytes) ? decode_way(bytes) : WayRecord{};
+    energy_[w] = storage.load({RECORD_ENERGY, w}, bytes) ? decode_energy(bytes) : EnergyRecord{};
   }
 }
 

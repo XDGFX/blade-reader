@@ -27,6 +27,8 @@ class PreferenceStorage : public blade_core::Storage {
  public:
   bool load(blade_core::RecordKey key, blade_core::RecordBytes &bytes) override;
   void save(blade_core::RecordKey key, const blade_core::RecordBytes &bytes) override;
+  // Left for the preferences' own sync, every flash_write_interval and on shutdown.
+  void stage(blade_core::RecordKey key, const blade_core::RecordBytes &bytes) override;
 
  protected:
   ESPPreferenceObject &preference_(blade_core::RecordKey key);
@@ -69,6 +71,7 @@ class BladeReader : public Component {
 
   void set_blown_sensor(uint8_t way, binary_sensor::BinarySensor *s) { this->blown_[way - 1] = s; }
   void set_fault_text_sensor(text_sensor::TextSensor *s) { this->fault_text_ = s; }
+  void set_energy_sensor(uint8_t way, sensor::Sensor *s) { this->energy_[way - 1] = s; }
 
   void clear_faults() { this->core_.clear_faults(); }
 
@@ -107,6 +110,7 @@ class BladeReader : public Component {
   text_sensor::TextSensor *not_zeroed_{nullptr};
   binary_sensor::BinarySensor *blown_[blade_core::WAYS]{};
   text_sensor::TextSensor *fault_text_{nullptr};
+  sensor::Sensor *energy_[blade_core::WAYS]{};
 
   // Each mux channel's last averaged reading, in mV at the ADC pin.
   float mv_table_[ARMS][MUX_CHANNELS]{};

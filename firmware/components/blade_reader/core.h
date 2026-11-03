@@ -30,6 +30,8 @@ struct WayReading {
   float current_a;
   float power_w;
   float voltage_v;
+  // The way's energy total, published with the group.
+  float energy_wh;
   // This sweep took a new zero, now in the way's record and saved.
   bool new_zero;
 };
@@ -72,6 +74,7 @@ class Core {
   void clear_faults();
 
   const WayRecord &record(int way_index) const { return records_[way_index]; }
+  const EnergyRecord &energy(int way_index) const { return energy_[way_index]; }
   // "None", or the unzeroed ways, e.g. "Not zeroed: 3, 7".
   std::string not_zeroed() const;
 
@@ -96,12 +99,18 @@ class Core {
   bool due_(Published &last, uint32_t now_ms, bool changed);
   bool track_zero_(int way_index, const Sweep &sweep, float out_mv);
   void save_(int way_index);
+  void integrate_energy_(Readings &r, uint32_t now_ms);
   void update_faults_(uint32_t now_ms);
 
   Storage *storage_{nullptr};
   bool live_[WAYS]{};
   Zeroing zeroing_[WAYS];
   WayRecord records_[WAYS];
+  EnergyRecord energy_[WAYS];
+  // The part of a mWs each way's total hasn't taken yet, carried to the next sweep.
+  double energy_carry_mws_[WAYS]{};
+  bool swept_{false};
+  uint32_t last_sweep_ms_{0};
   // When each way last turned live or dead.
   uint32_t changed_at_ms_[WAYS]{};
   // Whether each way has been live since boot, Clear faults or a No supply period. A dead way

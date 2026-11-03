@@ -26,6 +26,7 @@ class FakeStorage : public Storage {
     records[id(key)] = bytes;
     saves++;
   }
+  void stage(RecordKey, const RecordBytes &) override {}
   void put_way(int way, const WayRecord &record) { records[id({RECORD_WAY, way - 1})] = encode(record); }
   bool has_way(int way) { return records.count(id({RECORD_WAY, way - 1})) > 0; }
   WayRecord way(int way) { return decode_way(records.at(id({RECORD_WAY, way - 1}))); }

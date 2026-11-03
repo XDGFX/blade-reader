@@ -45,4 +45,7 @@ constexpr float TEMPERATURE_STEP_C = 1.0f;
 constexpr uint32_t ZERO_DEAD_MS = 5000;
 constexpr uint32_t ZERO_MEAN_MS = 10000;
 
+// Energy totals are kept in mWs and published in Wh.
+constexpr double MWS_PER_WH = 3600.0 * 1000.0;
+
 }  // namespace blade_core

@@ -21,18 +21,21 @@ from esphome.const import (
     CONF_NAME,
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_DURATION,
+    DEVICE_CLASS_ENERGY,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_PROBLEM,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
     ENTITY_CATEGORY_DIAGNOSTIC,
     STATE_CLASS_MEASUREMENT,
+    STATE_CLASS_TOTAL,
     UNIT_AMPERE,
     UNIT_CELSIUS,
     UNIT_MILLIVOLT,
     UNIT_SECOND,
     UNIT_VOLT,
     UNIT_WATT,
+    UNIT_WATT_HOURS,
 )
 
 AUTO_LOAD = ["binary_sensor", "button", "sensor", "text_sensor", "voltage_sampler"]
@@ -92,6 +95,13 @@ VOLTAGE = sensor.sensor_schema(
     accuracy_decimals=2,
     device_class=DEVICE_CLASS_VOLTAGE,
     state_class=STATE_CLASS_MEASUREMENT,
+)
+# Signed, so it can fall: `total`, not `total_increasing`.
+ENERGY = sensor.sensor_schema(
+    unit_of_measurement=UNIT_WATT_HOURS,
+    accuracy_decimals=3,
+    device_class=DEVICE_CLASS_ENERGY,
+    state_class=STATE_CLASS_TOTAL,
 )
 WAY_VOLTAGE = sensor.sensor_schema(
     unit_of_measurement=UNIT_VOLT,
@@ -164,6 +174,7 @@ def _make_entities(config):
                     {CONF_NAME: f"Way {n} zero time", **HIDDEN_DIAGNOSTIC}
                 ),
                 "blown": BLOWN({CONF_NAME: f"Way {n} blown fuse"}),
+                "energy": ENERGY({CONF_NAME: f"Way {n} energy"}),
             }
         )
     config[CONF_ENTITIES] = {
@@ -239,6 +250,7 @@ async def to_code(config):
         cg.add(
             var.set_blown_sensor(n, await binary_sensor.new_binary_sensor(way["blown"]))
         )
+        cg.add(var.set_energy_sensor(n, await sensor.new_sensor(way["energy"])))
     for key, diode, arm, _ in DIODES:
         temperature = await sensor.new_sensor(entities["diodes"][key])
         cg.add(var.set_diode(diode, arm, config[CONF_DIODES][key], temperature))

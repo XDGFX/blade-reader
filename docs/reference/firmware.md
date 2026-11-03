@@ -1,6 +1,6 @@
 # Firmware
 
-How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, zeros each way when it is dead and keeps the zeros in flash, reads every way against its zero and the nominal gain, follows the publish rule, and raises blown fuses and No supply with the fault text and a steady red LED; install mode, temperature tracking, trims, energy, the other faults and the LED's blinks are still to come.
+How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, zeros each way when it is dead and keeps the zeros in flash, reads every way against its zero and the nominal gain, keeps each way's energy total, follows the publish rule, and raises blown fuses and No supply with the fault text and a steady red LED; install mode, temperature tracking, trims, the other faults and the LED's blinks are still to come.
 
 Terms are as in [`GLOSSARY.md`](../../GLOSSARY.md).
 
@@ -79,7 +79,7 @@ The gain is nominal: 44 mV/A. Each way has a trim, which starts at 1.0. The API 
 
 ## Energy
 
-Each way keeps a signed 64-bit integer total, integrated from V × I on every sweep. It's published in Wh, with `device_class: energy` and `state_class: total`. Being signed, noise around 0 A cancels rather than piling up. ([#111](https://github.com/XDGFX/blade-reader/issues/111))
+Each way keeps a signed 64-bit integer total in mWs, integrated from V × I on every sweep. It's published in Wh, with `device_class: energy` and `state_class: total`, alongside the way's current and power. Being signed, noise around 0 A cancels rather than piling up; being an integer, a large total still gains a standby-sized sweep. `dump_state` logs each total in mWs. ([#111](https://github.com/XDGFX/blade-reader/issues/111))
 
 ## Faults
 

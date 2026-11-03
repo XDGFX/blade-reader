@@ -52,7 +52,36 @@ class Payload {
   size_t at_{0};
 };
 
+// Calls on_field(id, version, payload) for each field in order, up to the end marker or the first
+// field that runs past the record's end.
+template<typename F> void each_field(const RecordBytes &bytes, F on_field) {
+  size_t at = 0;
+  while (at + FIELD_HEADER_BYTES <= bytes.size() && bytes[at + FIELD_ID_AT] != 0) {
+    size_t length = bytes[at + FIELD_LENGTH_AT];
+    size_t start = at + FIELD_HEADER_BYTES;
+    if (start + length > bytes.size()) break;
+    Payload payload(&bytes[start], length);
+    on_field(bytes[at + FIELD_ID_AT], bytes[at + FIELD_VERSION_AT], payload);
+    at = start + length;
+  }
+}
+
 }  // namespace
+
+RecordBytes encode(const EnergyRecord &record) {
+  RecordBytes bytes{};
+  Writer(bytes).field(ENERGY_FIELD_TOTAL, ENERGY_TOTAL_FIELD_VERSION, record.mws);
+  return bytes;
+}
+
+EnergyRecord decode_energy(const RecordBytes &bytes) {
+  EnergyRecord record;
+  each_field(bytes, [&record](uint8_t id, uint8_t version, Payload &payload) {
+    int64_t mws;
+    if (id == ENERGY_FIELD_TOTAL && version == ENERGY_TOTAL_FIELD_VERSION && payload.read(mws)) record.mws = mws;
+  });
+  return record;
+}
 
 RecordBytes encode(const WayRecord &record) {
   RecordBytes bytes{};

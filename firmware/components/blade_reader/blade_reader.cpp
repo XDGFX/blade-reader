@@ -29,6 +29,11 @@ void PreferenceStorage::save(blade_core::RecordKey key, const blade_core::Record
     ESP_LOGW(TAG, "Couldn't write record %u for way %d", key.kind, key.way_index + 1);
 }
 
+void PreferenceStorage::stage(blade_core::RecordKey key, const blade_core::RecordBytes &bytes) {
+  if (!this->preference_(key).save(bytes.data(), bytes.size()))
+    ESP_LOGW(TAG, "Couldn't stage record %u for way %d", key.kind, key.way_index + 1);
+}
+
 void BladeReader::set_way(uint8_t way, uint8_t sense_channel, uint8_t voltage_channel, sensor::Sensor *current,
                           sensor::Sensor *power, sensor::Sensor *voltage) {
   Arm arm = way % 2 == 1 ? ODD_ARM : EVEN_ARM;
@@ -112,6 +117,7 @@ void BladeReader::publish_(const blade_core::Readings &r) {
     way.current->publish_state(reading.current_a);
     way.power->publish_state(reading.power_w);
     way.voltage_sensor->publish_state(reading.voltage_v);
+    this->energy_[w]->publish_state(reading.energy_wh);
   }
 
   // Faults go out as soon as they change; the binary sensors drop repeats themselves.
@@ -141,6 +147,7 @@ void BladeReader::publish_zero_(int w) {
 
 void BladeReader::dump_state() {
   for (int w = 0; w < blade_core::WAYS; w++) {
+    ESP_LOGI(TAG, "Way %d: energy %" PRId64 " mWs", w + 1, this->core_.energy(w).mws);
     const blade_core::Zero &zero = this->core_.record(w).zero;
     if (!zero.taken) {
       ESP_LOGI(TAG, "Way %d: not zeroed", w + 1);

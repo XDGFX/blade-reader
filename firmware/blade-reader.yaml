@@ -21,6 +21,11 @@ esp32:
   framework:
     type: esp-idf
 
+# Energy totals are written on this batch and before a reboot or OTA update, so power loss or a
+# crash loses up to 5 minutes of energy. Zeros are written as soon as they change.
+preferences:
+  flash_write_interval: 5min
+
 external_components:
   - source:
       type: local

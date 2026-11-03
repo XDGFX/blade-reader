@@ -10,7 +10,7 @@
 namespace blade_core {
 
 // Each kind of record has one per way. A new kind is a new entry here, with its own codec.
-enum RecordKind : uint8_t { RECORD_WAY, RECORD_KINDS };
+enum RecordKind : uint8_t { RECORD_WAY, RECORD_ENERGY, RECORD_KINDS };
 
 struct RecordKey {
   RecordKind kind;
@@ -28,6 +28,9 @@ class Storage {
   virtual bool load(RecordKey key, RecordBytes &bytes) = 0;
   // Writes the record to flash at once.
   virtual void save(RecordKey key, const RecordBytes &bytes) = 0;
+  // Keeps the record for the next batch write, every 5 minutes and before a reboot or OTA
+  // update. Staging it again before then replaces it.
+  virtual void stage(RecordKey key, const RecordBytes &bytes) = 0;
 };
 
 }  // namespace blade_core
