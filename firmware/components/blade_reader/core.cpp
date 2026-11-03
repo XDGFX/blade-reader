@@ -118,7 +118,7 @@ Readings Core::on_sweep(const Sweep &sweep) {
   update_install_mode_(sweep.now_ms);
   LedCauses causes{false, faults_.any(), false};
   for (int w = 0; w < WAYS; w++) {
-    causes.zeroing |= zeroing_[w].samples > 0 && !zeroing_[w].done;
+    causes.zeroing |= zeroing_[w].samples > 0;
     causes.install_blink |= install_mode_ && live_[w] && !records_[w].zero.taken;
   }
   r.led = led_for(causes);
@@ -149,7 +149,7 @@ Readings Core::on_sweep(const Sweep &sweep) {
   return r;
 }
 
-// One zero per dead spell: a way that stays dead isn't zeroed again until it has been live.
+// A zero ZERO_DEAD_MS into each dead spell, then every REZERO_EVERY_MS while the way stays dead.
 // True on the sweep that takes a zero.
 bool Core::track_zero_(int w, const Sweep &sweep, float out_mv) {
   Zeroing &z = zeroing_[w];
@@ -161,18 +161,23 @@ bool Core::track_zero_(int w, const Sweep &sweep, float out_mv) {
     z.dead = true;
     z.since_ms = sweep.now_ms;
   }
-  if (z.done) return false;
-  uint32_t dead_ms = sweep.now_ms - z.since_ms;
-  if (dead_ms < ZERO_DEAD_MS) return false;
-  if (dead_ms < ZERO_DEAD_MS + ZERO_MEAN_MS) {
+  uint32_t waited_ms = sweep.now_ms - z.since_ms;
+  if (waited_ms < z.wait_ms) return false;
+  if (waited_ms < z.wait_ms + ZERO_MEAN_MS) {
     z.samples++;
     z.sum_mv += out_mv;
     z.sum_vbe_mv += vbe_mv_;
     return false;
   }
-  z.done = true;
-  if (z.samples == 0) return false;
-  Zero taken{true, float(z.sum_mv / z.samples), float(z.sum_vbe_mv / z.samples), sweep.now_ms / 1000};
+  int samples = z.samples;
+  double sum_mv = z.sum_mv, sum_vbe_mv = z.sum_vbe_mv;
+  // The next zero lands REZERO_EVERY_MS after this one.
+  z.since_ms = sweep.now_ms;
+  z.wait_ms = REZERO_EVERY_MS - ZERO_MEAN_MS;
+  z.samples = 0;
+  z.sum_mv = z.sum_vbe_mv = 0;
+  if (samples == 0) return false;
+  Zero taken{true, float(sum_mv / samples), float(sum_vbe_mv / samples), sweep.now_ms / 1000};
   self_checks_[w] = learn_tempco_(w, taken);
   records_[w].zero = taken;
   save_(w);

@@ -48,7 +48,7 @@ An unzeroed way uses the nominal 1.65 V zero with no tempco.
 - **Rule:** a way that is dead for 5 s, then the mean of the next 10 s (about 70 sweeps). If the way goes live part-way, the attempt is dropped and the old zero kept. The rule is the same at install and in service. ([#113](https://github.com/XDGFX/blade-reader/issues/113))
 - Ways re-zero only when dead, never when they merely sit steady near 0 A, which would hide a standby drain.
 - The new zero, the smoothed Vbe at that moment, and when it was taken replace the stored ones and are written to flash at once.
-- A way zeros once per dead spell: one that stays dead isn't zeroed again until it has been live, which spares the flash.
+- A way zeros 5 s into each dead spell, then every hour it stays dead, by the same rule: the mean of the 10 s before, dropped if the way goes live. The red LED blinks fast for those 10 s. Cal added the hourly re-zero after review of [#117](https://github.com/XDGFX/blade-reader/issues/117), replacing one zero per dead spell, so an empty way keeps up with drift; each is one flash write.
 - To redo one way, pull its fuse for 15 s.
 
 ### Install mode

@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "doctest.h"
 
 #include "support.h"
@@ -62,4 +64,23 @@ TEST_CASE("a way that goes live part-way through keeps its old zero") {
 TEST_CASE("an unzeroed way reads against the nominal zero") {
   Core core;
   CHECK(way_1_live_current_a(core, 0) == doctest::Approx(NOMINAL_READING_A));
+}
+
+TEST_CASE("a way that stays dead re-zeros every REZERO_EVERY_MS, by the same mean") {
+  Core core;
+  Sweep s = dead_sweep(0);
+  std::vector<uint32_t> zeroed_at_ms;
+  for (uint32_t t = 0; t <= ZERO_DONE_MS + 2 * REZERO_EVERY_MS + ZERO_MEAN_MS; t += SWEEP_MS) {
+    s.now_ms = t;
+    if (core.on_sweep(s).way[0].new_zero) zeroed_at_ms.push_back(t);
+    // The sensor moves once the first zero is in.
+    if (zeroed_at_ms.size() == 1) s.sense_mv[0] = WAY_1_ZERO_MV + 20.0f;
+  }
+  REQUIRE(zeroed_at_ms.size() == 3);
+  for (size_t i = 1; i < zeroed_at_ms.size(); i++) {
+    CHECK(zeroed_at_ms[i] - zeroed_at_ms[i - 1] == doctest::Approx(REZERO_EVERY_MS).epsilon(double(SWEEP_MS) / REZERO_EVERY_MS));
+  }
+  set_volts(s, 1, 12.0f);
+  s.now_ms += SWEEP_MS;
+  CHECK(core.on_sweep(s).way[0].current_a == doctest::Approx(0.0f).epsilon(0.001));
 }

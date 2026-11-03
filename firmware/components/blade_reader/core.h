@@ -134,11 +134,12 @@ class Core {
     float panel_voltage_v{0}, diode_c[DIODES]{};
   };
 
-  // A way's progress through the zero rule in its current dead spell.
+  // A way's progress through the zero rule in its current dead spell: it waits wait_ms from
+  // since_ms, then takes the mean of the next ZERO_MEAN_MS.
   struct Zeroing {
     bool dead{false};
-    bool done{false};
     uint32_t since_ms{0};
+    uint32_t wait_ms{ZERO_DEAD_MS};
     int samples{0};
     double sum_mv{0}, sum_vbe_mv{0};
   };

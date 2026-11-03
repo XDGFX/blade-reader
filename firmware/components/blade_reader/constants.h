@@ -63,6 +63,8 @@ constexpr float TEMPERATURE_STEP_C = 1.0f;
 // Zero rule: a way dead for ZERO_DEAD_MS takes the mean of the next ZERO_MEAN_MS as its zero.
 constexpr uint32_t ZERO_DEAD_MS = 5000;
 constexpr uint32_t ZERO_MEAN_MS = 10000;
+// A way that stays dead takes a zero this often after its first, by the same mean.
+constexpr uint32_t REZERO_EVERY_MS = 3600000;
 
 // Temperature tracking of the zero. The Vbe it follows is smoothed with this time constant.
 constexpr uint32_t VBE_SMOOTHING_MS = 60000;
