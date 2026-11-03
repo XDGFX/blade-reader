@@ -101,8 +101,9 @@ sensor:
     samples: 16
     update_interval: never
 
-  # Temperature sensors: diode-connected MMBT3904s, Vbe about 0.65 V at 25 °C and −2 mV/°C.
-  # Absolute to ±5–10 °C; good enough to see a hot terminal.
+  # Temperature sensors: diode-connected MMBT3904s, −2 mV/°C. Vbe at 25 °C is 0.59 V as read
+  # through the ADC, from yoke B on the bench at about 30 °C. Absolute to ±5–10 °C; good enough
+  # to see a hot terminal.
   - platform: cd74hc4067
     name: "Chin temperature"
     cd74hc4067_id: mux_odd
@@ -114,7 +115,7 @@ sensor:
     state_class: measurement
     accuracy_decimals: 0
     filters:
-      - lambda: return 25.0f + (0.65f - x) / 0.002f;
+      - lambda: return 25.0f + (0.59f - x) / 0.002f;
   - platform: cd74hc4067
     name: "Odd arm temperature"
     cd74hc4067_id: mux_odd
@@ -126,7 +127,7 @@ sensor:
     state_class: measurement
     accuracy_decimals: 0
     filters:
-      - lambda: return 25.0f + (0.65f - x) / 0.002f;
+      - lambda: return 25.0f + (0.59f - x) / 0.002f;
   - platform: cd74hc4067
     name: "Even arm temperature"
     cd74hc4067_id: mux_even
@@ -138,7 +139,7 @@ sensor:
     state_class: measurement
     accuracy_decimals: 0
     filters:
-      - lambda: return 25.0f + (0.65f - x) / 0.002f;
+      - lambda: return 25.0f + (0.59f - x) / 0.002f;
   - platform: internal_temperature
     name: "ESP32 temperature"
   - platform: wifi_signal
