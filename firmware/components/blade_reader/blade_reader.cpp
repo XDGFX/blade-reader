@@ -11,6 +11,34 @@ namespace esphome::blade_reader {
 
 static const char *const TAG = "blade_reader";
 
+// Every record's preference key is this, plus its kind × 256, plus its way index. Changing it
+// loses every board's stored records.
+static constexpr uint32_t PREFERENCE_KEY_BASE = 0xB1AD0000;
+
+ESPPreferenceObject &PreferenceStorage::preference_(blade_core::RecordKey key) {
+  ESPPreferenceObject &pref = this->preferences_[key.kind][key.way_index];
+  if (!this->made_[key.kind][key.way_index]) {
+    uint32_t id = PREFERENCE_KEY_BASE + key.kind * 256u + key.way_index;
+    pref = global_preferences->make_preference(blade_core::RECORD_BYTES, id, true);
+    this->made_[key.kind][key.way_index] = true;
+  }
+  return pref;
+}
+
+bool PreferenceStorage::load(blade_core::RecordKey key, blade_core::RecordBytes &bytes) {
+  return this->preference_(key).load(bytes.data(), bytes.size());
+}
+
+void PreferenceStorage::save(blade_core::RecordKey key, const blade_core::RecordBytes &bytes) {
+  if (!this->preference_(key).save(bytes.data(), bytes.size()) || !global_preferences->sync())
+    ESP_LOGW(TAG, "Couldn't write record %u for way %d", key.kind, key.way_index + 1);
+}
+
+void PreferenceStorage::stage(blade_core::RecordKey key, const blade_core::RecordBytes &bytes) {
+  if (!this->preference_(key).save(bytes.data(), bytes.size()))
+    ESP_LOGW(TAG, "Couldn't stage record %u for way %d", key.kind, key.way_index + 1);
+}
+
 void BladeReader::set_way(uint8_t way, uint8_t sense_channel, uint8_t voltage_channel, sensor::Sensor *current,
                           sensor::Sensor *power, sensor::Sensor *voltage) {
   Arm arm = way % 2 == 1 ? ODD_ARM : EVEN_ARM;
@@ -50,9 +78,23 @@ void BladeReader::setup() {
   }
   for (GPIOPin *pin : this->select_pins_) pin->setup();
   this->fault_led_->turn_off();
+  this->core_.start(this->storage_);
+  for (int w = 0; w < blade_core::WAYS; w++)
+    this->publish_zero_(w);
+  for (int w = 0; w < blade_core::WAYS; w++)
+    this->gain_trims_[w]->publish_state(this->core_.record(w).gain_trim);
+  this->not_zeroed_->publish_state(this->core_.not_zeroed());
   this->select_(0);
   // The sweep runs continuously, one mux channel a loop, so the loop mustn't idle between them.
   this->high_freq_.start();
+}
+
+void BladeReader::update_fault_led_() {
+  bool lit = blade_core::led_lit(this->led_, millis());
+  if (lit == this->led_lit_)
+    return;
+  this->led_lit_ = lit;
+  this->fault_led_->set_state(lit);
 }
 
 void BladeReader::select_(uint8_t channel) {
@@ -63,6 +105,7 @@ void BladeReader::select_(uint8_t channel) {
 
 // One step a call: once the muxes have settled on a channel, average each arm's ADC and move on.
 void BladeReader::loop() {
+  this->update_fault_led_();
   if (micros() - this->selected_at_us_ < SETTLE_US)
     return;
   for (uint8_t arm = 0; arm < ARMS; arm++)
@@ -110,6 +153,19 @@ blade_core::Sweep BladeReader::collect_(uint32_t now_ms) const {
 }
 
 void BladeReader::publish_(const blade_core::Readings &r) {
+  bool new_zero = false;
+  for (int w = 0; w < blade_core::WAYS; w++) {
+    if (!r.way[w].new_zero)
+      continue;
+    new_zero = true;
+    const blade_core::Zero &zero = this->core_.record(w).zero;
+    ESP_LOGI(TAG, "Way %d zeroed: %+.1f mV from nominal at %.0f °C", w + 1, zero.mv - blade_core::NOMINAL_ZERO_MV,
+             blade_core::diode_c(zero.vbe_mv));
+    this->publish_zero_(w);
+  }
+  if (new_zero)
+    this->not_zeroed_->publish_state(this->core_.not_zeroed());
+
   for (int w = 0; w < blade_core::WAYS; w++) {
     const blade_core::WayReading &reading = r.way[w];
     if (!reading.publish)
@@ -118,6 +174,7 @@ void BladeReader::publish_(const blade_core::Readings &r) {
     way.current->publish_state(reading.current_a);
     way.power->publish_state(reading.power_w);
     way.voltage_sensor->publish_state(reading.voltage_v);
+    this->energy_[w]->publish_state(reading.energy_wh);
   }
 
   // Faults go out as soon as they change; the binary sensors drop repeats themselves.
@@ -126,7 +183,11 @@ void BladeReader::publish_(const blade_core::Readings &r) {
   std::string text = blade_core::fault_text(r.faults);
   if (!this->fault_text_->has_state() || this->fault_text_->state != text)
     this->fault_text_->publish_state(text);
-  this->fault_led_->set_state(r.faults.any());
+  this->led_ = r.led;
+  if (this->core_.install_mode() != this->install_mode_) {
+    this->install_mode_ = this->core_.install_mode();
+    ESP_LOGI(TAG, "Install mode %s", this->install_mode_ ? "on" : "ended");
+  }
 
   if (!r.publish_board)
     return;
@@ -135,6 +196,43 @@ void BladeReader::publish_(const blade_core::Readings &r) {
     this->diodes_[d]->publish_state(r.diode_c[d]);
   for (int i = 0; i < blade_core::SPARES; i++)
     this->spares_[i]->publish_state(r.spare_mv[i]);
+}
+
+void BladeReader::publish_zero_(int w) {
+  const blade_core::Zero &zero = this->core_.record(w).zero;
+  const ZeroEntities &entities = this->zeros_[w];
+  entities.offset->publish_state(zero.taken ? zero.mv - blade_core::NOMINAL_ZERO_MV : NAN);
+  entities.temperature->publish_state(zero.taken ? blade_core::diode_c(zero.vbe_mv) : NAN);
+  entities.time->publish_state(zero.taken ? zero.at_s : NAN);
+}
+
+void BladeReader::set_gain_trim(int way, float trim) {
+  if (way < 1 || way > blade_core::WAYS) {
+    ESP_LOGW(TAG, "set_gain_trim: no way %d; ways are 1 to %d", way, blade_core::WAYS);
+    return;
+  }
+  if (!this->core_.set_gain_trim(way - 1, trim)) {
+    ESP_LOGW(TAG, "set_gain_trim: way %d trim %.4f rejected, outside %.2f to %.2f", way, trim,
+             blade_core::GAIN_TRIM_MIN, blade_core::GAIN_TRIM_MAX);
+    return;
+  }
+  ESP_LOGI(TAG, "Way %d gain trim set to %.4f", way, trim);
+  this->gain_trims_[way - 1]->publish_state(trim);
+}
+
+void BladeReader::dump_state() {
+  for (int w = 0; w < blade_core::WAYS; w++) {
+    ESP_LOGI(TAG, "Way %d: energy %" PRId64 " mWs", w + 1, this->core_.energy(w).mws);
+    ESP_LOGI(TAG, "Way %d: gain trim %.4f", w + 1, this->core_.record(w).gain_trim);
+    const blade_core::Zero &zero = this->core_.record(w).zero;
+    if (!zero.taken) {
+      ESP_LOGI(TAG, "Way %d: not zeroed", w + 1);
+      continue;
+    }
+    ESP_LOGI(TAG, "Way %d: zero %.2f mV (%+.2f from nominal), Vbe %.1f mV (%.0f °C), taken %" PRIu32 " s after boot",
+             w + 1, zero.mv, zero.mv - blade_core::NOMINAL_ZERO_MV, zero.vbe_mv, blade_core::diode_c(zero.vbe_mv),
+             zero.at_s);
+  }
 }
 
 void BladeReader::dump_config() {

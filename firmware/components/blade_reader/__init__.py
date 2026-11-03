@@ -26,17 +26,22 @@ from esphome.const import (
     CONF_RAW,
     CONF_NAME,
     DEVICE_CLASS_CURRENT,
+    DEVICE_CLASS_DURATION,
+    DEVICE_CLASS_ENERGY,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_PROBLEM,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
     ENTITY_CATEGORY_DIAGNOSTIC,
     STATE_CLASS_MEASUREMENT,
+    STATE_CLASS_TOTAL,
     UNIT_AMPERE,
     UNIT_CELSIUS,
     UNIT_MILLIVOLT,
+    UNIT_SECOND,
     UNIT_VOLT,
     UNIT_WATT,
+    UNIT_WATT_HOURS,
 )
 
 AUTO_LOAD = ["binary_sensor", "button", "sensor", "text_sensor"]
@@ -98,6 +103,13 @@ VOLTAGE = sensor.sensor_schema(
     device_class=DEVICE_CLASS_VOLTAGE,
     state_class=STATE_CLASS_MEASUREMENT,
 )
+# Signed, so it can fall: `total`, not `total_increasing`.
+ENERGY = sensor.sensor_schema(
+    unit_of_measurement=UNIT_WATT_HOURS,
+    accuracy_decimals=3,
+    device_class=DEVICE_CLASS_ENERGY,
+    state_class=STATE_CLASS_TOTAL,
+)
 WAY_VOLTAGE = sensor.sensor_schema(
     unit_of_measurement=UNIT_VOLT,
     accuracy_decimals=2,
@@ -119,6 +131,30 @@ SPARE = sensor.sensor_schema(
     entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
 )
 
+ZERO_OFFSET = sensor.sensor_schema(
+    unit_of_measurement=UNIT_MILLIVOLT,
+    accuracy_decimals=1,
+    device_class=DEVICE_CLASS_VOLTAGE,
+    entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+)
+ZERO_TEMPERATURE = sensor.sensor_schema(
+    unit_of_measurement=UNIT_CELSIUS,
+    accuracy_decimals=0,
+    device_class=DEVICE_CLASS_TEMPERATURE,
+    entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+)
+# Seconds since the boot it was taken in, until there is a time source.
+ZERO_TIME = sensor.sensor_schema(
+    unit_of_measurement=UNIT_SECOND,
+    accuracy_decimals=0,
+    device_class=DEVICE_CLASS_DURATION,
+    entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+)
+GAIN_TRIM = sensor.sensor_schema(
+    accuracy_decimals=4,
+    entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+)
+NOT_ZEROED = text_sensor.text_sensor_schema()
 BLOWN = binary_sensor.binary_sensor_schema(device_class=DEVICE_CLASS_PROBLEM)
 FAULT_TEXT = text_sensor.text_sensor_schema()
 CLEAR_FAULTS = button.button_schema(ClearFaultsButton)
@@ -139,12 +175,26 @@ def _make_entities(config):
                 "voltage": WAY_VOLTAGE(
                     {CONF_NAME: f"Way {n} voltage", **HIDDEN_DIAGNOSTIC}
                 ),
+                "zero_offset": ZERO_OFFSET(
+                    {CONF_NAME: f"Way {n} zero", **HIDDEN_DIAGNOSTIC}
+                ),
+                "zero_temperature": ZERO_TEMPERATURE(
+                    {CONF_NAME: f"Way {n} zero temperature", **HIDDEN_DIAGNOSTIC}
+                ),
+                "zero_time": ZERO_TIME(
+                    {CONF_NAME: f"Way {n} zero time", **HIDDEN_DIAGNOSTIC}
+                ),
                 "blown": BLOWN({CONF_NAME: f"Way {n} blown fuse"}),
+                "energy": ENERGY({CONF_NAME: f"Way {n} energy"}),
+                "gain_trim": GAIN_TRIM(
+                    {CONF_NAME: f"Way {n} gain trim", **HIDDEN_DIAGNOSTIC}
+                ),
             }
         )
     config[CONF_ENTITIES] = {
         "ways": ways,
         "panel_voltage": VOLTAGE({CONF_NAME: "Panel voltage"}),
+        "not_zeroed": NOT_ZEROED({CONF_NAME: "Not zeroed"}),
         "fault_text": FAULT_TEXT({CONF_NAME: "Fault text"}),
         "clear_faults": CLEAR_FAULTS({CONF_NAME: "Clear faults"}),
         "diodes": {key: TEMPERATURE({CONF_NAME: name}) for key, _, _, name in DIODES},
@@ -230,7 +280,19 @@ async def to_code(config):
             )
         )
         cg.add(
+            var.set_zero_sensors(
+                n,
+                await sensor.new_sensor(way["zero_offset"]),
+                await sensor.new_sensor(way["zero_temperature"]),
+                await sensor.new_sensor(way["zero_time"]),
+            )
+        )
+        cg.add(
             var.set_blown_sensor(n, await binary_sensor.new_binary_sensor(way["blown"]))
+        )
+        cg.add(var.set_energy_sensor(n, await sensor.new_sensor(way["energy"])))
+        cg.add(
+            var.set_gain_trim_sensor(n, await sensor.new_sensor(way["gain_trim"]))
         )
     for key, diode, arm, _ in DIODES:
         temperature = await sensor.new_sensor(entities["diodes"][key])
@@ -241,6 +303,11 @@ async def to_code(config):
     cg.add(
         var.set_panel_voltage_sensor(
             await sensor.new_sensor(entities["panel_voltage"])
+        )
+    )
+    cg.add(
+        var.set_not_zeroed_text_sensor(
+            await text_sensor.new_text_sensor(entities["not_zeroed"])
         )
     )
     cg.add(

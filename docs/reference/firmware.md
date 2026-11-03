@@ -1,6 +1,6 @@
 # Firmware
 
-How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, reads every way against the nominal zero and gain, and follows the publish rule; zeroing, temperature tracking, trims, energy, faults and the red LED are still to come.
+How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, zeros each way when it is dead and keeps the zeros in flash, reads every way against its zero and the nominal gain times its trim, takes trims over the API, keeps each way's energy total, follows the publish rule, and raises blown fuses and No supply with the fault text, and runs install mode and the red LED in full; temperature tracking and the other faults are still to come.
 
 Terms are as in [`GLOSSARY.md`](../../GLOSSARY.md).
 
@@ -48,6 +48,7 @@ An unzeroed way uses the nominal 1.65 V zero with no tempco.
 - **Rule:** a way that is dead for 5 s, then the mean of the next 10 s (about 70 sweeps). If the way goes live part-way, the attempt is dropped and the old zero kept. The rule is the same at install and in service. ([#113](https://github.com/XDGFX/blade-reader/issues/113))
 - Ways re-zero only when dead, never when they merely sit steady near 0 A, which would hide a standby drain.
 - The new zero, the smoothed Vbe at that moment, and when it was taken replace the stored ones and are written to flash at once.
+- A way zeros once per dead spell: one that stays dead isn't zeroed again until it has been live, which spares the flash.
 - To redo one way, pull its fuse for 15 s.
 
 ### Install mode
@@ -78,7 +79,7 @@ The gain is nominal: 44 mV/A. Each way has a trim, which starts at 1.0. The API 
 
 ## Energy
 
-Each way keeps a signed 64-bit integer total, integrated from V × I on every sweep. It's published in Wh, with `device_class: energy` and `state_class: total`. Being signed, noise around 0 A cancels rather than piling up. ([#111](https://github.com/XDGFX/blade-reader/issues/111))
+Each way keeps a signed 64-bit integer total in mWs, integrated from V × I on every sweep. It's published in Wh, with `device_class: energy` and `state_class: total`, alongside the way's current and power. Being signed, noise around 0 A cancels rather than piling up; being an integer, a large total still gains a standby-sized sweep. `dump_state` logs each total in mWs. ([#111](https://github.com/XDGFX/blade-reader/issues/111))
 
 ## Faults
 

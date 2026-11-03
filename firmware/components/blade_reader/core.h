@@ -7,6 +7,7 @@
 #include <string>
 
 #include "constants.h"
+#include "core_record.h"
 
 namespace blade_core {
 
@@ -31,6 +32,10 @@ struct WayReading {
   float current_a;
   float power_w;
   float voltage_v;
+  // The way's energy total, published with the group.
+  float energy_wh;
+  // This sweep took a new zero, now in the way's record and saved.
+  bool new_zero;
 };
 
 // Each kind of way fault, in the order the fault text lists them within a way.
@@ -51,6 +56,25 @@ struct Faults {
 // `OK`, `No supply`, or every fault joined by `; `, board faults first, then ways ascending.
 std::string fault_text(const Faults &faults);
 
+enum Led { LED_OFF, LED_SLOW_BLINK, LED_STEADY, LED_FAST_BLINK };
+
+// What can light the red LED.
+struct LedCauses {
+  // A zero is being taken on some way.
+  bool zeroing;
+  // Any fault is active.
+  bool fault;
+  // Install mode, and a live way is still unzeroed.
+  bool install_blink;
+};
+
+// The red LED's pattern: the highest-priority cause wins.
+Led led_for(const LedCauses &causes);
+
+// Whether the red LED is lit at now_ms under its pattern. The glue calls it every loop, as a
+// sweep is too slow to time a blink.
+bool led_lit(Led led, uint32_t now_ms);
+
 struct Readings {
   WayReading way[WAYS];
   Faults faults;
@@ -58,16 +82,34 @@ struct Readings {
   float panel_voltage_v;
   float diode_c[DIODES];
   float spare_mv[SPARES];
+  // The red LED's pattern.
+  Led led;
 };
+
+// A diode's temperature from its Vbe.
+inline float diode_c(float vbe_mv) { return 25.0f + (vbe_mv - VBE_AT_25C_MV) / VBE_MV_PER_C; }
 
 class Core {
  public:
   // Set from the YAML.
   void set_over_temperature_c(float c) { over_temperature_c_ = c; }
+  // Loads every way's record and saves through storage from then on. Without it the core starts
+  // with every way unzeroed and keeps nothing.
+  void start(Storage &storage);
   Readings on_sweep(const Sweep &sweep);
   // The Clear faults button: clears every fault, and every dead way becomes empty. A fault whose
   // cause is still present comes back on the next sweep.
   void clear_faults();
+  // Sets a way's gain trim and saves it at once. False, keeping the old trim, if it is outside
+  // GAIN_TRIM_MIN to GAIN_TRIM_MAX.
+  bool set_gain_trim(int way_index, float trim);
+
+  const WayRecord &record(int way_index) const { return records_[way_index]; }
+  const EnergyRecord &energy(int way_index) const { return energy_[way_index]; }
+  // "None", or the unzeroed ways, e.g. "Not zeroed: 3, 7".
+  std::string not_zeroed() const;
+  // Install mode: from boot while any way has no zero, for INSTALL_MODE_MS at most.
+  bool install_mode() const { return install_mode_; }
 
  private:
   // When a group of readings was last published, and the values that decide the next.
@@ -78,12 +120,32 @@ class Core {
     float panel_voltage_v{0}, diode_c[DIODES]{};
   };
 
-  bool due_(Published &last, uint32_t now_ms, bool changed);
+  // A way's progress through the zero rule in its current dead spell.
+  struct Zeroing {
+    bool dead{false};
+    bool done{false};
+    uint32_t since_ms{0};
+    int samples{0};
+    double sum_mv{0}, sum_vbe_mv{0};
+  };
 
+  bool due_(Published &last, uint32_t now_ms, bool changed);
+  bool track_zero_(int way_index, const Sweep &sweep, float out_mv);
+  void save_(int way_index);
+  void integrate_energy_(Readings &r, uint32_t now_ms);
   void update_faults_(const Sweep &sweep, const Readings &r);
+  void update_install_mode_(uint32_t now_ms);
 
   float over_temperature_c_{OVER_TEMPERATURE_C};
+  Storage *storage_{nullptr};
   bool live_[WAYS]{};
+  Zeroing zeroing_[WAYS];
+  WayRecord records_[WAYS];
+  EnergyRecord energy_[WAYS];
+  // The part of a mWs each way's total hasn't taken yet, carried to the next sweep.
+  double energy_carry_mws_[WAYS]{};
+  bool swept_{false};
+  uint32_t last_sweep_ms_{0};
   // When each way last turned live or dead.
   uint32_t changed_at_ms_[WAYS]{};
   // Whether each way has been live since boot, Clear faults or a No supply period. A dead way
@@ -97,6 +159,8 @@ class Core {
   Faults faults_{};
   Published way_published_[WAYS];
   Published board_published_;
+  bool install_mode_{false};
+  bool install_mode_ended_{false};
 };
 
 }  // namespace blade_core

@@ -81,22 +81,54 @@ std::string fault_text(const Faults &faults) {
   return faults.no_supply ? "No supply" : "OK";
 }
 
+Led led_for(const LedCauses &causes) {
+  if (causes.zeroing) return LED_FAST_BLINK;
+  if (causes.fault) return LED_STEADY;
+  if (causes.install_blink) return LED_SLOW_BLINK;
+  return LED_OFF;
+}
+
+bool led_lit(Led led, uint32_t now_ms) {
+  switch (led) {
+    case LED_FAST_BLINK:
+      return now_ms % FAST_BLINK_MS < FAST_BLINK_MS / 2;
+    case LED_SLOW_BLINK:
+      return now_ms % SLOW_BLINK_MS < SLOW_BLINK_MS / 2;
+    case LED_STEADY:
+      return true;
+    case LED_OFF:
+      break;
+  }
+  return false;
+}
+
 Readings Core::on_sweep(const Sweep &sweep) {
   Readings r{};
   for (int w = 0; w < WAYS; w++) {
     WayReading &way = r.way[w];
-    way.current_a = current_a(w, sensor_out_mv(w, sweep.sense_mv[w]), NOMINAL_ZERO_MV);
+    const Zero &zero = records_[w].zero;
+    float out_mv = sensor_out_mv(w, sweep.sense_mv[w]);
+    way.current_a = current_a(w, out_mv, zero.taken ? zero.mv : NOMINAL_ZERO_MV) * records_[w].gain_trim;
     way.voltage_v = sweep.voltage_mv[w] * VOLTAGE_DIVIDER / 1000.0f;
     way.power_w = way.voltage_v * way.current_a;
     bool live = still_live(live_[w], way.voltage_v);
     if (live != live_[w]) changed_at_ms_[w] = sweep.now_ms;
     live_[w] = live;
+    way.new_zero = track_zero_(w, sweep, out_mv);
   }
+  integrate_energy_(r, sweep.now_ms);
   for (int d = 0; d < DIODES; d++) {
-    r.diode_c[d] = 25.0f + (sweep.vbe_mv[d] - VBE_AT_25C_MV) / VBE_MV_PER_C;
+    r.diode_c[d] = diode_c(sweep.vbe_mv[d]);
   }
   update_faults_(sweep, r);
   r.faults = faults_;
+  update_install_mode_(sweep.now_ms);
+  LedCauses causes{false, faults_.any(), false};
+  for (int w = 0; w < WAYS; w++) {
+    causes.zeroing |= zeroing_[w].samples > 0 && !zeroing_[w].done;
+    causes.install_blink |= install_mode_ && live_[w] && !records_[w].zero.taken;
+  }
+  r.led = led_for(causes);
   r.panel_voltage_v = median_live_voltage_v(r, live_);
   for (int i = 0; i < SPARES; i++) r.spare_mv[i] = sweep.spare_mv[i];
 
@@ -122,6 +154,83 @@ Readings Core::on_sweep(const Sweep &sweep) {
     for (int d = 0; d < DIODES; d++) board_published_.diode_c[d] = r.diode_c[d];
   }
   return r;
+}
+
+// One zero per dead spell: a way that stays dead isn't zeroed again until it has been live.
+// True on the sweep that takes a zero.
+bool Core::track_zero_(int w, const Sweep &sweep, float out_mv) {
+  Zeroing &z = zeroing_[w];
+  if (live_[w]) {
+    z = {};
+    return false;
+  }
+  if (!z.dead) {
+    z.dead = true;
+    z.since_ms = sweep.now_ms;
+  }
+  if (z.done) return false;
+  uint32_t dead_ms = sweep.now_ms - z.since_ms;
+  if (dead_ms < ZERO_DEAD_MS) return false;
+  if (dead_ms < ZERO_DEAD_MS + ZERO_MEAN_MS) {
+    z.samples++;
+    z.sum_mv += out_mv;
+    z.sum_vbe_mv += sweep.vbe_mv[DIODE_EVEN_ARM];
+    return false;
+  }
+  z.done = true;
+  if (z.samples == 0) return false;
+  records_[w].zero = {true, float(z.sum_mv / z.samples), float(z.sum_vbe_mv / z.samples),
+                      sweep.now_ms / 1000};
+  save_(w);
+  return true;
+}
+
+// Each way's power over the time since the last sweep. The first sweep has nothing to span.
+void Core::integrate_energy_(Readings &r, uint32_t now_ms) {
+  uint32_t span_ms = now_ms - last_sweep_ms_;
+  bool first = !swept_;
+  swept_ = true;
+  last_sweep_ms_ = now_ms;
+  for (int w = 0; w < WAYS; w++) {
+    if (!first) {
+      double mws = energy_carry_mws_[w] + double(r.way[w].power_w) * span_ms;
+      int64_t whole = std::llround(mws);
+      energy_[w].mws += whole;
+      energy_carry_mws_[w] = mws - double(whole);
+      if (whole != 0 && storage_ != nullptr) storage_->stage({RECORD_ENERGY, w}, encode(energy_[w]));
+    }
+    r.way[w].energy_wh = float(double(energy_[w].mws) / MWS_PER_WH);
+  }
+}
+
+std::string Core::not_zeroed() const {
+  std::string ways;
+  for (int w = 0; w < WAYS; w++) {
+    if (records_[w].zero.taken) continue;
+    ways += (ways.empty() ? "" : ", ") + std::to_string(w + 1);
+  }
+  return ways.empty() ? "None" : "Not zeroed: " + ways;
+}
+
+void Core::start(Storage &storage) {
+  storage_ = &storage;
+  for (int w = 0; w < WAYS; w++) {
+    RecordBytes bytes;
+    records_[w] = storage.load({RECORD_WAY, w}, bytes) ? decode_way(bytes) : WayRecord{};
+    energy_[w] = storage.load({RECORD_ENERGY, w}, bytes) ? decode_energy(bytes) : EnergyRecord{};
+  }
+}
+
+void Core::save_(int w) {
+  if (storage_ != nullptr) storage_->save({RECORD_WAY, w}, encode(records_[w]));
+}
+
+bool Core::set_gain_trim(int w, float trim) {
+  // Written so NaN fails too.
+  if (!(trim >= GAIN_TRIM_MIN && trim <= GAIN_TRIM_MAX)) return false;
+  records_[w].gain_trim = trim;
+  save_(w);
+  return true;
 }
 
 void Core::clear_faults() {
@@ -176,6 +285,14 @@ void Core::update_faults_(const Sweep &sweep, const Readings &r) {
       faults_.way[w][WAY_BLOWN] = true;
     }
   }
+}
+
+// Once ended it stays ended until the next boot, even when the millisecond clock wraps.
+void Core::update_install_mode_(uint32_t now_ms) {
+  bool any_unzeroed = false;
+  for (const WayRecord &record : records_) any_unzeroed |= !record.zero.taken;
+  if (!any_unzeroed || now_ms >= INSTALL_MODE_MS) install_mode_ended_ = true;
+  install_mode_ = !install_mode_ended_;
 }
 
 bool Core::due_(Published &last, uint32_t now_ms, bool changed) {

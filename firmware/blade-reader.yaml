@@ -21,6 +21,11 @@ esp32:
   framework:
     type: esp-idf
 
+# Energy totals are written on this batch and before a reboot or OTA update, so power loss or a
+# crash loses up to 5 minutes of energy. Zeros are written as soon as they change.
+preferences:
+  flash_write_interval: 5min
+
 external_components:
   - source:
       type: local
@@ -44,6 +49,18 @@ api:
     key: !secret api_key
   # The board runs on its own until Home Assistant connects, so it mustn't reboot without one.
   reboot_timeout: 0s
+  actions:
+    # Logs every way's stored record.
+    - action: dump_state
+      then:
+        - lambda: id(blade).dump_state();
+    # Sets a way's (1 to 12) gain trim, within 0.90 to 1.10, and stores it at once.
+    - action: set_gain_trim
+      variables:
+        way: int
+        trim: float
+      then:
+        - lambda: id(blade).set_gain_trim(way, trim);
 
 # Updates over Wi-Fi, encrypted with the api key above.
 ota:
@@ -102,6 +119,7 @@ sensor:
 # ways on mux 2. The odd arm's sense line falls with load and reaches mux 1 undivided; the even
 # arm's rises with load and is divided by 0.820 before mux 2. Voltages are 100 kΩ over 6.8 kΩ.
 blade_reader:
+  id: blade
   select_pins: [GPIO7, GPIO10, GPIO5, GPIO6]
   odd_arm_adc: adc_odd
   even_arm_adc: adc_even
@@ -129,3 +147,11 @@ blade_reader:
 text_sensor:
   - platform: version
     name: "Firmware"
+
+# Factory reset erases all of the board's flash, blade_reader's zeros with it, so the next boot
+# is in install mode.
+button:
+  - platform: restart
+    name: "Restart"
+  - platform: factory_reset
+    name: "Factory reset"
