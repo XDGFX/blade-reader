@@ -25,6 +25,8 @@ struct Tempco {
   uint8_t samples{0};
   // The latest samples, newest first; only the first `samples` of them are real.
   float recent[TEMPCO_CONFIDENT_SAMPLES]{};
+  // Self-checks in a row on which the tempco did worse than no correction.
+  uint8_t self_check_streak{0};
 
   // The tempco once its latest samples agree, otherwise 0.
   float applied_ma_per_k() const;
@@ -44,8 +46,17 @@ constexpr size_t FIELD_VERSION_AT = 1;
 constexpr size_t FIELD_LENGTH_AT = 2;
 constexpr size_t FIELD_HEADER_BYTES = 3;
 
-enum WayField : uint8_t { WAY_FIELD_END = 0, WAY_FIELD_ZERO = 1 };
+enum WayField : uint8_t {
+  WAY_FIELD_END = 0,
+  WAY_FIELD_ZERO = 1,
+  WAY_FIELD_TEMPCO = 2,
+  WAY_FIELD_TEMPCO_SAMPLES = 3,
+  WAY_FIELD_SELF_CHECK = 4,
+};
 constexpr uint8_t ZERO_FIELD_VERSION = 1;
+constexpr uint8_t TEMPCO_FIELD_VERSION = 1;
+constexpr uint8_t TEMPCO_SAMPLES_FIELD_VERSION = 1;
+constexpr uint8_t SELF_CHECK_FIELD_VERSION = 1;
 
 RecordBytes encode(const WayRecord &record);
 WayRecord decode_way(const RecordBytes &bytes);

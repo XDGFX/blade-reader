@@ -60,5 +60,9 @@ constexpr float TEMPCO_LIMIT_MA_PER_K = 5.0f;
 // TEMPCO_AGREE_MA_PER_K of each other; until then 0 is.
 constexpr int TEMPCO_CONFIDENT_SAMPLES = 3;
 constexpr float TEMPCO_AGREE_MA_PER_K = 2.0f;
+// A re-zero this far from the stored zero's temperature checks the tempco's prediction. This
+// many checks in a row worse than no correction reset the tempco and its sample count.
+constexpr float SELF_CHECK_MIN_K = 3.0f;
+constexpr int SELF_CHECK_RESET_AFTER = 2;
 
 }  // namespace blade_core

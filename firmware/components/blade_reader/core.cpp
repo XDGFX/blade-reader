@@ -78,6 +78,7 @@ Readings Core::on_sweep(const Sweep &sweep) {
     if (live != live_[w]) changed_at_ms_[w] = sweep.now_ms;
     live_[w] = live;
     way.new_zero = track_zero_(w, sweep, out_mv);
+    if (way.new_zero) way.self_check = self_checks_[w];
   }
   update_faults_(sweep.now_ms);
   r.faults = faults_;
@@ -135,7 +136,7 @@ bool Core::track_zero_(int w, const Sweep &sweep, float out_mv) {
   z.done = true;
   if (z.samples == 0) return false;
   Zero taken{true, float(z.sum_mv / z.samples), float(z.sum_vbe_mv / z.samples), sweep.now_ms / 1000};
-  learn_tempco_(w, taken);
+  self_checks_[w] = learn_tempco_(w, taken);
   records_[w].zero = taken;
   save_(w);
   return true;
@@ -164,19 +165,32 @@ float Core::zero_now_mv_(int w) const {
   return record.zero.mv + record.tempco.applied_ma_per_k() * k * GAIN_MV_PER_A / 1000.0f;
 }
 
-// A re-zero far enough in temperature from the stored zero is a sample of the way's tempco.
-void Core::learn_tempco_(int w, const Zero &taken) {
+bool SelfCheck::worse() const {
+  return std::fabs(measured_mv - predicted_mv) > std::fabs(measured_mv - uncorrected_mv);
+}
+
+// A re-zero far enough in temperature from the stored zero checks the tempco's prediction, and
+// further still is a sample of it. Two checks in a row worse than no correction reset it.
+SelfCheck Core::learn_tempco_(int w, const Zero &taken) {
   const Zero &stored = records_[w].zero;
-  if (!stored.taken) return;
+  if (!stored.taken) return {};
   float k = (taken.vbe_mv - stored.vbe_mv) / VBE_MV_PER_C;
-  if (std::fabs(k) < TEMPCO_SAMPLE_MIN_K) return;
   Tempco &tempco = records_[w].tempco;
+  SelfCheck check{};
+  if (std::fabs(k) >= SELF_CHECK_MIN_K) {
+    float predicted_mv = stored.mv + tempco.ma_per_k * k * GAIN_MV_PER_A / 1000.0f;
+    check = {true, k, taken.mv, predicted_mv, stored.mv};
+    tempco.self_check_streak = check.worse() ? tempco.self_check_streak + 1 : 0;
+    if (tempco.self_check_streak >= SELF_CHECK_RESET_AFTER) tempco = {};
+  }
+  if (std::fabs(k) < TEMPCO_SAMPLE_MIN_K) return check;
   float sample = (taken.mv - stored.mv) / k / GAIN_MV_PER_A * 1000.0f;
   float blended = tempco.ma_per_k + TEMPCO_BLEND * (sample - tempco.ma_per_k);
   tempco.ma_per_k = std::fmax(-TEMPCO_LIMIT_MA_PER_K, std::fmin(TEMPCO_LIMIT_MA_PER_K, blended));
   for (int i = TEMPCO_CONFIDENT_SAMPLES - 1; i > 0; i--) tempco.recent[i] = tempco.recent[i - 1];
   tempco.recent[0] = sample;
   if (tempco.samples < UINT8_MAX) tempco.samples++;
+  return check;
 }
 
 float Tempco::applied_ma_per_k() const {

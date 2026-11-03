@@ -92,6 +92,7 @@ class BladeReader : public Component {
   blade_core::Sweep collect_(uint32_t now_ms) const;
   void publish_(const blade_core::Readings &r);
   void publish_zero_(int way_index);
+  void log_tempco_(int way_index, const blade_core::SelfCheck &check);
 
   GPIOPin *select_pins_[SELECT_BITS]{};
   voltage_sampler::VoltageSampler *adcs_[ARMS]{};
@@ -107,6 +108,8 @@ class BladeReader : public Component {
   text_sensor::TextSensor *not_zeroed_{nullptr};
   binary_sensor::BinarySensor *blown_[blade_core::WAYS]{};
   text_sensor::TextSensor *fault_text_{nullptr};
+  // Each way's tempco as last logged, to log it again only when it changes.
+  blade_core::Tempco logged_tempco_[blade_core::WAYS]{};
 
   // Each mux channel's last averaged reading, in mV at the ADC pin.
   float mv_table_[ARMS][MUX_CHANNELS]{};

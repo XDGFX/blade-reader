@@ -23,6 +23,17 @@ struct Sweep {
   float spare_mv[SPARES];
 };
 
+// A re-zero at least SELF_CHECK_MIN_K from the stored zero checks the tempco: the zero it
+// measured against the one the tempco predicted and the stored one, all in output mV.
+struct SelfCheck {
+  bool done;
+  float k;
+  float measured_mv, predicted_mv, uncorrected_mv;
+
+  // The tempco did worse than no correction.
+  bool worse() const;
+};
+
 // What one sweep works out. The glue publishes a group only when its publish flag is set, and
 // then every reading in it, so current and power always go together.
 struct WayReading {
@@ -32,6 +43,8 @@ struct WayReading {
   float voltage_v;
   // This sweep took a new zero, now in the way's record and saved.
   bool new_zero;
+  // The self-check this sweep's new zero made, if any.
+  SelfCheck self_check;
 };
 
 // Each kind of way fault, in the order the fault text lists them within a way.
@@ -95,7 +108,7 @@ class Core {
 
   bool due_(Published &last, uint32_t now_ms, bool changed);
   bool track_zero_(int way_index, const Sweep &sweep, float out_mv);
-  void learn_tempco_(int way_index, const Zero &taken);
+  SelfCheck learn_tempco_(int way_index, const Zero &taken);
   void track_vbe_(const Sweep &sweep);
   float zero_now_mv_(int way_index) const;
   void save_(int way_index);
@@ -109,6 +122,8 @@ class Core {
   double vbe_mv_{0};
   bool vbe_tracked_{false};
   uint32_t vbe_at_ms_{0};
+  // The self-check each way's latest zero made.
+  SelfCheck self_checks_[WAYS]{};
   // When each way last turned live or dead.
   uint32_t changed_at_ms_[WAYS]{};
   // Whether each way has been live since boot, Clear faults or a No supply period. A dead way

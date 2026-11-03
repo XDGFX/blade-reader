@@ -60,6 +60,10 @@ RecordBytes encode(const WayRecord &record) {
   if (record.zero.taken) {
     out.field(WAY_FIELD_ZERO, ZERO_FIELD_VERSION, record.zero.mv, record.zero.vbe_mv, record.zero.at_s);
   }
+  const Tempco &tempco = record.tempco;
+  out.field(WAY_FIELD_TEMPCO, TEMPCO_FIELD_VERSION, tempco.ma_per_k);
+  out.field(WAY_FIELD_TEMPCO_SAMPLES, TEMPCO_SAMPLES_FIELD_VERSION, tempco.samples, tempco.recent);
+  out.field(WAY_FIELD_SELF_CHECK, SELF_CHECK_FIELD_VERSION, tempco.self_check_streak);
   return bytes;
 }
 
@@ -77,6 +81,22 @@ WayRecord decode_way(const RecordBytes &bytes) {
       Zero zero;
       zero.taken = payload.read(zero.mv, zero.vbe_mv, zero.at_s);
       if (zero.taken) record.zero = zero;
+    }
+    Tempco &tempco = record.tempco;
+    if (id == WAY_FIELD_TEMPCO && version == TEMPCO_FIELD_VERSION) {
+      float ma_per_k;
+      if (payload.read(ma_per_k)) tempco.ma_per_k = ma_per_k;
+    }
+    if (id == WAY_FIELD_TEMPCO_SAMPLES && version == TEMPCO_SAMPLES_FIELD_VERSION) {
+      Tempco read;
+      if (payload.read(read.samples, read.recent)) {
+        tempco.samples = read.samples;
+        std::memcpy(tempco.recent, read.recent, sizeof(tempco.recent));
+      }
+    }
+    if (id == WAY_FIELD_SELF_CHECK && version == SELF_CHECK_FIELD_VERSION) {
+      uint8_t streak;
+      if (payload.read(streak)) tempco.self_check_streak = streak;
     }
     at = start + length;
   }

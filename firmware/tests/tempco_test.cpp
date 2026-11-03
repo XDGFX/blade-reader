@@ -154,3 +154,39 @@ TEST_CASE("the chin's diode stands in when the even arm's Vbe is out of range") 
   float after_a = b.run(hot, SETTLE_MS).way[0].current_a;
   CHECK(after_a == doctest::Approx(LEARNT_MA_PER_K * 10.0f / 1000.0f).scale(0).epsilon(0.01));
 }
+
+TEST_CASE("a re-zero 3 K or more from the stored zero checks the tempco's prediction") {
+  Bench b;
+  b.rezero(25.0f, NOMINAL_ZERO_MV);
+  float zero_mv = NOMINAL_ZERO_MV + drift_mv(2.0f, 11.0f);
+  b.rezero(36.0f, zero_mv);
+  REQUIRE(b.core.record(0).tempco.ma_per_k == doctest::Approx(0.5f));
+
+  SUBCASE("logged with ΔT and the measured, predicted and uncorrected zeros") {
+    float measured_mv = zero_mv + drift_mv(2.0f, -5.0f);
+    SelfCheck check = b.rezero(31.0f, measured_mv).self_check;
+    CHECK(check.done);
+    CHECK(check.k == doctest::Approx(-5.0f).epsilon(0.001));
+    CHECK(check.measured_mv == doctest::Approx(measured_mv));
+    CHECK(check.predicted_mv == doctest::Approx(zero_mv + drift_mv(0.5f, -5.0f)));
+    CHECK(check.uncorrected_mv == doctest::Approx(zero_mv));
+  }
+  SUBCASE("not under 3 K") { CHECK_FALSE(b.rezero(34.0f, zero_mv).self_check.done); }
+  SUBCASE("2 worse than no correction in a row reset the tempco and its count") {
+    // Zeros that drift against the tempco, 5 K down and back up.
+    b.rezero(31.0f, zero_mv + drift_mv(-2.0f, -5.0f));
+    CHECK(b.core.record(0).tempco.self_check_streak == 1);
+    CHECK(b.core.record(0).tempco.samples == 1);
+    SUBCASE("the second resets") {
+      b.rezero(36.0f, zero_mv);
+      CHECK(b.core.record(0).tempco.ma_per_k == 0.0f);
+      CHECK(b.core.record(0).tempco.samples == 0);
+      CHECK(b.core.record(0).tempco.self_check_streak == 0);
+    }
+    SUBCASE("a good check between them ends the streak") {
+      b.rezero(36.0f, zero_mv + drift_mv(-2.0f, -5.0f) + drift_mv(2.0f, 5.0f));
+      CHECK(b.core.record(0).tempco.self_check_streak == 0);
+      CHECK(b.core.record(0).tempco.ma_per_k == doctest::Approx(0.5f));
+    }
+  }
+}

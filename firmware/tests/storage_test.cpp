@@ -150,3 +150,75 @@ TEST_CASE("the sweep that takes a zero flags it, and only that sweep") {
   CHECK(core.record(2).zero.taken);
   CHECK_FALSE(core.on_sweep(dead_sweep(ZERO_DONE_MS)).way[2].new_zero);
 }
+
+namespace {
+
+WayRecord learnt_record() {
+  WayRecord record;
+  record.zero = {true, 1661.5f, 572.25f, 15};
+  record.tempco.ma_per_k = 1.25f;
+  record.tempco.samples = 4;
+  record.tempco.recent[0] = 1.5f;
+  record.tempco.recent[1] = 1.0f;
+  record.tempco.recent[2] = 2.0f;
+  record.tempco.self_check_streak = 1;
+  return record;
+}
+
+// The offset of the first field with this id in a stored record.
+size_t field_at(const RecordBytes &bytes, uint8_t id) {
+  size_t at = 0;
+  while (bytes[at + FIELD_ID_AT] != id) at += FIELD_HEADER_BYTES + bytes[at + FIELD_LENGTH_AT];
+  return at;
+}
+
+}  // namespace
+
+TEST_CASE("a way's tempco, its samples and its self-check streak round-trip through the stored form") {
+  Tempco tempco = decode_way(encode(learnt_record())).tempco;
+  CHECK(tempco.ma_per_k == 1.25f);
+  CHECK(tempco.samples == 4);
+  CHECK(tempco.recent[0] == 1.5f);
+  CHECK(tempco.recent[1] == 1.0f);
+  CHECK(tempco.recent[2] == 2.0f);
+  CHECK(tempco.self_check_streak == 1);
+}
+
+TEST_CASE("a tempco field of another format version resets only that field") {
+  RecordBytes bytes = encode(learnt_record());
+  bytes[field_at(bytes, WAY_FIELD_TEMPCO) + FIELD_VERSION_AT]++;
+  WayRecord record = decode_way(bytes);
+  CHECK(record.tempco.ma_per_k == 0.0f);
+  CHECK(record.tempco.samples == 4);
+  CHECK(record.tempco.self_check_streak == 1);
+  CHECK(record.zero.taken);
+}
+
+TEST_CASE("a stored tempco moves the zero from the first sweep") {
+  FakeStorage storage;
+  WayRecord stored = learnt_record();
+  stored.zero.vbe_mv = 590.0f;
+  storage.put_way(3, stored);
+  Core core;
+  core.start(storage);
+  Sweep s = dead_sweep(0);
+  s.vbe_mv[DIODE_EVEN_ARM] = 570.0f;  // 10 K above the zero
+  s.sense_mv[2] = stored.zero.mv;
+  s.voltage_mv[2] = 12000.0f / VOLTAGE_DIVIDER;
+  CHECK(core.on_sweep(s).way[2].current_a == doctest::Approx(0.0125f).scale(0).epsilon(0.001));
+}
+
+TEST_CASE("the tempco, its count and its streak are saved with the re-zero that changes them") {
+  FakeStorage storage;
+  WayRecord stored;
+  stored.zero = {true, NOMINAL_ZERO_MV + 10.0f, 592.0f, 15};
+  storage.put_way(3, stored);
+  Core core;
+  core.start(storage);
+  // dead_sweep's even arm reads 570 mV, 11 K above the stored zero, and way 3 hasn't drifted.
+  run(core, dead_sweep(0), 0, ZERO_DONE_MS);
+  Tempco saved = storage.way(3).tempco;
+  CHECK(saved.samples == 1);
+  CHECK(saved.ma_per_k == 0.0f);
+  CHECK(saved.self_check_streak == 0);
+}

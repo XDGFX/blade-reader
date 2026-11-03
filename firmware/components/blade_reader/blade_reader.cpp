@@ -49,8 +49,10 @@ void BladeReader::setup() {
   for (GPIOPin *pin : this->select_pins_) pin->setup();
   this->fault_led_->turn_off();
   this->core_.start(this->storage_);
-  for (int w = 0; w < blade_core::WAYS; w++)
+  for (int w = 0; w < blade_core::WAYS; w++) {
     this->publish_zero_(w);
+    this->logged_tempco_[w] = this->core_.record(w).tempco;
+  }
   this->not_zeroed_->publish_state(this->core_.not_zeroed());
   this->select_(0);
   // The sweep runs continuously, one mux channel a loop, so the loop mustn't idle between them.
@@ -100,6 +102,7 @@ void BladeReader::publish_(const blade_core::Readings &r) {
     ESP_LOGI(TAG, "Way %d zeroed: %+.1f mV from nominal at %.0f °C", w + 1, zero.mv - blade_core::NOMINAL_ZERO_MV,
              blade_core::diode_c(zero.vbe_mv));
     this->publish_zero_(w);
+    this->log_tempco_(w, r.way[w].self_check);
   }
   if (new_zero)
     this->not_zeroed_->publish_state(this->core_.not_zeroed());
@@ -139,6 +142,25 @@ void BladeReader::publish_zero_(int w) {
   entities.time->publish_state(zero.taken ? zero.at_s : NAN);
 }
 
+void BladeReader::log_tempco_(int w, const blade_core::SelfCheck &check) {
+  using blade_core::NOMINAL_ZERO_MV;
+  if (check.done) {
+    ESP_LOGI(TAG,
+             "Way %d self-check: ΔT %+.1f K, zero measured %+.2f mV, predicted %+.2f mV, uncorrected %+.2f mV "
+             "from nominal%s",
+             w + 1, check.k, check.measured_mv - NOMINAL_ZERO_MV, check.predicted_mv - NOMINAL_ZERO_MV,
+             check.uncorrected_mv - NOMINAL_ZERO_MV, check.worse() ? ", worse than none" : "");
+  }
+  const blade_core::Tempco &tempco = this->core_.record(w).tempco;
+  blade_core::Tempco &logged = this->logged_tempco_[w];
+  if (tempco.ma_per_k == logged.ma_per_k && tempco.samples == logged.samples &&
+      tempco.self_check_streak == logged.self_check_streak)
+    return;
+  ESP_LOGI(TAG, "Way %d tempco %+.3f mA/K from %u samples, %s; self-check streak %u", w + 1, tempco.ma_per_k,
+           tempco.samples, tempco.applied_ma_per_k() != 0.0f ? "applied" : "not applied", tempco.self_check_streak);
+  logged = tempco;
+}
+
 void BladeReader::dump_state() {
   for (int w = 0; w < blade_core::WAYS; w++) {
     const blade_core::Zero &zero = this->core_.record(w).zero;
@@ -149,6 +171,9 @@ void BladeReader::dump_state() {
     ESP_LOGI(TAG, "Way %d: zero %.2f mV (%+.2f from nominal), Vbe %.1f mV (%.0f °C), taken %" PRIu32 " s after boot",
              w + 1, zero.mv, zero.mv - blade_core::NOMINAL_ZERO_MV, zero.vbe_mv, blade_core::diode_c(zero.vbe_mv),
              zero.at_s);
+    const blade_core::Tempco &tempco = this->core_.record(w).tempco;
+    ESP_LOGI(TAG, "Way %d: tempco %+.3f mA/K from %u samples (applied %+.3f), self-check streak %u", w + 1,
+             tempco.ma_per_k, tempco.samples, tempco.applied_ma_per_k(), tempco.self_check_streak);
   }
 }
 

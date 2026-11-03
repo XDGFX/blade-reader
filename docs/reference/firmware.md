@@ -1,6 +1,6 @@
 # Firmware
 
-How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, zeros each way when it is dead and keeps the zeros in flash, reads every way against its zero and the nominal gain, follows the publish rule, and raises blown fuses and No supply with the fault text and a steady red LED; install mode, temperature tracking, trims, energy, the other faults and the LED's blinks are still to come.
+How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, zeros each way when it is dead and keeps the zeros in flash, tracks each zero with temperature, reads every way against its zero and the nominal gain, follows the publish rule, and raises blown fuses and No supply with the fault text and a steady red LED; install mode, trims, energy, the other faults and the LED's blinks are still to come.
 
 Terms are as in [`GLOSSARY.md`](../../GLOSSARY.md).
 
@@ -140,8 +140,8 @@ Green is ESPHome's `status_led`. ([#113](https://github.com/XDGFX/blade-reader/i
 - **Each way's record** holds the zero, the Vbe at the zero, the zero's time, the tempco and its sample count, the self-check streak and the trim. Each field has a format version.
 - **Energy** has a separate record per way.
 - **When records are written:**
-  - Zeros and trims: as soon as they change.
-  - Tempcos, self-check state and energy: on the 5-minute batch, flushed before a reboot or OTA update.
+  - Zeros and trims: as soon as they change. Tempcos and self-check state change only at a re-zero, so they go with it.
+  - Energy: on the 5-minute batch, flushed before a reboot or OTA update.
   - Power loss or a crash loses up to 5 minutes of energy.
 - **Format changes:** only the changed field resets to its default (no zero, tempco 0, trim 1.0). Energy is untouched. There are no migrations.
 - **Kept and wiped:** stored values survive OTA and USB updates and a move to another panel. Factory reset wipes them, and the next boot is in install mode.
