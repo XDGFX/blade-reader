@@ -30,6 +30,16 @@ blown until its fault is cleared.
 A dead way that is not a fault: dead since start-up, or when faults were last cleared.
 _Avoid_: Unused way, spare
 
+**Zero**:
+A way's sensor reading at no current, taken while the way is dead and subtracted from every
+reading after.
+_Avoid_: Offset, calibration (for the zero alone)
+
+**Install mode**:
+The period after start-up, while any way has no zero, in which the yoke prompts for fuses to be
+pulled or moved until every way has one.
+_Avoid_: Calibration mode, setup mode
+
 ## The yoke
 
 **Yoke**:
