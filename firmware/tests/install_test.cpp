@@ -1,75 +1,13 @@
-#include <map>
 #include <utility>
 
 #include "doctest.h"
 
-#include "constants.h"
-#include "core.h"
-#include "core_storage.h"
+#include "support.h"
 
-using namespace blade_core;
-
-namespace {
-
-constexpr uint32_t SWEEP_MS = 140;
-
-// Flash that outlives a Core, so a second Core started from it is the next boot.
-class Flash : public Storage {
- public:
-  bool load(RecordKey key, RecordBytes &bytes) override {
-    auto it = records.find(id(key));
-    if (it == records.end()) return false;
-    bytes = it->second;
-    return true;
-  }
-  void save(RecordKey key, const RecordBytes &bytes) override { records[id(key)] = bytes; }
-  void stage(RecordKey, const RecordBytes &) override {}
-  // Every way zeroed but the ones listed.
-  void zero_all_but(std::initializer_list<int> unzeroed_ways) {
-    for (int w = 0; w < WAYS; w++) {
-      bool skip = false;
-      for (int way : unzeroed_ways) skip |= way == w + 1;
-      if (!skip) records[id({RECORD_WAY, w})] = encode(WayRecord{{true, NOMINAL_ZERO_MV, 590.0f, 0}});
-    }
-  }
-
-  std::map<int, RecordBytes> records;
-
- private:
-  static int id(RecordKey key) { return key.kind * 256 + key.way_index; }
-};
-
-void set_volts(Sweep &s, int way, float volts) {
-  s.voltage_mv[way - 1] = volts * 1000.0f / VOLTAGE_DIVIDER;
-}
-
-// Every way live at 12 V with no load, so no way zeros.
-Sweep all_live() {
-  Sweep s{};
-  for (int w = 0; w < WAYS; w++) {
-    bool even_arm = (w + 1) % 2 == 0;
-    s.sense_mv[w] = even_arm ? NOMINAL_ZERO_MV * EVEN_ARM_DIVIDER : NOMINAL_ZERO_MV;
-    set_volts(s, w + 1, 12.0f);
-  }
-  for (float &vbe : s.vbe_mv) vbe = 590.0f;
-  return s;
-}
-
-// Feeds the same sweep every SWEEP_MS from `from_ms`, the last at `until_ms`, and returns what the
-// last one worked out.
-Readings run(Core &core, Sweep s, uint32_t from_ms, uint32_t until_ms) {
-  for (uint32_t t = from_ms; t < until_ms; t += SWEEP_MS) {
-    s.now_ms = t;
-    core.on_sweep(s);
-  }
-  s.now_ms = until_ms;
-  return core.on_sweep(s);
-}
-
-}  // namespace
+using namespace blade_test;
 
 TEST_CASE("install mode starts at boot if any way has no zero, and not otherwise") {
-  Flash one_missing, none_missing;
+  FakeStorage one_missing, none_missing;
   one_missing.zero_all_but({7});
   none_missing.zero_all_but({});
   Core a, b;
@@ -82,7 +20,7 @@ TEST_CASE("install mode starts at boot if any way has no zero, and not otherwise
 }
 
 TEST_CASE("install mode ends when every way has a zero") {
-  Flash flash;
+  FakeStorage flash;
   flash.zero_all_but({7});
   Core core;
   core.start(flash);
@@ -91,12 +29,12 @@ TEST_CASE("install mode ends when every way has a zero") {
   run(core, s, 0, ZERO_DEAD_MS);
   CHECK(core.install_mode());
   run(core, s, ZERO_DEAD_MS, ZERO_DEAD_MS + ZERO_MEAN_MS + SWEEP_MS);
-  CHECK(core.record(6).zero.taken);
+  CHECK(core.not_zeroed() == "None");
   CHECK_FALSE(core.install_mode());
 }
 
 TEST_CASE("install mode ends INSTALL_MODE_MS after boot with ways still unzeroed") {
-  Flash flash;
+  FakeStorage flash;
   flash.zero_all_but({7});
   Core core;
   core.start(flash);
@@ -107,7 +45,7 @@ TEST_CASE("install mode ends INSTALL_MODE_MS after boot with ways still unzeroed
 }
 
 TEST_CASE("install mode stays ended when the millisecond clock wraps") {
-  Flash flash;
+  FakeStorage flash;
   flash.zero_all_but({7});
   Core core;
   core.start(flash);
@@ -119,7 +57,7 @@ TEST_CASE("install mode stays ended when the millisecond clock wraps") {
 }
 
 TEST_CASE("install mode returns at the next boot while any way is still unzeroed") {
-  Flash flash;
+  FakeStorage flash;
   flash.zero_all_but({7});
   Core first;
   first.start(flash);
@@ -151,7 +89,7 @@ TEST_CASE("the red LED takes the highest-priority cause: zeroing, then a fault, 
 }
 
 TEST_CASE("the red LED blinks fast while a zero is being taken, and only then") {
-  Flash flash;
+  FakeStorage flash;
   flash.zero_all_but({});
   Core core;
   core.start(flash);
@@ -164,7 +102,7 @@ TEST_CASE("the red LED blinks fast while a zero is being taken, and only then") 
 }
 
 TEST_CASE("the red LED is steady while there is a fault") {
-  Flash flash;
+  FakeStorage flash;
   flash.zero_all_but({});
   Core core;
   core.start(flash);
@@ -175,7 +113,7 @@ TEST_CASE("the red LED is steady while there is a fault") {
 }
 
 TEST_CASE("in install mode the red LED blinks slowly while a live way is unzeroed, not a dead one") {
-  Flash flash;
+  FakeStorage flash;
   flash.zero_all_but({7});
   Core live, dead;
   live.start(flash);
@@ -187,7 +125,7 @@ TEST_CASE("in install mode the red LED blinks slowly while a live way is unzeroe
 }
 
 TEST_CASE("an unzeroed live way doesn't blink the red LED once install mode has ended") {
-  Flash flash;
+  FakeStorage flash;
   flash.zero_all_but({7});
   Core core;
   core.start(flash);

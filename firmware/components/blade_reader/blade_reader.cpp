@@ -204,7 +204,7 @@ void BladeReader::publish_(const blade_core::Readings &r) {
 void BladeReader::publish_zero_(int w) {
   const blade_core::Zero &zero = this->core_.record(w).zero;
   const ZeroEntities &entities = this->zeros_[w];
-  entities.offset->publish_state(zero.taken ? zero.mv - blade_core::NOMINAL_ZERO_MV : NAN);
+  entities.mv->publish_state(zero.taken ? zero.mv - blade_core::NOMINAL_ZERO_MV : NAN);
   entities.temperature->publish_state(zero.taken ? blade_core::diode_c(zero.vbe_mv) : NAN);
   entities.time->publish_state(zero.taken ? zero.at_s : NAN);
 }

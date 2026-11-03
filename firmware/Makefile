@@ -19,6 +19,6 @@ BIN = .build/core_tests
 test: $(BIN)
 	./$(BIN)
 
-$(BIN): $(CORE) $(TESTS) $(wildcard components/blade_reader/*.h) tests/vendor/doctest.h
+$(BIN): $(CORE) $(TESTS) $(wildcard components/blade_reader/*.h) $(wildcard tests/*.h) tests/vendor/doctest.h
 	@mkdir -p .build
 	$(CXX) $(CXXFLAGS) -o $@ $(CORE) $(TESTS)

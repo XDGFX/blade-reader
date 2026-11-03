@@ -1,6 +1,6 @@
 #pragma once
 
-// The blade_reader core: everything the board works out, with no ESPHome or ESP-IDF in it.
+// The blade_reader core: everything the yoke works out, with no ESPHome or ESP-IDF in it.
 // The glue hands it each finished sweep and publishes what it returns.
 
 #include <cstdint>
@@ -55,7 +55,7 @@ struct WayReading {
 enum WayFault { WAY_BLOWN, WAY_OVER_RANGE, WAY_FAULT_KINDS };
 
 struct Faults {
-  // No way is live, so the board is on USB alone. It is not a fault in itself.
+  // No way is live, so the yoke is on USB alone. It is not a fault in itself.
   bool no_supply;
   // The hottest diode has reached the over-temperature threshold.
   bool over_temperature;

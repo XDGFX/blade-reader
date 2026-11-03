@@ -131,7 +131,7 @@ SPARE = sensor.sensor_schema(
     entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
 )
 
-ZERO_OFFSET = sensor.sensor_schema(
+ZERO = sensor.sensor_schema(
     unit_of_measurement=UNIT_MILLIVOLT,
     accuracy_decimals=1,
     device_class=DEVICE_CLASS_VOLTAGE,
@@ -175,7 +175,7 @@ def _make_entities(config):
                 "voltage": WAY_VOLTAGE(
                     {CONF_NAME: f"Way {n} voltage", **HIDDEN_DIAGNOSTIC}
                 ),
-                "zero_offset": ZERO_OFFSET(
+                "zero": ZERO(
                     {CONF_NAME: f"Way {n} zero", **HIDDEN_DIAGNOSTIC}
                 ),
                 "zero_temperature": ZERO_TEMPERATURE(
@@ -282,7 +282,7 @@ async def to_code(config):
         cg.add(
             var.set_zero_sensors(
                 n,
-                await sensor.new_sensor(way["zero_offset"]),
+                await sensor.new_sensor(way["zero"]),
                 await sensor.new_sensor(way["zero_temperature"]),
                 await sensor.new_sensor(way["zero_time"]),
             )

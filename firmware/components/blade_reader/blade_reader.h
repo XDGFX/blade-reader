@@ -70,8 +70,8 @@ class BladeReader : public Component {
   void set_diode(blade_core::Diode diode, Arm arm, uint8_t channel, sensor::Sensor *temperature);
   void set_spare(blade_core::Spare spare, Arm arm, uint8_t channel, sensor::Sensor *level);
   void set_panel_voltage_sensor(sensor::Sensor *s) { this->panel_voltage_ = s; }
-  void set_zero_sensors(uint8_t way, sensor::Sensor *offset, sensor::Sensor *temperature, sensor::Sensor *time) {
-    this->zeros_[way - 1] = {offset, temperature, time};
+  void set_zero_sensors(uint8_t way, sensor::Sensor *mv, sensor::Sensor *temperature, sensor::Sensor *time) {
+    this->zeros_[way - 1] = {mv, temperature, time};
   }
   void set_not_zeroed_text_sensor(text_sensor::TextSensor *s) { this->not_zeroed_ = s; }
 
@@ -91,7 +91,7 @@ class BladeReader : public Component {
  protected:
   // A way's zero, as hidden diagnostics: mV from nominal, its temperature and when it was taken.
   struct ZeroEntities {
-    sensor::Sensor *offset, *temperature, *time;
+    sensor::Sensor *mv, *temperature, *time;
   };
 
   struct Tap {

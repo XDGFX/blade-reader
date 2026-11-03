@@ -43,7 +43,7 @@ constexpr uint32_t OVER_RANGE_CLEARS_AFTER_MS = 5000;
 constexpr float VBE_AT_25C_MV = 590.0f;
 constexpr float VBE_MV_PER_C = -2.0f;
 
-// The board is over temperature once its hottest diode reaches the threshold, which the YAML sets
+// The yoke is over temperature once its hottest diode reaches the threshold, which the YAML sets
 // and which is OVER_TEMPERATURE_C until it does, and clears OVER_TEMPERATURE_CLEARS_K below it.
 constexpr float OVER_TEMPERATURE_C = 85.0f;
 constexpr float OVER_TEMPERATURE_CLEARS_K = 5.0f;

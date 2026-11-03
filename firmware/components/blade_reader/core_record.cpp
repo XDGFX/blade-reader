@@ -83,57 +83,40 @@ EnergyRecord decode_energy(const RecordBytes &bytes) {
   return record;
 }
 
+namespace {
+
+// Every field of a way record, listed once for both directions: visit(id, version, values...) with
+// the record's members that make up the field's payload, in order.
+template<typename Record, typename F> void way_fields(Record &record, F visit) {
+  visit(WAY_FIELD_ZERO, ZERO_FIELD_VERSION, record.zero.mv, record.zero.vbe_mv, record.zero.at_s);
+  visit(WAY_FIELD_GAIN_TRIM, GAIN_TRIM_FIELD_VERSION, record.gain_trim);
+  visit(WAY_FIELD_TEMPCO, TEMPCO_FIELD_VERSION, record.tempco.ma_per_k);
+  visit(WAY_FIELD_TEMPCO_SAMPLES, TEMPCO_SAMPLES_FIELD_VERSION, record.tempco.samples, record.tempco.recent);
+  visit(WAY_FIELD_SELF_CHECK, SELF_CHECK_FIELD_VERSION, record.tempco.self_check_streak);
+}
+
+}  // namespace
+
 RecordBytes encode(const WayRecord &record) {
   RecordBytes bytes{};
   Writer out(bytes);
-  if (record.zero.taken) {
-    out.field(WAY_FIELD_ZERO, ZERO_FIELD_VERSION, record.zero.mv, record.zero.vbe_mv, record.zero.at_s);
-  }
-  out.field(WAY_FIELD_GAIN_TRIM, GAIN_TRIM_FIELD_VERSION, record.gain_trim);
-  const Tempco &tempco = record.tempco;
-  out.field(WAY_FIELD_TEMPCO, TEMPCO_FIELD_VERSION, tempco.ma_per_k);
-  out.field(WAY_FIELD_TEMPCO_SAMPLES, TEMPCO_SAMPLES_FIELD_VERSION, tempco.samples, tempco.recent);
-  out.field(WAY_FIELD_SELF_CHECK, SELF_CHECK_FIELD_VERSION, tempco.self_check_streak);
+  way_fields(record, [&](uint8_t id, uint8_t version, const auto &...values) {
+    // An unzeroed way stores no zero.
+    if (id == WAY_FIELD_ZERO && !record.zero.taken) return;
+    out.field(id, version, values...);
+  });
   return bytes;
 }
 
 WayRecord decode_way(const RecordBytes &bytes) {
   WayRecord record;
-  size_t at = 0;
-  while (at + FIELD_HEADER_BYTES <= bytes.size() && bytes[at + FIELD_ID_AT] != WAY_FIELD_END) {
-    uint8_t id = bytes[at + FIELD_ID_AT];
-    uint8_t version = bytes[at + FIELD_VERSION_AT];
-    size_t length = bytes[at + FIELD_LENGTH_AT];
-    size_t start = at + FIELD_HEADER_BYTES;
-    if (start + length > bytes.size()) break;
-    Payload payload(&bytes[start], length);
-    if (id == WAY_FIELD_ZERO && version == ZERO_FIELD_VERSION) {
-      Zero zero;
-      zero.taken = payload.read(zero.mv, zero.vbe_mv, zero.at_s);
-      if (zero.taken) record.zero = zero;
-    }
-    Tempco &tempco = record.tempco;
-    if (id == WAY_FIELD_TEMPCO && version == TEMPCO_FIELD_VERSION) {
-      float ma_per_k;
-      if (payload.read(ma_per_k)) tempco.ma_per_k = ma_per_k;
-    }
-    if (id == WAY_FIELD_TEMPCO_SAMPLES && version == TEMPCO_SAMPLES_FIELD_VERSION) {
-      Tempco read;
-      if (payload.read(read.samples, read.recent)) {
-        tempco.samples = read.samples;
-        std::memcpy(tempco.recent, read.recent, sizeof(tempco.recent));
-      }
-    }
-    if (id == WAY_FIELD_SELF_CHECK && version == SELF_CHECK_FIELD_VERSION) {
-      uint8_t streak;
-      if (payload.read(streak)) tempco.self_check_streak = streak;
-    }
-    if (id == WAY_FIELD_GAIN_TRIM && version == GAIN_TRIM_FIELD_VERSION) {
-      float trim;
-      if (payload.read(trim)) record.gain_trim = trim;
-    }
-    at = start + length;
-  }
+  each_field(bytes, [&record](uint8_t id, uint8_t version, Payload &payload) {
+    way_fields(record, [&](uint8_t field, uint8_t field_version, auto &...values) {
+      // A payload of the wrong length leaves every value as it was.
+      if (field != id || field_version != version || !payload.read(values...)) return;
+      if (id == WAY_FIELD_ZERO) record.zero.taken = true;
+    });
+  });
   return record;
 }
 

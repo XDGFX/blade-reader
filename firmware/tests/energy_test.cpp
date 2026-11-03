@@ -1,63 +1,20 @@
 #include <cstdlib>
-#include <map>
 
 #include "doctest.h"
 
-#include "constants.h"
-#include "core.h"
-#include "core_storage.h"
+#include "support.h"
 
-using namespace blade_core;
+using namespace blade_test;
 
 namespace {
-
-constexpr uint32_t SWEEP_MS = 140;
-
-// Every way dead with its sensor at the nominal zero.
-Sweep quiet_sweep(uint32_t now_ms) {
-  Sweep s{};
-  s.now_ms = now_ms;
-  for (int w = 0; w < WAYS; w++) {
-    bool even_arm = (w + 1) % 2 == 0;
-    s.sense_mv[w] = even_arm ? NOMINAL_ZERO_MV * EVEN_ARM_DIVIDER : NOMINAL_ZERO_MV;
-  }
-  for (float &vbe : s.vbe_mv) vbe = VBE_AT_25C_MV;
-  return s;
-}
 
 // Way 1 (odd arm, unzeroed) live at 12 V, carrying amps.
 Sweep way_1_sweep(uint32_t now_ms, float amps) {
   Sweep s = quiet_sweep(now_ms);
-  s.voltage_mv[0] = 12000.0f / VOLTAGE_DIVIDER;
-  s.sense_mv[0] = NOMINAL_ZERO_MV - amps * GAIN_MV_PER_A;
+  set_volts(s, 1, 12.0f);
+  set_amps(s, 1, amps);
   return s;
 }
-
-// Flash as the core sees it. A staged record reaches flash on the batch, here sync().
-class FakeStorage : public Storage {
- public:
-  bool load(RecordKey key, RecordBytes &bytes) override {
-    auto it = flash.find(id(key));
-    if (it == flash.end()) return false;
-    bytes = it->second;
-    return true;
-  }
-  void save(RecordKey key, const RecordBytes &bytes) override { flash[id(key)] = bytes; }
-  void stage(RecordKey key, const RecordBytes &bytes) override { staged[id(key)] = bytes; }
-  void sync() {
-    for (auto &[key, bytes] : staged) flash[key] = bytes;
-    staged.clear();
-  }
-
-  void put(RecordKind kind, int way, const RecordBytes &bytes) { flash[id({kind, way - 1})] = bytes; }
-  void put_energy(int way, int64_t mws) { put(RECORD_ENERGY, way, encode(EnergyRecord{mws})); }
-  bool has_energy(int way) { return flash.count(id({RECORD_ENERGY, way - 1})) > 0; }
-
-  std::map<int, RecordBytes> flash, staged;
-
- private:
-  static int id(RecordKey key) { return key.kind * 256 + key.way_index; }
-};
 
 }  // namespace
 
@@ -110,19 +67,17 @@ TEST_CASE("a format change to the way record leaves the energy total untouched")
   WayRecord way;
   way.zero = {true, NOMINAL_ZERO_MV, VBE_AT_25C_MV, 15};
   RecordBytes newer = encode(way);
-  REQUIRE(newer[FIELD_ID_AT] == WAY_FIELD_ZERO);
-  newer[FIELD_VERSION_AT] = ZERO_FIELD_VERSION + 1;
+  newer[field_at(newer, WAY_FIELD_ZERO) + FIELD_VERSION_AT] = ZERO_FIELD_VERSION + 1;
   storage.put(RECORD_WAY, 1, newer);
   storage.put_energy(1, 123456789);
   Core core;
   core.start(storage);
-  CHECK_FALSE(core.record(0).zero.taken);
+  CHECK(core.not_zeroed().find("Not zeroed: 1,") == 0);
   CHECK(core.energy(0).mws == 123456789);
 }
 
 TEST_CASE("an energy total of another format version reads as zero") {
   RecordBytes bytes = encode(EnergyRecord{123456789});
-  REQUIRE(bytes[FIELD_ID_AT] == ENERGY_FIELD_TOTAL);
-  bytes[FIELD_VERSION_AT] = ENERGY_TOTAL_FIELD_VERSION + 1;
+  bytes[field_at(bytes, ENERGY_FIELD_TOTAL) + FIELD_VERSION_AT] = ENERGY_TOTAL_FIELD_VERSION + 1;
   CHECK(decode_energy(bytes).mws == 0);
 }

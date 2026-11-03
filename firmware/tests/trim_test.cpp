@@ -2,22 +2,16 @@
 
 #include "doctest.h"
 
-#include "constants.h"
-#include "core.h"
+#include "support.h"
 
-using namespace blade_core;
+using namespace blade_test;
 
 namespace {
 
 // Every way dead with its sensor at the nominal zero, way 1 (odd arm) at 10 A by the nominal gain.
 Sweep ten_amp_sweep() {
-  Sweep s{};
-  for (int w = 0; w < WAYS; w++) {
-    bool even_arm = (w + 1) % 2 == 0;
-    s.sense_mv[w] = even_arm ? NOMINAL_ZERO_MV * EVEN_ARM_DIVIDER : NOMINAL_ZERO_MV;
-  }
-  s.sense_mv[0] = NOMINAL_ZERO_MV - 440.0f;
-  for (float &vbe : s.vbe_mv) vbe = 590.0f;
+  Sweep s = quiet_sweep();
+  set_amps(s, 1, 10.0f);
   return s;
 }
 
