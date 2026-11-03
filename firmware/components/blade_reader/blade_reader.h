@@ -3,6 +3,10 @@
 // The glue round the core: drives the muxes and ADCs, hands the core each finished sweep and
 // publishes what it returns.
 
+#include <string>
+
+#include "esphome/components/binary_sensor/binary_sensor.h"
+#include "esphome/components/button/button.h"
 #include "esphome/components/output/binary_output.h"
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/text_sensor/text_sensor.h"
@@ -63,6 +67,11 @@ class BladeReader : public Component {
   // Logs every way's stored record.
   void dump_state();
 
+  void set_blown_sensor(uint8_t way, binary_sensor::BinarySensor *s) { this->blown_[way - 1] = s; }
+  void set_fault_text_sensor(text_sensor::TextSensor *s) { this->fault_text_ = s; }
+
+  void clear_faults() { this->core_.clear_faults(); }
+
  protected:
   // A way's zero, as hidden diagnostics: mV from nominal, its temperature and when it was taken.
   struct ZeroEntities {
@@ -96,6 +105,8 @@ class BladeReader : public Component {
   sensor::Sensor *panel_voltage_{nullptr};
   ZeroEntities zeros_[blade_core::WAYS]{};
   text_sensor::TextSensor *not_zeroed_{nullptr};
+  binary_sensor::BinarySensor *blown_[blade_core::WAYS]{};
+  text_sensor::TextSensor *fault_text_{nullptr};
 
   // Each mux channel's last averaged reading, in mV at the ADC pin.
   float mv_table_[ARMS][MUX_CHANNELS]{};
@@ -104,6 +115,11 @@ class BladeReader : public Component {
   HighFrequencyLoopRequester high_freq_;
   PreferenceStorage storage_;
   blade_core::Core core_;
+};
+
+class ClearFaultsButton : public button::Button, public Parented<BladeReader> {
+ protected:
+  void press_action() override { this->parent_->clear_faults(); }
 };
 
 }  // namespace esphome::blade_reader

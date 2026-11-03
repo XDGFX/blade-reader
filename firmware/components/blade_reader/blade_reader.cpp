@@ -113,6 +113,15 @@ void BladeReader::publish_(const blade_core::Readings &r) {
     way.power->publish_state(reading.power_w);
     way.voltage_sensor->publish_state(reading.voltage_v);
   }
+
+  // Faults go out as soon as they change; the binary sensors drop repeats themselves.
+  for (int w = 0; w < blade_core::WAYS; w++)
+    this->blown_[w]->publish_state(r.faults.way[w][blade_core::WAY_BLOWN]);
+  std::string text = blade_core::fault_text(r.faults);
+  if (!this->fault_text_->has_state() || this->fault_text_->state != text)
+    this->fault_text_->publish_state(text);
+  this->fault_led_->set_state(r.faults.any());
+
   if (!r.publish_board)
     return;
   this->panel_voltage_->publish_state(r.panel_voltage_v);

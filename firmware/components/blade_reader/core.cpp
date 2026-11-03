@@ -39,7 +39,31 @@ float median_live_voltage_v(const Readings &r, const bool is_live[WAYS]) {
   return n % 2 == 1 ? live[n / 2] : (live[n / 2 - 1] + live[n / 2]) / 2.0f;
 }
 
+// How the fault text names each kind of way fault, after `Way n `.
+constexpr const char *WAY_FAULT_TEXT[] = {"blown"};
+static_assert(sizeof(WAY_FAULT_TEXT) / sizeof(WAY_FAULT_TEXT[0]) == WAY_FAULT_KINDS,
+              "every way fault needs its text");
+
 }  // namespace
+
+bool Faults::any() const {
+  for (const auto &kinds : way)
+    for (bool fault : kinds)
+      if (fault) return true;
+  return false;
+}
+
+std::string fault_text(const Faults &faults) {
+  if (faults.no_supply) return "No supply";
+  std::string text;
+  auto add = [&text](const std::string &fault) { text += (text.empty() ? "" : "; ") + fault; };
+  for (int w = 0; w < WAYS; w++) {
+    for (int kind = 0; kind < WAY_FAULT_KINDS; kind++) {
+      if (faults.way[w][kind]) add("Way " + std::to_string(w + 1) + " " + WAY_FAULT_TEXT[kind]);
+    }
+  }
+  return text.empty() ? "OK" : text;
+}
 
 Readings Core::on_sweep(const Sweep &sweep) {
   Readings r{};
@@ -50,9 +74,13 @@ Readings Core::on_sweep(const Sweep &sweep) {
     way.current_a = current_a(w, out_mv, zero.taken ? zero.mv : NOMINAL_ZERO_MV);
     way.voltage_v = sweep.voltage_mv[w] * VOLTAGE_DIVIDER / 1000.0f;
     way.power_w = way.voltage_v * way.current_a;
-    live_[w] = still_live(live_[w], way.voltage_v);
+    bool live = still_live(live_[w], way.voltage_v);
+    if (live != live_[w]) changed_at_ms_[w] = sweep.now_ms;
+    live_[w] = live;
     way.new_zero = track_zero_(w, sweep, out_mv);
   }
+  update_faults_(sweep.now_ms);
+  r.faults = faults_;
   r.panel_voltage_v = median_live_voltage_v(r, live_);
   for (int d = 0; d < DIODES; d++) {
     r.diode_c[d] = diode_c(sweep.vbe_mv[d]);
@@ -131,6 +159,36 @@ void Core::start(Storage &storage) {
 
 void Core::save_(int w) {
   if (storage_ != nullptr) storage_->save({RECORD_WAY, w}, encode(records_[w]));
+}
+
+void Core::clear_faults() {
+  for (int w = 0; w < WAYS; w++) {
+    for (bool &fault : faults_.way[w]) fault = false;
+    if (!live_[w]) been_live_[w] = false;
+  }
+}
+
+void Core::update_faults_(uint32_t now_ms) {
+  bool any_live = false;
+  for (bool live : live_) any_live |= live;
+  faults_.no_supply = !any_live;
+  if (faults_.no_supply) {
+    // Starts afresh, as if just booted, when a way comes back.
+    for (int w = 0; w < WAYS; w++) {
+      been_live_[w] = false;
+      faults_.way[w][WAY_BLOWN] = false;
+    }
+    return;
+  }
+  for (int w = 0; w < WAYS; w++) {
+    uint32_t held_ms = now_ms - changed_at_ms_[w];
+    if (live_[w]) {
+      been_live_[w] = true;
+      if (held_ms >= BLOWN_CLEARS_AFTER_MS) faults_.way[w][WAY_BLOWN] = false;
+    } else if (been_live_[w] && held_ms >= BLOWN_AFTER_MS) {
+      faults_.way[w][WAY_BLOWN] = true;
+    }
+  }
 }
 
 bool Core::due_(Published &last, uint32_t now_ms, bool changed) {
