@@ -37,9 +37,12 @@ The thresholds are fixed and suit both 12 V and 24 V. ([#108](https://github.com
 ## Current
 
 ```
-I = (Vout − zero_now) / 44 mV/A × trim
+I = (Vout − zero_now) / 44 mV/A × trim     even ways (2, 4, …, 12)
+I = (zero_now − Vout) / 44 mV/A × trim     odd ways (1, 3, …, 11)
 zero_now = zero + tempco × (Vbe_now − Vbe_at_zero)
 ```
+
+Vout is the sensor's output, after undoing the even arm's 0.820 divider. The odd arm's sensors are fitted reversed, so their output falls as load rises; the even arm's rises. A load reads positive on both arms. The zero, the tempco and the self-check are all in terms of Vout, so the published zero (mV from nominal) and a tempco read the other way round on the odd arm: a zero above nominal there is a negative current offset.
 
 An unzeroed way uses the nominal 1.65 V zero with no tempco.
 
@@ -79,7 +82,7 @@ The gain is nominal: 44 mV/A. Each way has a trim, which starts at 1.0. The API 
 
 ## Energy
 
-Each way keeps a signed 64-bit integer total in mWs, integrated from V × I on every sweep. It's published in Wh, with `device_class: energy` and `state_class: total`, alongside the way's current and power. Being signed, noise around 0 A cancels rather than piling up; being an integer, a large total still gains a standby-sized sweep. `dump_state` logs each total in mWs. ([#111](https://github.com/XDGFX/blade-reader/issues/111))
+Each way keeps a signed 64-bit integer total in mWs, integrated from V × I on every sweep. It's published in Wh, with `device_class: energy` and `state_class: total`, alongside the way's current and power. Being signed, noise around 0 A cancels rather than piling up; being an integer, a large total still gains a standby-sized sweep. `dump_state` logs each total in mWs. A way with no zero adds nothing to its total, though its current and power still publish against the nominal zero; it counts from the sweep after its first zero. Cal decided this after testing on yoke B. ([#111](https://github.com/XDGFX/blade-reader/issues/111))
 
 ## Faults
 

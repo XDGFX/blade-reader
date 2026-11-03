@@ -100,8 +100,10 @@ bool led_lit(Led led, uint32_t now_ms) {
 Readings Core::on_sweep(const Sweep &sweep) {
   Readings r{};
   track_vbe_(sweep);
+  bool zeroed[WAYS];
   for (int w = 0; w < WAYS; w++) {
     WayReading &way = r.way[w];
+    zeroed[w] = records_[w].zero.taken;
     float out_mv = sensor_out_mv(w, sweep.sense_mv[w]);
     way.current_a = current_a(w, out_mv, zero_now_mv_(w)) * records_[w].gain_trim;
     way.voltage_v = sweep.voltage_mv[w] * VOLTAGE_DIVIDER / 1000.0f;
@@ -112,7 +114,7 @@ Readings Core::on_sweep(const Sweep &sweep) {
     way.new_zero = track_zero_(w, sweep, out_mv);
     if (way.new_zero) way.self_check = self_checks_[w];
   }
-  integrate_energy_(r, sweep.now_ms);
+  integrate_energy_(r, zeroed, sweep.now_ms);
   for (int d = 0; d < DIODES; d++) {
     r.diode_c[d] = diode_c(sweep.vbe_mv[d]);
   }
@@ -249,14 +251,15 @@ float Tempco::applied_ma_per_k() const {
   return one_sign && highest - lowest <= TEMPCO_AGREE_MA_PER_K ? ma_per_k : 0.0f;
 }
 
-// Each way's power over the time since the last sweep. The first sweep has nothing to span.
-void Core::integrate_energy_(Readings &r, uint32_t now_ms) {
+// Each way's power over the time since the last sweep. The first sweep has nothing to span, and
+// a way that read against the nominal zero adds nothing.
+void Core::integrate_energy_(Readings &r, const bool zeroed[WAYS], uint32_t now_ms) {
   uint32_t span_ms = now_ms - last_sweep_ms_;
   bool first = !swept_;
   swept_ = true;
   last_sweep_ms_ = now_ms;
   for (int w = 0; w < WAYS; w++) {
-    if (!first) {
+    if (!first && zeroed[w]) {
       double mws = energy_carry_mws_[w] + double(r.way[w].power_w) * span_ms;
       int64_t whole = std::llround(mws);
       energy_[w].mws += whole;

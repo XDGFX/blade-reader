@@ -154,7 +154,8 @@ class Core {
   void track_vbe_(const Sweep &sweep);
   float zero_now_mv_(int way_index) const;
   void save_(int way_index);
-  void integrate_energy_(Readings &r, uint32_t now_ms);
+  // zeroed: each way had a zero when this sweep read it.
+  void integrate_energy_(Readings &r, const bool zeroed[WAYS], uint32_t now_ms);
   void update_faults_(const Sweep &sweep, const Readings &r);
   void update_install_mode_(uint32_t now_ms);
 

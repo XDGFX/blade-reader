@@ -8,7 +8,7 @@ using namespace blade_test;
 
 namespace {
 
-// Way 1 (odd arm, unzeroed) live at 12 V, carrying amps.
+// Way 1 (odd arm) live at 12 V, carrying amps.
 Sweep way_1_sweep(uint32_t now_ms, float amps) {
   Sweep s = quiet_sweep(now_ms);
   set_volts(s, 1, 12.0f);
@@ -16,10 +16,50 @@ Sweep way_1_sweep(uint32_t now_ms, float amps) {
   return s;
 }
 
+// Storage with every way zeroed at the nominal zero, so energy counts from the first sweep.
+FakeStorage zeroed() {
+  FakeStorage storage;
+  storage.zero_all_but({});
+  return storage;
+}
+
 }  // namespace
 
-TEST_CASE("noise around 0 A nets to about zero energy over many sweeps") {
+TEST_CASE("an unzeroed way adds nothing to its energy total, though its power publishes") {
   Core core;
+  Readings r{};
+  for (int i = 0; i <= 100; i++) r = core.on_sweep(way_1_sweep(i * SWEEP_MS, 2.0f));
+  CHECK(r.way[0].power_w == doctest::Approx(24.0f).epsilon(0.001));
+  CHECK(core.energy(0).mws == 0);
+  CHECK(r.way[0].energy_wh == 0.0f);
+}
+
+TEST_CASE("a way's energy counts from the sweep after its first zero") {
+  FakeStorage storage;
+  Core core;
+  core.start(storage);
+  // Way 1 dead at 1.9 V, its sensor 1 A below the nominal zero: power against the nominal zero.
+  Sweep s = quiet_sweep();
+  set_volts(s, 1, 1.9f);
+  set_amps(s, 1, 1.0f);
+  uint32_t t = 0;
+  for (;; t += SWEEP_MS) {
+    s.now_ms = t;
+    if (core.on_sweep(s).way[0].new_zero) break;
+  }
+  // The zeroing sweep read 1 A against the nominal zero, and adds nothing.
+  CHECK(core.energy(0).mws == 0);
+  // 1 A above its zero at 1.9 V for one sweep: 1.9 W × 140 ms is 266 mWs.
+  set_amps(s, 1, 2.0f);
+  s.now_ms = t + SWEEP_MS;
+  core.on_sweep(s);
+  CHECK(core.energy(0).mws == 266);
+}
+
+TEST_CASE("noise around 0 A nets to about zero energy over many sweeps") {
+  FakeStorage storage = zeroed();
+  Core core;
+  core.start(storage);
   for (int i = 0; i < 10000; i++) {
     // ±0.02 A at 12 V is ±34 mWs a sweep.
     core.on_sweep(way_1_sweep(i * SWEEP_MS, i % 2 == 0 ? 0.02f : -0.02f));
@@ -29,7 +69,9 @@ TEST_CASE("noise around 0 A nets to about zero energy over many sweeps") {
 }
 
 TEST_CASE("2 A at 12 V for an hour reads 24 Wh") {
+  FakeStorage storage = zeroed();
   Core core;
+  core.start(storage);
   Readings r{};
   for (uint32_t t = 0; t <= 3600 * 1000; t += SWEEP_MS) r = core.on_sweep(way_1_sweep(t, 2.0f));
   CHECK(r.way[0].energy_wh == doctest::Approx(24.0).epsilon(0.001));
@@ -38,7 +80,7 @@ TEST_CASE("2 A at 12 V for an hour reads 24 Wh") {
 TEST_CASE("a large total still gains a standby-sized sweep") {
   // 10^12 mWs is about 278 kWh, where a float's step is 65 536 mWs.
   constexpr int64_t LARGE_MWS = 1000000000000;
-  FakeStorage storage;
+  FakeStorage storage = zeroed();
   storage.put_energy(1, LARGE_MWS);
   Core core;
   core.start(storage);
@@ -49,7 +91,7 @@ TEST_CASE("a large total still gains a standby-sized sweep") {
 }
 
 TEST_CASE("energy waits for the batch write, and a restart carries on from it") {
-  FakeStorage storage;
+  FakeStorage storage = zeroed();
   Core core;
   core.start(storage);
   for (int i = 0; i <= 1000; i++) core.on_sweep(way_1_sweep(i * SWEEP_MS, 2.0f));
