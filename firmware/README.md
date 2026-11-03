@@ -11,8 +11,11 @@
   give it the same API key. Nothing on the board changes.
 
 The readings are uncalibrated: currents use the CC6905's nominal 44 mV/A and a 1.65 V zero, so
-expect each way to read a few tenths of an amp off at no load. Calibration and automatic
-re-zeroing come later, over Wi-Fi.
+expect each way to read a few tenths of an amp off at no load. The full firmware zeros each way
+whenever it is dead, tracks the zero with temperature, counts energy and raises faults. It's
+specified in [`docs/reference/firmware.md`](../docs/reference/firmware.md) and is built by the
+tickets under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117).
+It arrives as an update over Wi-Fi.
 
 ## First flash from a Mac
 

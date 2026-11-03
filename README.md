@@ -85,6 +85,21 @@ antenna overhangs, and 13.5 mm below the positive end.
    socket or the programming pads on the panel.
 8. **Put the cover back on**, reconnect the battery, and check every torque again after the first
    warm run. The joints clamp FR4, which settles when warm.
+9. **Zero every way (recommended).** Each way needs a zero, read with no current through its
+   finger. The board takes one by itself whenever a way is dead, but a way that is live all the
+   time in service never gets one unless you do this. A board with any way unzeroed starts in
+   install mode, for up to an hour: the red LED blinks slowly while a live way still needs a zero,
+   and blinks fast while a zero is being taken. Don't touch a fuse while it blinks fast.
+   1. Isolate the battery, take out every fuse but one, and reconnect. The other 11 ways zero
+      within about 15 s.
+   2. Zero the way with the fuse, in either of two ways. Refit the other 11 fuses, then pull that
+      one for 15 s and refit it: it shows as a blown fuse until it has been back for 5 s. Or move
+      that one fuse to another way, which turns the board off while it's out, so the way it left
+      zeroes at the next boot; then refit the rest.
+   3. It's done when the board's "Not zeroed" reading says `None` and the red LED stops blinking.
+
+   On the bench, a board on USB with every fuse out zeroes all 12 at once. Zeros survive updates
+   and a move to another panel. To redo one way, pull its fuse for 15 s.
 
 ### Flashing through the programming pads
 
@@ -105,8 +120,9 @@ so a flat lug has to rise by the yoke's 1.6 mm or more: a washer about 2 mm thic
 leaves about 11.9 mm of stud. A lug that steps up from its palm may clear without one; check for
 a visible gap all the way across the chin.
 
-How far the feed's field moves the readings of ways 11 and 12 is not known until a built yoke is
-bench-checked.
+The feed's field moves the reading of whichever way is nearest where the feed leaves the panel,
+by up to about −0.24 A at a 100 A feed. That is way 12 when the feed leaves to the right of the
+chin. The firmware doesn't correct for it.
 
 ### On a 6 circuit panel
 
@@ -137,8 +153,9 @@ on each side. The plate fitted a Blue Sea ST Blade 6 circuit that way, and its c
 | `docs/assets/` | The banner and renders of the board |
 | [`board/`](board/) | The yoke's [tscircuit](https://tscircuit.com) source: placed and routed, with every check passing. Its Gerbers, BOM and CPL are in `board/fab/` |
 
-The first five yokes were ordered assembled from JLCPCB on 2026-10-12. An ESPHome configuration
-will land here when it is made.
+The first five yokes were ordered assembled from JLCPCB on 2026-10-12. The ESPHome configuration
+for the first flash is in [`firmware/`](firmware/). How the full firmware behaves is in
+[`docs/reference/firmware.md`](docs/reference/firmware.md).
 
 ## Licence
 
