@@ -1,0 +1,164 @@
+# Measurement build for yoke B (#106, #107, #62). It reads no ways for Home Assistant.
+#
+# Keeps blade-reader.yaml's name, API key, OTA, safe mode and Wi-Fi, so it updates over Wi-Fi
+# like the normal build. Build it with the same options:
+#   esphome -s name blade-reader-b -s friendly_name "Blade Reader B" run firmware/test/bench-b.yaml
+# Press a button on the web page (or POST /button/<name>/press) and read the "B|" lines with
+# `esphome logs`. See docs/research/2026-11-03-bench-b-adc-and-temperature.md.
+
+substitutions:
+  name: blade-reader-a
+  friendly_name: Blade Reader A
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  includes:
+    - bench.h
+
+esp32:
+  board: esp32-c3-devkitm-1
+  variant: esp32c3
+  flash_size: 4MB
+  framework:
+    type: esp-idf
+
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: ${name} fallback
+    password: !secret fallback_password
+
+captive_portal:
+
+# No reboot after 15 minutes without an API client, so a radio-idle stretch can run longer.
+api:
+  reboot_timeout: 0s
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+    encryption: {}
+
+web_server:
+  port: 80
+  version: 3
+  ota: false
+
+safe_mode:
+
+status_led:
+  pin: GPIO1
+
+output:
+  - platform: gpio
+    id: fault_led_out
+    pin:
+      number: GPIO8
+      inverted: true
+      ignore_strapping_warning: true
+
+light:
+  - platform: binary
+    name: "Fault LED"
+    output: fault_led_out
+    restore_mode: ALWAYS_OFF
+
+sensor:
+  - platform: adc
+    id: adc_odd
+    pin: GPIO4
+    attenuation: 12db
+    samples: 1
+    raw: true
+    update_interval: never
+  - platform: adc
+    id: adc_even
+    pin: GPIO3
+    attenuation: 12db
+    samples: 1
+    raw: true
+    update_interval: never
+  - platform: internal_temperature
+    id: esp_temp
+    name: "ESP32 temperature"
+    update_interval: 10s
+    accuracy_decimals: 2
+  - platform: wifi_signal
+    name: "Wi-Fi signal"
+    update_interval: 60s
+  - platform: template
+    id: chin_v
+    name: "Chin diode"
+    unit_of_measurement: V
+    accuracy_decimals: 4
+    update_interval: never
+  - platform: template
+    id: odd_v
+    name: "Odd arm diode"
+    unit_of_measurement: V
+    accuracy_decimals: 4
+    update_interval: never
+  - platform: template
+    id: even_v
+    name: "Even arm diode"
+    unit_of_measurement: V
+    accuracy_decimals: 4
+    update_interval: never
+
+interval:
+  - interval: 50ms
+    then:
+      - lambda: |-
+          bench::init(id(adc_odd), id(adc_even));
+          bench::tick();
+  - interval: 100ms
+    then:
+      - lambda: |-
+          bench::dump_tick();
+          bench::monitor(id(esp_temp).state);
+  - interval: 10s
+    then:
+      - lambda: |-
+          id(chin_v).publish_state(bench::last_v[0][1]);
+          id(odd_v).publish_state(bench::last_v[0][14]);
+          id(even_v).publish_state(bench::last_v[1][8]);
+
+button:
+  - platform: template
+    name: "Timing"
+    on_press:
+      - lambda: bench::start(bench::TIMING);
+  - platform: template
+    name: "Noise"
+    on_press:
+      - lambda: bench::start(bench::NOISE);
+  - platform: template
+    name: "Settle"
+    on_press:
+      - lambda: bench::start(bench::SETTLE);
+  - platform: template
+    name: "Zero x10"
+    on_press:
+      - lambda: bench::start(bench::ZERO, 10);
+  - platform: template
+    name: "Sweep"
+    on_press:
+      - lambda: bench::start(bench::SWEEP);
+  - platform: template
+    name: "Dump"
+    on_press:
+      - lambda: bench::dump_i = 0;
+  - platform: template
+    name: "Clear"
+    on_press:
+      - lambda: bench::ring_n = 0;
+
+text_sensor:
+  - platform: version
+    name: "Firmware"

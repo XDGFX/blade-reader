@@ -16,6 +16,7 @@ design basis says so; the notes themselves are not rewritten.
 | [`silkscreen-design.md`](silkscreen-design.md) | Silkscreen exemplars, JLC mask colours and fees, tscircuit silk authoring, torque on the finger |
 | [`cable-aperture-sensing.md`](cable-aperture-sensing.md) | Sensing current around each output cable instead of through the board. Not pursued |
 | [`economic-pcba-wifi-mcu.md`](economic-pcba-wifi-mcu.md) | Which Wi-Fi modules and chips JLC places under Economic PCBA, and what each costs the way 1 ear |
+| [`2026-11-03-bench-b-adc-and-temperature.md`](2026-11-03-bench-b-adc-and-temperature.md) | Yoke B on panel B: ADC noise, mux settling, zeros and sweep rate; the temperature diodes with the radio busy; the feed's stray field on ways 11 and 12, and way 7's crosstalk into way 5 |
 | [`usb-socket-edge-and-plug.md`](usb-socket-edge-and-plug.md) | The TYPE-C-31-M-12's datasheet edge line against the socket as placed, the room a USB-C plug needs off the bulkhead, and what the fit scripts need for its stake slots |
 
 "Way monitor" was the working name before the project became Blade Reader.
