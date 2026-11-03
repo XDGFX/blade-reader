@@ -71,7 +71,7 @@ Readings Core::on_sweep(const Sweep &sweep) {
     WayReading &way = r.way[w];
     const Zero &zero = records_[w].zero;
     float out_mv = sensor_out_mv(w, sweep.sense_mv[w]);
-    way.current_a = current_a(w, out_mv, zero.taken ? zero.mv : NOMINAL_ZERO_MV);
+    way.current_a = current_a(w, out_mv, zero.taken ? zero.mv : NOMINAL_ZERO_MV) * records_[w].gain_trim;
     way.voltage_v = sweep.voltage_mv[w] * VOLTAGE_DIVIDER / 1000.0f;
     way.power_w = way.voltage_v * way.current_a;
     bool live = still_live(live_[w], way.voltage_v);
@@ -159,6 +159,14 @@ void Core::start(Storage &storage) {
 
 void Core::save_(int w) {
   if (storage_ != nullptr) storage_->save({RECORD_WAY, w}, encode(records_[w]));
+}
+
+bool Core::set_gain_trim(int w, float trim) {
+  // Written so NaN fails too.
+  if (!(trim >= GAIN_TRIM_MIN && trim <= GAIN_TRIM_MAX)) return false;
+  records_[w].gain_trim = trim;
+  save_(w);
+  return true;
 }
 
 void Core::clear_faults() {

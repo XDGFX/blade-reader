@@ -70,6 +70,9 @@ class Core {
   // The Clear faults button: clears every fault, and every dead way becomes empty. A fault whose
   // cause is still present comes back on the next sweep.
   void clear_faults();
+  // Sets a way's gain trim and saves it at once. False, keeping the old trim, if it is outside
+  // GAIN_TRIM_MIN to GAIN_TRIM_MAX.
+  bool set_gain_trim(int way_index, float trim);
 
   const WayRecord &record(int way_index) const { return records_[way_index]; }
   // "None", or the unzeroed ways, e.g. "Not zeroed: 3, 7".

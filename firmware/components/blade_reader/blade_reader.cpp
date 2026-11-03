@@ -51,6 +51,8 @@ void BladeReader::setup() {
   this->core_.start(this->storage_);
   for (int w = 0; w < blade_core::WAYS; w++)
     this->publish_zero_(w);
+  for (int w = 0; w < blade_core::WAYS; w++)
+    this->gain_trims_[w]->publish_state(this->core_.record(w).gain_trim);
   this->not_zeroed_->publish_state(this->core_.not_zeroed());
   this->select_(0);
   // The sweep runs continuously, one mux channel a loop, so the loop mustn't idle between them.
@@ -139,8 +141,23 @@ void BladeReader::publish_zero_(int w) {
   entities.time->publish_state(zero.taken ? zero.at_s : NAN);
 }
 
+void BladeReader::set_gain_trim(int way, float trim) {
+  if (way < 1 || way > blade_core::WAYS) {
+    ESP_LOGW(TAG, "set_gain_trim: no way %d; ways are 1 to %d", way, blade_core::WAYS);
+    return;
+  }
+  if (!this->core_.set_gain_trim(way - 1, trim)) {
+    ESP_LOGW(TAG, "set_gain_trim: way %d trim %.4f rejected, outside %.2f to %.2f", way, trim,
+             blade_core::GAIN_TRIM_MIN, blade_core::GAIN_TRIM_MAX);
+    return;
+  }
+  ESP_LOGI(TAG, "Way %d gain trim set to %.4f", way, trim);
+  this->gain_trims_[way - 1]->publish_state(trim);
+}
+
 void BladeReader::dump_state() {
   for (int w = 0; w < blade_core::WAYS; w++) {
+    ESP_LOGI(TAG, "Way %d: gain trim %.4f", w + 1, this->core_.record(w).gain_trim);
     const blade_core::Zero &zero = this->core_.record(w).zero;
     if (!zero.taken) {
       ESP_LOGI(TAG, "Way %d: not zeroed", w + 1);
