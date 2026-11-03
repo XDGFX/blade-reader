@@ -1,6 +1,7 @@
 #include "blade_reader.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "esp_adc/adc_cali_scheme.h"
 #include "esp_adc/adc_oneshot.h"
@@ -83,8 +84,13 @@ void BladeReader::setup() {
     this->publish_zero_(w);
     this->logged_tempco_[w] = this->core_.record(w).tempco;
   }
-  for (int w = 0; w < blade_core::WAYS; w++)
+  for (int w = 0; w < blade_core::WAYS; w++) {
+    float rejected = this->core_.rejected_gain_trim(w);
+    if (!std::isnan(rejected))
+      ESP_LOGW(TAG, "Way %d stored gain trim %.4f is outside %.2f to %.2f; using 1.0", w + 1, rejected,
+               blade_core::GAIN_TRIM_MIN, blade_core::GAIN_TRIM_MAX);
     this->gain_trims_[w]->publish_state(this->core_.record(w).gain_trim);
+  }
   this->not_zeroed_->publish_state(this->core_.not_zeroed());
   this->select_(0);
   // The sweep runs continuously, one mux channel a loop, so the loop mustn't idle between them.

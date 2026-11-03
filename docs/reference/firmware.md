@@ -75,7 +75,7 @@ Install mode starts at boot if any way has no zero. It ends when all 12 have one
 
 ## Gain
 
-The gain is nominal: 44 mV/A. Each way has a trim, which starts at 1.0. The API action `set_gain_trim(way, trim)` sets it, rejecting and logging anything outside 0.90–1.10. Nothing on the board or in this repo works the trims out yet. ([#110](https://github.com/XDGFX/blade-reader/issues/110))
+The gain is nominal: 44 mV/A. Each way has a trim, which starts at 1.0. The API action `set_gain_trim(way, trim)` sets it, rejecting and logging anything outside 0.90–1.10. A trim loaded from flash outside that range is logged at boot and the way uses 1.0. Nothing on the board or in this repo works the trims out yet. ([#110](https://github.com/XDGFX/blade-reader/issues/110))
 
 ## Energy
 

@@ -3,6 +3,7 @@
 // The blade_reader core: everything the yoke works out, with no ESPHome or ESP-IDF in it.
 // The glue hands it each finished sweep and publishes what it returns.
 
+#include <cmath>
 #include <cstdint>
 #include <string>
 
@@ -119,6 +120,9 @@ class Core {
   bool set_gain_trim(int way_index, float trim);
 
   const WayRecord &record(int way_index) const { return records_[way_index]; }
+  // A gain trim start() found stored outside GAIN_TRIM_MIN to GAIN_TRIM_MAX, which the way
+  // replaced with 1.0; NaN if there was none. The glue logs it.
+  float rejected_gain_trim(int way_index) const { return gain_trim_rejected_[way_index] ? rejected_gain_trims_[way_index] : NAN; }
   const EnergyRecord &energy(int way_index) const { return energy_[way_index]; }
   // "None", or the unzeroed ways, e.g. "Not zeroed: 3, 7".
   std::string not_zeroed() const;
@@ -159,6 +163,8 @@ class Core {
   bool live_[WAYS]{};
   Zeroing zeroing_[WAYS];
   WayRecord records_[WAYS];
+  bool gain_trim_rejected_[WAYS]{};
+  float rejected_gain_trims_[WAYS]{};
   // The smoothed Vbe that temperature tracking follows.
   double vbe_mv_{0};
   bool vbe_tracked_{false};

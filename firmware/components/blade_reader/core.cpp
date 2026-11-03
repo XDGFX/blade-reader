@@ -19,6 +19,9 @@ float current_a(int way_index, float out_mv, float zero_mv) {
   return rise_mv / GAIN_MV_PER_A;
 }
 
+// Written so NaN fails too.
+bool gain_trim_allowed(float trim) { return trim >= GAIN_TRIM_MIN && trim <= GAIN_TRIM_MAX; }
+
 bool still_live(bool was_live, float voltage_v) {
   if (voltage_v >= LIVE_V) return true;
   if (voltage_v < DEAD_V) return false;
@@ -278,6 +281,11 @@ void Core::start(Storage &storage) {
   for (int w = 0; w < WAYS; w++) {
     RecordBytes bytes;
     records_[w] = storage.load({RECORD_WAY, w}, bytes) ? decode_way(bytes) : WayRecord{};
+    gain_trim_rejected_[w] = !gain_trim_allowed(records_[w].gain_trim);
+    if (gain_trim_rejected_[w]) {
+      rejected_gain_trims_[w] = records_[w].gain_trim;
+      records_[w].gain_trim = WayRecord{}.gain_trim;
+    }
     energy_[w] = storage.load({RECORD_ENERGY, w}, bytes) ? decode_energy(bytes) : EnergyRecord{};
   }
 }
@@ -287,8 +295,7 @@ void Core::save_(int w) {
 }
 
 bool Core::set_gain_trim(int w, float trim) {
-  // Written so NaN fails too.
-  if (!(trim >= GAIN_TRIM_MIN && trim <= GAIN_TRIM_MAX)) return false;
+  if (!gain_trim_allowed(trim)) return false;
   records_[w].gain_trim = trim;
   save_(w);
   return true;

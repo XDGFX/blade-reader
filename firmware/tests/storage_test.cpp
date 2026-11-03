@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "doctest.h"
 
 #include "support.h"
@@ -228,4 +230,21 @@ TEST_CASE("the tempco, its count and its streak are saved with the re-zero that 
   CHECK(saved.samples == 1);
   CHECK(saved.ma_per_k == 0.0f);
   CHECK(saved.self_check_streak == 0);
+}
+
+TEST_CASE("a stored gain trim outside GAIN_TRIM_MIN to GAIN_TRIM_MAX reads as 1.0, and is reported") {
+  FakeStorage storage;
+  WayRecord stored;
+  float bad = GAIN_TRIM_MAX + 0.05f;
+  SUBCASE("too high") {}
+  SUBCASE("too low") { bad = GAIN_TRIM_MIN - 0.05f; }
+  stored.gain_trim = bad;
+  storage.put_way(3, stored);
+  Core core;
+  core.start(storage);
+  Sweep s = dead_sweep(0);
+  set_amps(s, 3, 10.0f);
+  CHECK(core.on_sweep(s).way[2].current_a == doctest::Approx(10.0f));
+  CHECK(core.rejected_gain_trim(2) == bad);
+  CHECK(std::isnan(core.rejected_gain_trim(0)));
 }
