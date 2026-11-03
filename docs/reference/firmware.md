@@ -1,6 +1,6 @@
 # Firmware
 
-How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). Until those tickets land, the first-flash config in [`firmware/`](../../firmware/) does none of this: it reads every way against the nominal zero and gain.
+How the yoke's firmware behaves. The reasoning is in the tickets linked from each section, and the summary is the Firmware and Accuracy rows of [`docs/design.md`](../design.md). It's being built under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117). So far the component in [`firmware/`](../../firmware/) sweeps, zeros each way when it is dead and keeps the zeros in flash, reads every way against its zero and the nominal gain times its trim, tracks each zero with temperature, takes trims over the API, keeps each way's energy total, follows the publish rule, and raises every fault and No supply with the fault text, and runs install mode and the red LED in full.
 
 Terms are as in [`GLOSSARY.md`](../../GLOSSARY.md).
 
@@ -48,6 +48,7 @@ An unzeroed way uses the nominal 1.65 V zero with no tempco.
 - **Rule:** a way that is dead for 5 s, then the mean of the next 10 s (about 70 sweeps). If the way goes live part-way, the attempt is dropped and the old zero kept. The rule is the same at install and in service. ([#113](https://github.com/XDGFX/blade-reader/issues/113))
 - Ways re-zero only when dead, never when they merely sit steady near 0 A, which would hide a standby drain.
 - The new zero, the smoothed Vbe at that moment, and when it was taken replace the stored ones and are written to flash at once.
+- A way zeros 5 s into each dead spell, then every hour it stays dead, by the same rule: the mean of the 10 s before, dropped if the way goes live. The red LED blinks fast for those 10 s. Cal added the hourly re-zero after review of [#117](https://github.com/XDGFX/blade-reader/issues/117), replacing one zero per dead spell, so an empty way keeps up with drift; each is one flash write.
 - To redo one way, pull its fuse for 15 s.
 
 ### Install mode
@@ -74,11 +75,11 @@ Install mode starts at boot if any way has no zero. It ends when all 12 have one
 
 ## Gain
 
-The gain is nominal: 44 mV/A. Each way has a trim, which starts at 1.0. The API action `set_gain_trim(way, trim)` sets it, rejecting and logging anything outside 0.90–1.10. Nothing on the board or in this repo works the trims out yet. ([#110](https://github.com/XDGFX/blade-reader/issues/110))
+The gain is nominal: 44 mV/A. Each way has a trim, which starts at 1.0. The API action `set_gain_trim(way, trim)` sets it, rejecting and logging anything outside 0.90–1.10. A trim loaded from flash outside that range is logged at boot and the way uses 1.0. Nothing on the board or in this repo works the trims out yet. ([#110](https://github.com/XDGFX/blade-reader/issues/110))
 
 ## Energy
 
-Each way keeps a signed 64-bit integer total, integrated from V × I on every sweep. It's published in Wh, with `device_class: energy` and `state_class: total`. Being signed, noise around 0 A cancels rather than piling up. ([#111](https://github.com/XDGFX/blade-reader/issues/111))
+Each way keeps a signed 64-bit integer total in mWs, integrated from V × I on every sweep. It's published in Wh, with `device_class: energy` and `state_class: total`, alongside the way's current and power. Being signed, noise around 0 A cancels rather than piling up; being an integer, a large total still gains a standby-sized sweep. `dump_state` logs each total in mWs. ([#111](https://github.com/XDGFX/blade-reader/issues/111))
 
 ## Faults
 
@@ -92,9 +93,9 @@ No fault latches. Each clears itself once its cause has cleared and held steady.
 
 - A pulled fuse counts as blown. Voltage alone decides.
 - A sensor stuck at a rail clips the ADC, so it shows as over range. A sensor stuck mid-range isn't detected.
-- **No supply:** no way is live, which is only possible on USB. No blown-fuse faults are raised, and the panel voltage reads 0 V. When a way comes back, the board starts afresh as if it had just booted.
+- **No supply:** no way is live, which is only possible on USB. It isn't a fault, so it doesn't light the red LED. No blown-fuse faults are raised, and the panel voltage reads 0 V. When a way comes back, the yoke starts afresh as if it had just booted.
 - **Clear faults** (button): clears every fault, and every dead way becomes an empty way. A fault whose cause is still present comes straight back.
-- **Fault text:** `OK`, `No supply`, or each fault joined by `; `, board faults first, then ways in ascending order. For example: `Over temperature 87 °C; Way 3 blown; Way 9 over range`. It fits in 255 characters.
+- **Fault text:** `OK`, or its parts joined by `; `: `No supply` first, then over temperature, then each kind of way fault with every way that has it, in ascending order. One way reads `Way`, more read `Ways`. For example: `Over temperature 87 °C; Ways 3, 7 blown; Way 9 over range`, or `No supply; Way 9 over range` for a sensor stuck at a rail on USB. Even with every fault raised it fits in Home Assistant's 255 characters, so nothing is cut off. Cal chose the grouping and No supply's place after review of [#117](https://github.com/XDGFX/blade-reader/issues/117), replacing one part per way fault, a bare `No supply` that hid any faults, and a `; …` cut-off.
 
 There are no per-way over-current limits, no 20 A derating when hot, and no panel total on the board. Home Assistant does those.
 
@@ -106,6 +107,8 @@ The component owns the red LED. Highest priority first:
 2. Steady: any fault is active.
 3. Slow blink (about 1 Hz): install mode, and a live way is still unzeroed.
 4. Off.
+
+No supply isn't a fault and has no pattern of its own: on USB alone the red LED is off unless one of the above holds. Cal kept this after review of [#117](https://github.com/XDGFX/blade-reader/issues/117).
 
 Green is ESPHome's `status_led`. ([#113](https://github.com/XDGFX/blade-reader/issues/113))
 
@@ -139,8 +142,8 @@ Green is ESPHome's `status_led`. ([#113](https://github.com/XDGFX/blade-reader/i
 - **Each way's record** holds the zero, the Vbe at the zero, the zero's time, the tempco and its sample count, the self-check streak and the trim. Each field has a format version.
 - **Energy** has a separate record per way.
 - **When records are written:**
-  - Zeros and trims: as soon as they change.
-  - Tempcos, self-check state and energy: on the 5-minute batch, flushed before a reboot or OTA update.
+  - Zeros and trims: as soon as they change. Tempcos and self-check state change only at a re-zero, so they go with it.
+  - Energy: on the 5-minute batch, flushed before a reboot or OTA update.
   - Power loss or a crash loses up to 5 minutes of energy.
 - **Format changes:** only the changed field resets to its default (no zero, tempco 0, trim 1.0). Energy is untouched. There are no migrations.
 - **Kept and wiped:** stored values survive OTA and USB updates and a move to another panel. Factory reset wipes them, and the next boot is in install mode.

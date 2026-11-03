@@ -1,6 +1,7 @@
 # Firmware
 
-`blade-reader.yaml` is the yoke's ESPHome configuration for the first flash. It does three jobs:
+`blade-reader.yaml` is the yoke's ESPHome configuration. It holds the board, and the
+`blade_reader` component in `components/` does the rest. It does three jobs:
 
 - **Updates over Wi-Fi.** After the first flash over USB-C, every update goes over Wi-Fi,
   encrypted with the API key in `secrets.yaml`. Safe mode means a bad update can also be undone
@@ -10,12 +11,18 @@
 - **Ready for Home Assistant.** When Home Assistant is set up it discovers the board, and you
   give it the same API key. Nothing on the board changes.
 
-The readings are uncalibrated: currents use the CC6905's nominal 44 mV/A and a 1.65 V zero, so
-expect each way to read a few tenths of an amp off at no load. The full firmware zeros each way
-whenever it is dead, tracks the zero with temperature, counts energy and raises faults. It's
-specified in [`docs/reference/firmware.md`](../docs/reference/firmware.md) and is built by the
-tickets under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117).
+Each way zeros itself once it has been dead for 15 s and keeps the zero in flash; until then it
+reads against a nominal 1.65 V zero, a few tenths of an amp off at no load. Gain is the CC6905's
+nominal 44 mV/A times each way's gain trim, which starts at 1.0 and is set with the
+`set_gain_trim` API action. Each way counts its energy in Wh, written to flash every 5 minutes and
+before a restart or update. The full firmware also tracks the zero with temperature and raises
+faults.
+It's specified in [`docs/reference/firmware.md`](../docs/reference/firmware.md) and is built by
+the tickets under [Spec: Blade Reader firmware](https://github.com/XDGFX/blade-reader/issues/117).
 It arrives as an update over Wi-Fi.
+
+The component's calculations are a hardware-free core with tests that run on a Mac:
+`make -C firmware test` from the repo root.
 
 ## First flash from a Mac
 

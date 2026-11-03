@@ -94,9 +94,10 @@ antenna overhangs, and 13.5 mm below the positive end.
    1. Isolate the battery, take out every fuse but one, and reconnect. The other 11 ways zero
       within about 15 s.
    2. Zero the way with the fuse, in either of two ways. Refit the other 11 fuses, then pull that
-      one for 15 s and refit it: it shows as a blown fuse until it has been back for 5 s. Or move
-      that one fuse to another way, which turns the board off while it's out, so the way it left
-      zeroes at the next boot; then refit the rest.
+      one for 15 s and refit it once the fast blink stops: it shows as a blown fuse, with the red
+      LED steady, until it has been back for 5 s. Or move that one fuse to another way, which
+      turns the board off while it's out, so the way it left zeroes at the next boot; then refit
+      the rest.
    3. It's done when the board's "Not zeroed" reading says `None` and the red LED stops blinking.
 
    On the bench, a board on USB with every fuse out zeroes all 12 at once. Zeros survive updates

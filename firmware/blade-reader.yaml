@@ -1,14 +1,14 @@
-# Blade Reader yoke, rev B: first-flash ESPHome configuration.
+# Blade Reader yoke, rev B: ESPHome configuration.
 #
 # Flash once over USB-C, then update over Wi-Fi. See firmware/README.md.
+# This file holds the board. The blade_reader component in components/ owns the sweep, every
+# calculation and every way's entities; its behaviour is in docs/reference/firmware.md.
 # The pin map and multiplexer channels follow board/index.circuit.tsx, board/lib/root.tsx and
-# board/lib/root-even.tsx. Currents use the CC6905's nominal 44 mV/A and a 1.65 V zero: they are
-# uncalibrated, so expect each way to read a few tenths of an amp off until it is zeroed.
+# board/lib/root-even.tsx.
 
 substitutions:
   name: blade-reader-a
   friendly_name: Blade Reader A
-  interval: 5s
 
 esphome:
   name: ${name}
@@ -20,6 +20,16 @@ esp32:
   flash_size: 4MB
   framework:
     type: esp-idf
+
+# Energy totals are written on this batch and before a reboot or OTA update, so power loss or a
+# crash loses up to 5 minutes of energy. Zeros are written as soon as they change.
+preferences:
+  flash_write_interval: 5min
+
+external_components:
+  - source:
+      type: local
+      path: components
 
 logger:
   hardware_uart: USB_SERIAL_JTAG
@@ -39,6 +49,18 @@ api:
     key: !secret api_key
   # The board runs on its own until Home Assistant connects, so it mustn't reboot without one.
   reboot_timeout: 0s
+  actions:
+    # Logs every way's stored record.
+    - action: dump_state
+      then:
+        - lambda: id(blade).dump_state();
+    # Sets a way's (1 to 12) gain trim, within 0.90 to 1.10, and stores it at once.
+    - action: set_gain_trim
+      variables:
+        way: int
+        trim: float
+      then:
+        - lambda: id(blade).set_gain_trim(way, trim);
 
 # Updates over Wi-Fi, encrypted with the api key above.
 ota:
@@ -60,410 +82,76 @@ status_led:
   pin: GPIO1
 
 # Red fault LED, from 3V3, lit when GPIO8 is low. GPIO8 is a strapping pin; its pull-up holds it
-# high at boot.
+# high at boot. blade_reader drives it.
 output:
   - platform: gpio
-    id: fault_led_out
+    id: fault_led
     pin:
       number: GPIO8
       inverted: true
       ignore_strapping_warning: true
 
-light:
-  - platform: binary
-    name: "Fault LED"
-    output: fault_led_out
-    restore_mode: ALWAYS_OFF
-
-# Two 74HC4067s share their selects: S0 to S3 on GPIO7, 10, 5 and 6. Mux 1 reads the odd arm,
-# its common on GPIO4; mux 2 the even arm, its common on GPIO3.
-cd74hc4067:
-  - id: mux_odd
-    pin_s0: { number: GPIO7, allow_other_uses: true }
-    pin_s1: { number: GPIO10, allow_other_uses: true }
-    pin_s2: { number: GPIO5, allow_other_uses: true }
-    pin_s3: { number: GPIO6, allow_other_uses: true }
-  - id: mux_even
-    pin_s0: { number: GPIO7, allow_other_uses: true }
-    pin_s1: { number: GPIO10, allow_other_uses: true }
-    pin_s2: { number: GPIO5, allow_other_uses: true }
-    pin_s3: { number: GPIO6, allow_other_uses: true }
-
+# Each arm's mux common, read at the 12 dB range. blade_reader reads them in turn, a raw sample at
+# a time: it averages 64 a channel and flags any at the rail as clipped.
 sensor:
   - platform: adc
     id: adc_odd
     pin: GPIO4
     attenuation: 12db
-    samples: 16
+    raw: true
     update_interval: never
+    internal: true
   - platform: adc
     id: adc_even
     pin: GPIO3
     attenuation: 12db
-    samples: 16
+    raw: true
     update_interval: never
-
-  # Temperature sensors: diode-connected MMBT3904s, −2 mV/°C. Vbe at 25 °C is 0.59 V as read
-  # through the ADC, from yoke B on the bench at about 30 °C. Absolute to ±5–10 °C; good enough
-  # to see a hot terminal.
-  - platform: cd74hc4067
-    name: "Chin temperature"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 1
-    update_interval: 30s
-    unit_of_measurement: °C
-    device_class: temperature
-    state_class: measurement
-    accuracy_decimals: 0
-    filters:
-      - lambda: return 25.0f + (0.59f - x) / 0.002f;
-  - platform: cd74hc4067
-    name: "Odd arm temperature"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 14
-    update_interval: 30s
-    unit_of_measurement: °C
-    device_class: temperature
-    state_class: measurement
-    accuracy_decimals: 0
-    filters:
-      - lambda: return 25.0f + (0.59f - x) / 0.002f;
-  - platform: cd74hc4067
-    name: "Even arm temperature"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 8
-    update_interval: 30s
-    unit_of_measurement: °C
-    device_class: temperature
-    state_class: measurement
-    accuracy_decimals: 0
-    filters:
-      - lambda: return 25.0f + (0.59f - x) / 0.002f;
+    internal: true
   - platform: internal_temperature
     name: "ESP32 temperature"
   - platform: wifi_signal
     name: "Wi-Fi signal"
     update_interval: 60s
 
-  # Each way: current through its sensor and voltage on its line copper. The odd arm's sense
-  # line falls with load and reaches mux 1 undivided; the even arm's rises with load and is
-  # divided by 0.820 before mux 2.
-  - platform: cd74hc4067
-    id: way1_current
-    name: "Way 1 current"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 6
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (1.65f - x) / 0.044f;
-  - platform: cd74hc4067
-    id: way1_voltage
-    name: "Way 1 voltage"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 7
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way2_current
-    name: "Way 2 current"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 6
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (x / 0.820f - 1.65f) / 0.044f;
-  - platform: cd74hc4067
-    id: way2_voltage
-    name: "Way 2 voltage"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 9
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way3_current
-    name: "Way 3 current"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 4
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (1.65f - x) / 0.044f;
-  - platform: cd74hc4067
-    id: way3_voltage
-    name: "Way 3 voltage"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 5
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way4_current
-    name: "Way 4 current"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 7
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (x / 0.820f - 1.65f) / 0.044f;
-  - platform: cd74hc4067
-    id: way4_voltage
-    name: "Way 4 voltage"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 10
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way5_current
-    name: "Way 5 current"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 2
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (1.65f - x) / 0.044f;
-  - platform: cd74hc4067
-    id: way5_voltage
-    name: "Way 5 voltage"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 3
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way6_current
-    name: "Way 6 current"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 4
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (x / 0.820f - 1.65f) / 0.044f;
-  - platform: cd74hc4067
-    id: way6_voltage
-    name: "Way 6 voltage"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 11
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way7_current
-    name: "Way 7 current"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 9
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (1.65f - x) / 0.044f;
-  - platform: cd74hc4067
-    id: way7_voltage
-    name: "Way 7 voltage"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 8
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way8_current
-    name: "Way 8 current"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 3
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (x / 0.820f - 1.65f) / 0.044f;
-  - platform: cd74hc4067
-    id: way8_voltage
-    name: "Way 8 voltage"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 13
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way9_current
-    name: "Way 9 current"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 11
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (1.65f - x) / 0.044f;
-  - platform: cd74hc4067
-    id: way9_voltage
-    name: "Way 9 voltage"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 10
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way10_current
-    name: "Way 10 current"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 2
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (x / 0.820f - 1.65f) / 0.044f;
-  - platform: cd74hc4067
-    id: way10_voltage
-    name: "Way 10 voltage"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 14
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way11_current
-    name: "Way 11 current"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 13
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (1.65f - x) / 0.044f;
-  - platform: cd74hc4067
-    id: way11_voltage
-    name: "Way 11 voltage"
-    cd74hc4067_id: mux_odd
-    sensor: adc_odd
-    number: 12
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
-  - platform: cd74hc4067
-    id: way12_current
-    name: "Way 12 current"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 5
-    update_interval: ${interval}
-    unit_of_measurement: A
-    device_class: current
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - lambda: return (x / 0.820f - 1.65f) / 0.044f;
-  - platform: cd74hc4067
-    id: way12_voltage
-    name: "Way 12 voltage"
-    cd74hc4067_id: mux_even
-    sensor: adc_even
-    number: 15
-    update_interval: ${interval}
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    accuracy_decimals: 2
-    filters:
-      - multiply: 15.706  # 100 kΩ over 6.8 kΩ
+# Two 74HC4067s share their selects: S0 to S3 on GPIO7, 10, 5 and 6. Mux 1 reads the odd arm,
+# its common on GPIO4; mux 2 the even arm, its common on GPIO3. Odd ways are on mux 1 and even
+# ways on mux 2. The odd arm's sense line falls with load and reaches mux 1 undivided; the even
+# arm's rises with load and is divided by 0.820 before mux 2. Voltages are 100 kΩ over 6.8 kΩ.
+blade_reader:
+  id: blade
+  select_pins: [GPIO7, GPIO10, GPIO5, GPIO6]
+  odd_arm_adc: adc_odd
+  even_arm_adc: adc_even
+  fault_led: fault_led
+  # The hottest diode at this is Over temperature, cleared 5 K below.
+  over_temperature: 85°C
+  ways:  # ways 1 to 12, in order
+    - { sense: 6, voltage: 7 }
+    - { sense: 6, voltage: 9 }
+    - { sense: 4, voltage: 5 }
+    - { sense: 7, voltage: 10 }
+    - { sense: 2, voltage: 3 }
+    - { sense: 4, voltage: 11 }
+    - { sense: 9, voltage: 8 }
+    - { sense: 3, voltage: 13 }
+    - { sense: 11, voltage: 10 }
+    - { sense: 2, voltage: 14 }
+    - { sense: 13, voltage: 12 }
+    - { sense: 5, voltage: 15 }
+  # Diode-connected MMBT3904s: the chin's and the odd arm's on mux 1, the even arm's on mux 2.
+  diodes: { chin: 1, odd_arm: 14, even_arm: 8 }
+  # Inputs tied to GND, to watch the zero shift with the radio.
+  spares: { odd_arm: 0, even_arm: 0 }
 
 text_sensor:
   - platform: version
     name: "Firmware"
+
+# Factory reset erases all of the board's flash, blade_reader's zeros with it, so the next boot
+# is in install mode.
+button:
+  - platform: restart
+    name: "Restart"
+  - platform: factory_reset
+    name: "Factory reset"
