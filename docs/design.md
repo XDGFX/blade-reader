@@ -47,4 +47,4 @@ Prices are USD from JLCPCB/LCSC on 2026-10-09, at 10–50 quantity.
 - On the first built yoke: one way at 30 A with 15 A on each neighbour, which decides 2 oz ([#87](https://github.com/XDGFX/blade-reader/issues/87)); the feed's stray field on ways 11 and 12 ([#62](https://github.com/XDGFX/blade-reader/issues/62)); how far the odd arm's temperature sensor moves with the radio busy ([#82](https://github.com/XDGFX/blade-reader/issues/82)); the arms' stiffness on the 13.5 mm chin ([#79](https://github.com/XDGFX/blade-reader/issues/79)).
 - Board rules: JLC trace and via minimums, the antenna keepout, edge clearance.
 - Other blade fuse panels: their terminal pitch and style.
-- ESPHome configuration, once a board exists.
+- ESPHome beyond the first flash: per-way calibration, automatic re-zeroing and the temperature tracking under Accuracy, and the fault LED's logic. The first-flash configuration, with Wi-Fi updates and uncalibrated readings, is in `firmware/`.
