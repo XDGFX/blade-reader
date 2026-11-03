@@ -13,6 +13,17 @@ _Avoid_: Fuse box, fuse block
 One numbered fuse position on the fuse panel, and the circuit it feeds.
 _Avoid_: Channel, slot
 
+**Feed**:
+The cables that supply the fuse panel, bolted to its stud past the positive end.
+_Avoid_: Main, supply cable
+
+**Stray field**:
+The magnetic field of the feed's current reaching a sensor, read as current on that way.
+
+**Crosstalk**:
+A sensor reading part of the current in the finger beside it on the chin side.
+_Avoid_: Leakage, bleed
+
 **Pocket**:
 The space between two barriers of the fuse panel where a way's output screw sits on its pad.
 
