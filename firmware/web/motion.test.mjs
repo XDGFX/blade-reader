@@ -2,6 +2,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
+import vm from "node:vm"
 
 // The page's styles: page.css, and the art's own, which page.js carries as a string.
 const css = ["page.css", "page.js"].map((f) => readFileSync(new URL(f, import.meta.url), "utf8")).join("\n")
@@ -25,9 +26,14 @@ test("every animation the page runs is one the browser can run without repaintin
   }
 })
 
-test("an SVG filter blurs nothing bigger than an LED", () => {
-  // Firefox redraws an SVG filter on the CPU at every zoom step and every new tile, and the art is
-  // drawn four times over; a blur on its copper took zooming from 50 fps to 4.
-  const rules = [...css.matchAll(/([^{}]*)\{[^{}]*filter\s*:\s*url\(/g)].map(([, sel]) => sel.trim())
-  for (const sel of rules) assert.match(sel, /\.led\b/, `${sel} has an SVG filter`)
+test("the board holds no inline SVG", () => {
+  // Firefox rasterises inline SVG on the CPU again at every zoom step: the art drawn inline took
+  // pinch-zoom to 17 fps. The art goes in as an image (paintArt); all else on the board is HTML.
+  const context = vm.createContext({})
+  vm.runInContext(readFileSync(new URL("page.js", import.meta.url), "utf8"), context)
+  const html = vm.runInContext("page(readYoke(newStore(), 0))", context)
+  const board = html.slice(html.indexOf('class="stage"'), html.indexOf('class="sys"'))
+  assert.ok(board.includes('class="art"'))
+  assert.doesNotMatch(board, /<svg|filter:url/)
+  assert.doesNotMatch(css, /filter\s*:\s*url\(/)
 })

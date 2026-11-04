@@ -44,14 +44,21 @@ button:focus-visible,[data-way]:focus-visible{outline:2px solid var(--pink);outl
 .mould{position:absolute;top:4px;left:0;right:0;display:flex;justify-content:center;gap:28%;font-family:var(--din);font-size:12px;color:var(--case-rim);text-shadow:0 1px 0 #0006}
 .stage{position:relative;container-type:inline-size}
 .stage>.art,.stage>.frost,.stage>.ov{position:absolute;inset:0;width:100%;height:100%;display:block}
-.art{display:flex;flex-direction:column}.art>svg{display:block;width:100%;flex:none;overflow:hidden}
+.art>.layer{position:absolute;inset:0}.art img{display:block;width:100%}
+/* a blink layer shows in its quarters of a 1 s cycle (paintArt) */
+.art>.layer[class*=q]{opacity:0}
+.art>.q1{animation:q1 1s steps(1) infinite}.art>.q2{animation:q2 1s steps(1) infinite}.art>.q3{animation:q3 1s steps(1) infinite}
+.art>.q13{animation:q13 1s steps(1) infinite}.art>.q23{animation:q23 1s steps(1) infinite}
+@keyframes q1{0%{opacity:0}25%{opacity:1}50%{opacity:0}}@keyframes q2{0%{opacity:0}50%{opacity:1}75%{opacity:0}}@keyframes q3{0%{opacity:0}75%{opacity:1}}
+@keyframes q13{0%{opacity:0}25%{opacity:1}50%{opacity:0}75%{opacity:1}}@keyframes q23{0%{opacity:0}50%{opacity:1}}
 .frost{pointer-events:none;background:
   linear-gradient(90deg,var(--case-grid) 1px,#0000 1px) 0 0/4.18% 4.25%,linear-gradient(var(--case-grid) 1px,#0000 1px) 0 0/4.18% 4.25%,var(--case-tint)}
 
-/* over the art: the LEDs and the tap targets */
-.ov .led{fill:#3a1216}.ov .led.on{fill:var(--red);filter:url(#glow2)}.ov .led.slow{animation:blink 1s steps(1) infinite}
-.ov .sled{fill:#0b2a3a}
-.ov .hit{fill:#0000;cursor:pointer;outline:none}.ov .hit.sel,.ov .hit:focus-visible{stroke:var(--ink);stroke-width:.3;stroke-dasharray:1 1}
+/* over the art: the LEDs and the tap targets, sized in board mm (1 mm is 100cqw / 119.6) */
+.ov .led{position:absolute;width:1.5cqw;height:1.5cqw;border-radius:50%;transform:translate(-50%,-50%);background:#3a1216}
+.ov .led.on{background:var(--red);box-shadow:0 0 .8cqw var(--red)}.ov .led.slow{animation:blink 1s steps(1) infinite}
+.ov .sled{background:#0b2a3a}
+.ov .hit{position:absolute;border-radius:1.25cqw;border:.25cqw dashed #0000;cursor:pointer;outline:none}.ov .hit.sel,.ov .hit:focus-visible{border-color:var(--ink)}
 
 /* readings, in the fuse panel's opening beside each finger */
 .pane{position:absolute;background:var(--smoke);border-radius:0 0 2.5cqw 2.5cqw;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);box-shadow:inset 0 0 0 1px var(--line)}

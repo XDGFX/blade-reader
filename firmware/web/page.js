@@ -103,11 +103,11 @@ const ART = `<path class="outline" d="M0 44.38h-4.52l-8.54-.36-7.04-.59-5.02-.57
 const BOARD = {"viewBox":{"x":-59.8,"y":-58.88,"width":119.6,"height":117.76},"ways":{"1":{"ring":[-52.8,-51.2],"screw":[-33.58,-51.2],"tip":[-29.1,-51.2]},"2":{"ring":[52.8,-51.2],"screw":[33.58,-51.2],"tip":[29.1,-51.2]},"3":{"ring":[-52.8,-37.84],"screw":[-33.58,-37.84],"tip":[-29.1,-37.84]},"4":{"ring":[52.8,-37.84],"screw":[33.58,-37.84],"tip":[29.1,-37.84]},"5":{"ring":[-52.8,-24.48],"screw":[-33.58,-24.48],"tip":[-29.1,-24.48]},"6":{"ring":[52.8,-24.48],"screw":[33.58,-24.48],"tip":[29.1,-24.48]},"7":{"ring":[-52.8,-11.12],"screw":[-33.58,-11.12],"tip":[-29.1,-11.12]},"8":{"ring":[52.8,-11.12],"screw":[33.58,-11.12],"tip":[29.1,-11.12]},"9":{"ring":[-52.8,2.24],"screw":[-33.58,2.24],"tip":[-29.1,2.24]},"10":{"ring":[52.8,2.24],"screw":[33.58,2.24],"tip":[29.1,2.24]},"11":{"ring":[-52.8,15.6],"screw":[-33.58,15.6],"tip":[-29.1,15.6]},"12":{"ring":[52.8,15.6],"screw":[33.58,15.6],"tip":[29.1,15.6]}},"faultLed":[-37,56.03],"statusLed":[-41,56.03],"opening":{"x":-42.1,"y":-57.88,"width":84.2,"height":101.31}};
 // </board-art>
 
-// The art's own styles travel inside it, so each <use> copy of it is styled too.
-const ART_CSS = ".outline{fill:var(--mask);stroke:var(--mask-edge);stroke-width:.25}.cu-ring{fill:var(--copper);stroke:var(--copper)}.cu-parts{fill:var(--cu-parts);stroke:var(--cu-parts);opacity:.7}.pad{fill:var(--hasl);stroke:var(--hasl)}.via{stroke:#5E656C}.hole{fill:var(--hole)}.comp{fill:none;stroke:var(--comp);stroke-width:.15}.silk{fill:var(--silk);stroke:none}g[id^=w]{--lit:var(--copper);transition:opacity .4s}g[id^=w].live{--lit:var(--glow)}g[id^=w].live :is(.cu-ring,.cu-parts){opacity:var(--k)!important}g[id^=w].unz{--lit:var(--pink);animation:blink 1s steps(1) infinite}g[id^=w].blown,g[id^=w].range{--lit:var(--red)}g[id^=w].range{animation:blink .5s steps(1) infinite}g[id^=w]:is(.live,.unz,.blown,.range) :is(.cu-ring,.cu-parts){fill:var(--lit);stroke:var(--lit);opacity:1}g[id^=w]:is(.live,.unz,.blown,.range) .pad{fill:color-mix(in srgb,var(--lit) 55%,var(--hasl))}@keyframes blink{50%{opacity:.35}}@media (prefers-reduced-motion:reduce){g[id^=w]{animation:none!important}}"
-  // Each way's brightness comes in from .art, outside the art: WebKit rebuilds every <use> copy,
-  // restarting every blink, whenever anything inside the art changes.
-  + Array.from({ length: WAYS }, (_, i) => `#w${i + 1}{--k:var(--k${i + 1})}`).join("");
+// The art's own styles, which travel inside its image. Nothing in it moves: a way blinks by a
+// layer of the art with it dimmed (.dim) showing over the art with it lit.
+const ART_CSS = ".outline{fill:var(--mask);stroke:var(--mask-edge);stroke-width:.25}.cu-ring{fill:var(--copper);stroke:var(--copper)}.cu-parts{fill:var(--cu-parts);stroke:var(--cu-parts);opacity:.7}.pad{fill:var(--hasl);stroke:var(--hasl)}.via{stroke:#5E656C}.hole{fill:var(--hole)}.comp{fill:none;stroke:var(--comp);stroke-width:.15}.silk{fill:var(--silk);stroke:none}g[id^=w]{--lit:var(--copper)}g[id^=w].live{--lit:var(--glow)}g[id^=w].live :is(.cu-ring,.cu-parts){opacity:var(--k)!important}g[id^=w].unz{--lit:var(--pink)}g[id^=w].blown,g[id^=w].range{--lit:var(--red)}g[id^=w]:is(.live,.unz,.blown,.range) :is(.cu-ring,.cu-parts){fill:var(--lit);stroke:var(--lit);opacity:1}g[id^=w]:is(.live,.unz,.blown,.range) .pad{fill:color-mix(in srgb,var(--lit) 55%,var(--hasl))}g[id^=w].dim{opacity:.35}";
+// The page's colours the art uses: an image can't read the page's custom properties.
+const ART_VARS = [...new Set([...ART_CSS.matchAll(/var\((--[\w-]+)/g)].map(([, v]) => v))].filter((v) => v !== "--lit" && v !== "--k");
 
 // ── View ──
 
@@ -186,21 +186,20 @@ function reading(w, n) {
     <div class="bar"><i style="width:${flowing(w) ? Math.max(2, fullness(w) * 100) : 0}%"></i></div></div>`;
 }
 
-
-// What lies over the art: each way's tap target, then the LEDs.
+// What lies over the art, as plain HTML so nothing on the board is inline SVG: each way's tap
+// target, then the LEDs.
 function overlay(y) {
   const out = [];
   for (let n = 1; n <= WAYS; n++) {
     const yy = BOARD.ways[n].screw[1];
-    out.push(`<rect class="hit${ui.open === n ? " sel" : ""}" data-way="${n}" tabindex="0" role="button" aria-label="Way ${n}" x="${n % 2 ? VB.x + 0.5 : 0.5}" y="${M(yy - 6.4)}" width="${VB.width / 2 - 1}" height="${M(yy + 6.4) - M(yy - 6.4)}" rx="1.5"/>`);
+    out.push(`<div class="hit${ui.open === n ? " sel" : ""}" data-way="${n}" tabindex="0" role="button" aria-label="Way ${n}" style="left:${X(n % 2 ? VB.x + 0.5 : 0.5)}%;top:${Y(yy - 6.4)}%;width:${((VB.width / 2 - 1) / VB.width) * 100}%;height:${Y(yy + 6.4) - Y(yy - 6.4)}%"></div>`);
   }
   // The red LED, as the yoke shows it: steady for a fault, slow blink in install mode with a live way unzeroed.
   const led = y.status.kind === "fault" ? "on" : y.install?.pull.length && y.install.endsInS !== 0 ? "on slow" : "";
-  out.push(`<circle class="led ${led}" cx="${BOARD.faultLed[0]}" cy="${M(BOARD.faultLed[1])}" r=".9"><title>Red LED</title></circle>`,
-    `<circle class="sled" cx="${BOARD.statusLed[0]}" cy="${M(BOARD.statusLed[1])}" r=".9"/>`);
+  out.push(`<span class="led ${led}" title="Red LED" style="left:${X(BOARD.faultLed[0])}%;top:${Y(BOARD.faultLed[1])}%"></span>`,
+    `<span class="led sled" style="left:${X(BOARD.statusLed[0])}%;top:${Y(BOARD.statusLed[1])}%"></span>`);
   return out.join("");
 }
-
 // A way's popover. It floats over the board, so nothing moves, and it is always in the DOM, so
 // opening it doesn't shift the stage's children and restart their animations.
 function popover(y) {
@@ -228,10 +227,7 @@ function page(y) {
     <div class="art" data-static></div>
     <div class="frost"></div>
     <div class="pane" style="left:${X(op.x)}%;top:${Y(op.y)}%;width:${(op.width / VB.width) * 100}%;height:${Y(op.y + op.height) - Y(op.y)}%"></div>
-    <svg class="ov" viewBox="${VB.x} ${VB.y} ${VB.width} ${height()}" preserveAspectRatio="none">
-      <defs><filter id="glow2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation=".5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-      ${overlay(y)}
-    </svg>
+    <div class="ov">${overlay(y)}</div>
     ${y.ways.map((w, i) => reading(w, i + 1)).join("")}
     <div class="panelv" style="top:${Y(PANEL_Y)}%"><b>${fmt(y.panelVoltage, 2, " V")}</b><span>Panel · ${fmt(y.totalCurrent, 1, " A")} total</span></div>
     <div class="temps" style="top:${Y(TEMPS_Y)}%"><span><em>Odd</em>${fmt(t.odd, 0, " °C")}</span><span><em>Chin</em>${fmt(t.chin, 0, " °C")}</span><span><em>Even</em>${fmt(t.even, 0, " °C")}</span></div>
@@ -243,30 +239,76 @@ function page(y) {
   </div>`;
 }
 
-// The art is drawn once per gap, shown through one window per band, and kept; after that only
-// each way's class changes inside it, and its brightness on .art.
-function paintArt(y) {
-  const art = document.querySelector(".art");
-  if (art.dataset.gap !== String(ui.gap)) {
-    const bands = [];
-    let y0 = VB.y;
-    for (const [c, f] of CUTS) {
-      bands.push([y0, c, 0], [c, c + CUT_H, f * ui.gap]);
-      y0 = c + CUT_H;
-    }
-    bands.push([y0, VB.y + VB.height, 0]);
-    art.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><g id="artg" stroke-linecap="round" stroke-linejoin="round"><style>${ART_CSS}</style>${ART}</g></defs></svg>`
-      + bands.map(([a, b, g]) => `<svg viewBox="${VB.x} ${a} ${VB.width} ${b - a}" preserveAspectRatio="none" style="height:${((b - a + g) / height()) * 100}%" aria-hidden="true"><use href="#artg"/></svg>`).join("");
-    art.dataset.gap = String(ui.gap);
+// The art is an SVG image, not inline SVG: Firefox rasterises inline SVG on the CPU again at every
+// zoom step, and the art is big. One image document holds the whole art; each band is an <img>
+// of its own slice, so a stretched band is drawn at its own size.
+// The art is rebuilt only when what it shows changes: the gap, the theme, or a way's state or
+// brightness step.
+
+// A way's brightness in quarter steps, held until the reading is well past the next one, so a
+// reading on the boundary doesn't rebuild the art every second.
+const artSteps = [];
+function artStep(w, n) {
+  const s = Math.sqrt(fullness(w)) * 4;
+  if (artSteps[n] == null || Math.abs(s - artSteps[n]) > 0.6) artSteps[n] = Math.round(s);
+  return artSteps[n] / 4;
+}
+
+// Blinks, as quarters of a 1 s cycle in which a state's ways are off: unzeroed blink every 1 s,
+// over range every 0.5 s. Each quarter with ways off is a layer of the art with them dimmed, over
+// the art with every way on; the layer's opacity steps through its quarters (page.css, .q*).
+const BLINK_OFF = { unz: [2, 3], range: [1, 3] };
+function artLayers(y) {
+  const layers = new Map();
+  for (const q of [1, 2, 3]) {
+    const off = Object.keys(BLINK_OFF).filter((s) => BLINK_OFF[s].includes(q) && y.ways.some((w) => lit(w) === s)).join(" ");
+    if (off) layers.set(off, (layers.get(off) || "") + q);
   }
+  return [...layers].map(([off, qs]) => ({ off: off.split(" "), cls: `q${qs}` }));
+}
+
+function artSvg(y, colours, off) {
+  let art = ART;
+  let ks = "";
   for (let n = 1; n <= WAYS; n++) {
     const w = y.ways[n - 1];
-    const g = art.querySelector(`#w${n}`);
-    if (!g) continue;
     const cls = lit(w);
-    if (g.getAttribute("class") !== cls) g.setAttribute("class", cls);
-    art.style.setProperty(`--k${n}`, (0.35 + 0.65 * Math.sqrt(fullness(w))).toFixed(2));
+    art = art.replace(`<g id="w${n}">`, `<g id="w${n}" class="${cls}${off.includes(cls) ? " dim" : ""}">`);
+    ks += `#w${n}{--k:${(0.35 + 0.65 * artStep(w, n)).toFixed(2)}}`;
   }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VB.x} ${VB.y} ${VB.width} ${VB.height}"><style>svg{${colours}}${ART_CSS}${ks}</style><g stroke-linecap="round" stroke-linejoin="round">${art}</g></svg>`;
+}
+
+function artBands() {
+  const bands = [];
+  let y0 = VB.y;
+  for (const [c, f] of CUTS) {
+    bands.push([y0, c, 0], [c, c + CUT_H, f * ui.gap]);
+    y0 = c + CUT_H;
+  }
+  bands.push([y0, VB.y + VB.height, 0]);
+  return bands;
+}
+
+let artKey = "";
+let artUrls = [];
+function paintArt(y) {
+  const page = getComputedStyle(document.documentElement);
+  const colours = ART_VARS.map((v) => `${v}:${page.getPropertyValue(v).trim()}`).join(";");
+  const key = `${ui.gap}|${colours}` + y.ways.map((w, i) => `|${lit(w)}${artStep(w, i + 1)}`).join("");
+  if (key === artKey) return;
+  artKey = key;
+  const layers = artLayers(y);
+  const urls = [[], ...layers.map((l) => l.off)].map((off) => URL.createObjectURL(new Blob([artSvg(y, colours, off)], { type: "image/svg+xml" })));
+  // Swapped in once decoded, so the art never blanks between versions. Every layer is made anew
+  // at once, so their blinks start together.
+  Promise.all(urls.map((u) => Object.assign(new Image(), { src: u }).decode().catch(() => {}))).then(() => {
+    if (artKey !== key) return urls.forEach((u) => URL.revokeObjectURL(u));
+    artUrls.forEach((u) => URL.revokeObjectURL(u));
+    artUrls = urls;
+    const bands = artBands();
+    document.querySelector(".art").innerHTML = urls.map((u, i) => `<div class="layer ${i ? layers[i - 1].cls : ""}">${bands.map(([a, b, g]) => `<img alt="" src="${u}#svgView(viewBox(${VB.x},${a},${VB.width},${b - a});preserveAspectRatio(none))" style="height:${((b - a + g) / height()) * 100}%">`).join("")}</div>`).join("");
+  });
 }
 
 // Patch the live DOM to match the new markup rather than replacing it, so running animations
