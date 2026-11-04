@@ -11,7 +11,7 @@ ESPHome, with one external component, `blade_reader`. The YAML holds the board:
 - pins and the mux channel map
 - Wi-Fi, API (with `reboot_timeout: 0s`), OTA and safe mode
 - the green `status_led`
-- the stock `web_server` page
+- the yoke's own web page, from `firmware/web/`, behind `auth`
 - the over-temperature threshold
 - `preferences: flash_write_interval: 5min`
 
@@ -130,7 +130,7 @@ Names are grouped as `Group: Item`, so a way's entities sort together in Home As
 | `Fault Text` | board | |
 | `Not Zeroed` | board | the ways without a zero, e.g. `3, 4, 7, 11`, or `None` |
 | `Temperature: Chin`, `Temperature: Odd Arm`, `Temperature: Even Arm` | board | the diodes |
-| `Temperature: ESP32`, `Wi-Fi Signal`, `Firmware` | board | ESPHome's own |
+| `Temperature: ESP32`, `Wi-Fi Signal`, `Firmware`, `Uptime` | board | ESPHome's own; the web page counts install mode down from `Uptime` |
 | `Way n: Voltage` | way | hidden diagnostic |
 | `Way n: Gain Trim` | way | hidden diagnostic |
 | `Way n: Zero` (mV from nominal), `Way n: Zero Temperature`, `Way n: Zero Time` | way | hidden diagnostics |
@@ -146,7 +146,20 @@ Names are grouped as `Group: Item`, so a way's entities sort together in Home As
   | off | on | blown, or pulled until Clear faults |
 - **Actions:** `set_gain_trim(way, trim)`, and `dump_state`, which logs every way's stored record.
 - **Buttons:** `Clear Faults`, `Factory Reset`, `Restart`.
-- The web page is ESPHome's stock one. It's the install and fault-finding aid. ([#116](https://github.com/XDGFX/blade-reader/issues/116) is future work.)
+- **Web page:** see [Web page](#web-page).
+
+## Web page
+
+The yoke serves its own page at `http://<name>.local`, the install and fault-finding aid with or without Home Assistant. It's embedded in the firmware, so it needs no internet, and `auth` (digest, with the login from `secrets.yaml`) covers the page, `/events` and the buttons. ([#116](https://github.com/XDGFX/blade-reader/issues/116), [#126](https://github.com/XDGFX/blade-reader/issues/126), [#127](https://github.com/XDGFX/blade-reader/issues/127))
+
+- **Files:** `firmware/web/page.js` and `page.css`, embedded with `web_server`'s `js_include` and `css_include` (`js_url` and `css_url` empty). Plain JS, no build step. They are about 27 KB gzipped, 15 KB of it the board art.
+- **Board art:** the ring face drawn as fitted, from the routed `circuit.json`, with each way's power path as `<g id="wN">`. `firmware/web/board-art/board-art.ts` writes it into the marked region of `page.js`; run it again for each board revision.
+- **What it shows:** the status first (All OK, the fault text with Clear Faults, No supply, or how many ways have a zero); in install mode, which live ways to pull, which dead ones are zeroing, and when install mode ends, from `Uptime`; each way's copper lit by its state, its current, power or state beside its finger, and a popover with its diagnostics; the panel voltage, total current and the three temperatures.
+- **Entities:** found by name from the `/events` stream, nothing hard-coded beyond the names in What is published. A state message names its entity in `id` as `domain/Name`. Over range is read from the fault text. Tempco isn't published, so the page doesn't show it. Zero Time is the seconds after the boot it was taken in, shown as such, not as an age.
+- **Read-only** apart from Clear Faults, Restart and Factory Reset, the last two behind a confirm.
+- **Trying it without a yoke:** open `firmware/web/try.html`; `fake-events.js` stands in for the yoke with Normal, Install mode, Faults and No supply. Neither is served by the yoke.
+- **Tests:** the page's model runs under `node --test` as part of `make -C firmware test`.
+- **Upkeep:** re-test the page after any ESPHome release that touches the `web_server` API.
 
 ## Flash
 

@@ -1,4 +1,5 @@
-# Builds and runs the blade_reader core's tests on the Mac: `make -C firmware test`.
+# Builds and runs the blade_reader core's tests on the Mac, then the web page's model tests with
+# Node: `make -C firmware test`.
 
 CXX ?= c++
 
@@ -18,6 +19,7 @@ BIN = .build/core_tests
 .PHONY: test
 test: $(BIN)
 	./$(BIN)
+	node --test web/
 
 $(BIN): $(CORE) $(TESTS) $(wildcard components/blade_reader/*.h) $(wildcard tests/*.h) tests/vendor/doctest.h
 	@mkdir -p .build
