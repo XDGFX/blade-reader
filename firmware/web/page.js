@@ -186,21 +186,6 @@ function reading(w, n) {
     <div class="bar"><i style="width:${flowing(w) ? Math.max(2, fullness(w) * 100) : 0}%"></i></div></div>`;
 }
 
-// Each live way's flow out to its ring: a dashed strip slid by transform, so the browser moves it
-// without repainting anything. A way's flow comes and goes inside its own <div>, so morph() never
-// shifts another way's.
-function flows(y) {
-  const out = [];
-  for (let n = 1; n <= WAYS; n++) {
-    const w = y.ways[n - 1];
-    const p = BOARD.ways[n];
-    const x0 = Math.min(p.screw[0], p.ring[0]);
-    // Stepped, so a small wobble in a reading doesn't keep retiming the animation.
-    const flow = flowing(w) ? `<div class="flow ${lit(w)} ${n % 2 ? "o" : "e"}" style="left:${X(x0)}%;top:${Y(p.screw[1])}%;width:${(Math.abs(p.ring[0] - p.screw[0]) / VB.width) * 100}%;--dur:${(2.4 - 2.0 * Math.sqrt(fullness(w))).toFixed(1)}s"><i></i></div>` : "";
-    out.push(`<div>${flow}</div>`);
-  }
-  return out.join("");
-}
 
 // What lies over the art: each way's tap target, then the LEDs.
 function overlay(y) {
@@ -239,11 +224,10 @@ function page(y) {
   return `<div class="wrap">${head(y)}
   <div class="case"><span class="boss b1"></span><span class="boss b2"></span><span class="boss b3"></span><span class="boss b4"></span>
    <div class="mould"><span>↑</span><span>up</span><span>↑</span></div>
-   <div class="stage" style="aspect-ratio:${VB.width}/${height()};--u:${(100 / VB.width).toFixed(4)}cqw">
+   <div class="stage" style="aspect-ratio:${VB.width}/${height()}">
     <div class="art" data-static></div>
     <div class="frost"></div>
     <div class="pane" style="left:${X(op.x)}%;top:${Y(op.y)}%;width:${(op.width / VB.width) * 100}%;height:${Y(op.y + op.height) - Y(op.y)}%"></div>
-    ${flows(y)}
     <svg class="ov" viewBox="${VB.x} ${VB.y} ${VB.width} ${height()}" preserveAspectRatio="none">
       <defs><filter id="glow2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation=".5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
       ${overlay(y)}

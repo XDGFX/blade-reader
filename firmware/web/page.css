@@ -48,15 +48,7 @@ button:focus-visible,[data-way]:focus-visible{outline:2px solid var(--pink);outl
 .frost{pointer-events:none;background:
   linear-gradient(90deg,var(--case-grid) 1px,#0000 1px) 0 0/4.18% 4.25%,linear-gradient(var(--case-grid) 1px,#0000 1px) 0 0/4.18% 4.25%,var(--case-tint)}
 
-/* the flow to each live way's ring, in board units (--u): 2 lit, 2.6 dark. Only its <i> moves,
-   by transform, one period per --dur, so the browser slides it without repainting. */
-.flow{position:absolute;height:var(--u);transform:translateY(-50%);overflow:hidden;pointer-events:none;--c:#FFF6E6;
-  background:color-mix(in srgb,var(--c) 15%,#0000);box-shadow:0 0 calc(var(--u)*.8) color-mix(in srgb,var(--c) 45%,#0000)}
-.flow.o{transform:translateY(-50%) scaleX(-1)}
-.flow.unz{--c:#FFD3EA}.flow.range{--c:#FFD0D5}
-.flow i{position:absolute;top:0;bottom:0;left:calc(var(--u)*-4.6);width:calc(var(--u)*4.6);animation:flow var(--dur) linear infinite}
-.flow i::before{content:"";position:absolute;inset:0 auto 0 0;width:calc(var(--u)*30);background:repeating-linear-gradient(90deg,var(--c) 0 calc(var(--u)*2),#0000 0 calc(var(--u)*4.6))}
-@keyframes flow{to{transform:translateX(100%)}}
+/* over the art: the LEDs and the tap targets */
 .ov .led{fill:#3a1216}.ov .led.on{fill:var(--red);filter:url(#glow2)}.ov .led.slow{animation:blink 1s steps(1) infinite}
 .ov .sled{fill:#0b2a3a}
 .ov .hit{fill:#0000;cursor:pointer;outline:none}.ov .hit.sel,.ov .hit:focus-visible{stroke:var(--ink);stroke-width:.3;stroke-dasharray:1 1}
