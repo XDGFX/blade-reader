@@ -6,7 +6,7 @@
   --mask:#0E1116;--mask-edge:#2A3340;--copper:#3D2C1F;--cu-parts:#1C2A33;--hasl:#8E949A;--hole:#030405;--silk:#E7E1D3;--comp:#3B4654;
   --case-rim:#ffffff22;--case-tint:#0000;--case-grid:#ffffff0c;--sheen:#ffffff0d;--smoke:#0A0D12b8;--surface:#10141Bf2;--line:#ffffff1c;--btn:#ffffff0f;
   color-scheme:dark}
-:root[data-theme=light]{--void:#E3E6E9;--ink:#15171B;--dim:#646A73;--glow:#FF8A1F;--pink:#E0217F;--red:#D81B33;
+:root[data-theme=light]{--void:#E3E6E9;--ink:#15171B;--dim:#646A73;--glow:#FF8A1F;--pink:#E0217F;--red:#D81B33;--hole:#E7EAED;
   --case-rim:#ffffffcc;--case-tint:#F4F6F840;--case-grid:#0000000f;--sheen:#ffffff66;--smoke:#F3F5F7d9;--surface:#FAFBFCf2;--line:#0000001a;--btn:#00000008;
   color-scheme:light}
 *{box-sizing:border-box}
