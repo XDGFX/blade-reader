@@ -6,8 +6,10 @@
 - **Updates over Wi-Fi.** After the first flash over USB-C, every update goes over Wi-Fi,
   encrypted with the API key in `secrets.yaml`. Safe mode means a bad update can also be undone
   over Wi-Fi.
-- **Testing without Home Assistant.** A page at `http://blade-reader-a.local` shows every
-  reading live, and `esphome logs` shows them in a terminal.
+- **Its own page.** `http://blade-reader-a.local`, behind the web login in `secrets.yaml`,
+  shows the fuse panel live, guides install mode and shows the fault text, with or without Home
+  Assistant. It is in `web/`; open `web/try.html` in a browser to try it without a yoke.
+  `esphome logs` shows the readings in a terminal.
 - **Ready for Home Assistant.** When Home Assistant is set up it discovers the board, and you
   give it the same API key. Nothing on the board changes.
 
@@ -49,7 +51,8 @@ cp secrets.example.yaml secrets.yaml
 openssl rand -base64 32     # paste the result in as api_key
 ```
 
-Fill in the Wi-Fi details in `secrets.yaml` and a fallback password of eight characters or more.
+Fill in the Wi-Fi details in `secrets.yaml`, a web login for the board's page, and a fallback
+password of eight characters or more.
 **Keep a copy of `secrets.yaml` in your password manager.** Without the API key you can't update
 the board over Wi-Fi, and you'd be back to the USB port. Git ignores the file.
 
@@ -87,9 +90,10 @@ crossed (see `docs/design.md`), so swap those two leads.
 
 ### 5. Test it, and prove the Wi-Fi update before giving up the USB port
 
-1. Open `http://blade-reader-a.local`. Each way with a fuse in should show the battery's voltage,
-   and a pulled fuse 0 V. Switch on a load you know, such as a light, and its way's current should
-   move by about what you expect.
+1. Open `http://blade-reader-a.local` and log in with the web login. The panel voltage should be
+   the battery's, each way with a fuse in should light, and a pulled fuse should go dead. Switch
+   on a load you know, such as a light, and its way's current should move by about what you
+   expect.
 2. **Update over Wi-Fi once while the USB cable is still in reach:**
 
    ```sh

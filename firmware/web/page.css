@@ -1,0 +1,94 @@
+/* The yoke's own web page, served as /0.css; see docs/reference/firmware.md.
+   Amber is current, pink is the accent and "needs you", red is a fault. */
+:root{--din:"DIN Alternate","Bahnschrift","Roboto Condensed","Arial Narrow",sans-serif;
+  --sans:-apple-system,"SF Pro Text","Helvetica Neue","Segoe UI",Roboto,sans-serif;
+  --void:#06080C;--ink:#F1ECE1;--dim:#8C8A93;--glow:#FFC27A;--pink:#FF4FA3;--red:#FF3348;
+  --mask:#0E1116;--mask-edge:#2A3340;--copper:#3D2C1F;--cu-parts:#1C2A33;--hasl:#8E949A;--hole:#030405;--silk:#E7E1D3;--comp:#3B4654;
+  --case-rim:#ffffff22;--case-tint:#0000;--case-grid:#ffffff0c;--sheen:#ffffff0d;--smoke:#0A0D12b8;--surface:#10141Bf2;--line:#ffffff1c;--btn:#ffffff0f;
+  color-scheme:dark}
+:root[data-theme=light]{--void:#E3E6E9;--ink:#15171B;--dim:#646A73;--glow:#FF8A1F;--pink:#E0217F;--red:#D81B33;
+  --case-rim:#ffffffcc;--case-tint:#F4F6F840;--case-grid:#0000000f;--sheen:#ffffff66;--smoke:#F3F5F7d9;--surface:#FAFBFCf2;--line:#0000001a;--btn:#00000008;
+  color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;overflow-x:clip;color:var(--ink);font:15px/1.35 var(--sans);
+  background:radial-gradient(120% 60% at 85% -10%,#FF8A3D22,#0000 60%),radial-gradient(90% 50% at 0% 110%,#52E5F218,#0000 60%),var(--void)}
+:root[data-theme=light] body{background:radial-gradient(100% 60% at 50% 0,#fff,#0000 70%),var(--void)}
+main{padding:16px 14px 32px}
+.wrap{max-width:600px;margin:0 auto}
+button{font:inherit;font-size:14px;border-radius:6px;padding:8px 14px;background:var(--btn);color:inherit;border:1px solid var(--line);cursor:pointer}
+button:focus-visible,[data-way]:focus-visible{outline:2px solid var(--pink);outline-offset:1px}
+@keyframes blink{50%{opacity:.35}}
+
+/* status */
+.head{margin:0 2px 20px}
+.hrow{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start}
+.theme{display:grid;place-items:center;width:42px;height:42px;padding:0;border-radius:50%}.theme svg{display:block}
+.head h1{font-family:var(--din);font-size:clamp(26px,7.4vw,40px);font-weight:700;line-height:1.04;margin:0;letter-spacing:-.01em}
+.head h1 span{display:block;transform:skewX(-11.9deg);transform-origin:0 100%}
+.head h1.ok span{text-shadow:0 0 22px #FFC27A55}
+.head h1.bad{color:var(--red)}.head h1.bad span{text-shadow:-1px 0 #52E5F288,1px 0 #FF4FA388,0 0 22px #FF334855}
+.act{display:flex;gap:14px;align-items:center;margin-top:14px;font-size:13px;color:var(--dim)}
+.act .clear{background:var(--red);border-color:var(--red);color:#fff;font-weight:600;white-space:nowrap}
+.lost{margin-top:12px;font-size:13px;color:var(--pink)}
+.install{margin-top:16px;padding:10px 0 2px 14px;border-left:3px solid var(--pink);box-shadow:-10px 0 18px -12px var(--pink)}
+.install b{display:block;font-family:var(--din);font-size:20px;line-height:1.15;color:var(--pink)}
+.install span{display:block;margin-top:4px;font-size:13px;color:var(--dim)}
+
+/* the clear case, with a rim, screw bosses and a 5 mm grid */
+.case{position:relative;padding:20px 9px;margin:0 -6px;border-radius:20px;
+  background:linear-gradient(160deg,var(--sheen),#0000 35%,#0000 65%,var(--sheen)),var(--case-tint);
+  box-shadow:inset 0 0 0 1px var(--case-rim),inset 0 1px 0 var(--case-rim),0 30px 60px -20px #000c}
+:root[data-theme=light] .case{box-shadow:inset 0 0 0 1px var(--case-rim),0 30px 50px -24px #2a3a5040,0 0 0 1px #00000010}
+.boss{position:absolute;width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--case-rim);background:radial-gradient(circle,var(--case-rim) 0 1.5px,#0000 2px)}
+.b1{top:7px;left:7px}.b2{top:7px;right:7px}.b3{bottom:7px;left:7px}.b4{bottom:7px;right:7px}
+.mould{position:absolute;top:4px;left:0;right:0;display:flex;justify-content:center;gap:28%;font-family:var(--din);font-size:12px;color:var(--case-rim);text-shadow:0 1px 0 #0006}
+.stage{position:relative;container-type:inline-size}
+.stage>.art,.stage>.frost,.stage>.ov{position:absolute;inset:0;width:100%;height:100%;display:block}
+.art{display:flex;flex-direction:column}.art>svg{display:block;width:100%;flex:none;overflow:hidden}
+.frost{pointer-events:none;background:
+  linear-gradient(90deg,var(--case-grid) 1px,#0000 1px) 0 0/4.18% 4.25%,linear-gradient(var(--case-grid) 1px,#0000 1px) 0 0/4.18% 4.25%,var(--case-tint)}
+
+/* over the art: the flow to each live way's ring, the LEDs, and the tap targets */
+.ov .flow{fill:none;stroke:#FFF6E6;stroke-width:1;stroke-dasharray:2 2.6;animation:dash var(--dur) linear infinite;filter:url(#glow2)}
+.ov .flow.unz{stroke:#FFD3EA}.ov .flow.range{stroke:#FFD0D5}
+@keyframes dash{from{stroke-dashoffset:4.6}to{stroke-dashoffset:0}}
+.ov .led{fill:#3a1216}.ov .led.on{fill:var(--red);filter:url(#glow2)}.ov .led.slow{animation:blink 1s steps(1) infinite}
+.ov .sled{fill:#0b2a3a}
+.ov .hit{fill:#0000;cursor:pointer;outline:none}.ov .hit.sel,.ov .hit:focus-visible{stroke:var(--ink);stroke-width:.3;stroke-dasharray:1 1}
+
+/* readings, in the fuse panel's opening beside each finger */
+.pane{position:absolute;background:var(--smoke);border-radius:0 0 2.5cqw 2.5cqw;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);box-shadow:inset 0 0 0 1px var(--line)}
+.rd{position:absolute;transform:translateY(-50%);pointer-events:none;width:21cqw}
+.rd.o{text-align:left}.rd.e{text-align:right}
+.rd .i{font-family:var(--din);font-size:clamp(21px,6cqw,30px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rd .i .n{display:inline-block;min-width:1.5em;font-size:max(12px,.5em);padding:1px 3px;margin:0 .45em 0 0;vertical-align:.45em;text-align:center;border-radius:3px;box-shadow:inset 0 0 0 1px var(--line);background:var(--btn)}
+.rd.e .i{display:flex;flex-direction:row-reverse;justify-content:flex-start;align-items:baseline}.rd.e .i .n{margin:0 0 0 .45em}
+.rd .i small{font-size:max(12px,.55em);color:var(--dim);margin-left:2px}
+.rd .p{font-size:clamp(13px,3.4cqw,15px);line-height:1.15;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums;margin-top:1px}
+.rd .p.warn{color:var(--pink)}.rd .p.bad{color:var(--red)}
+.rd .bar{height:2px;margin-top:6px;background:var(--line);position:relative;overflow:hidden}
+.rd .bar i{position:absolute;top:0;bottom:0;background:var(--pink);box-shadow:0 0 6px var(--pink)}
+.rd.o .bar i{left:0}.rd.e .bar i{right:0}
+.panelv{position:absolute;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.panelv b{display:block;font-family:var(--din);font-size:clamp(24px,7.4cqw,40px);font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.panelv span{font-size:clamp(12px,2.9cqw,14px);color:var(--dim)}
+.temps{position:absolute;left:0;right:0;transform:translateY(-50%);display:flex;justify-content:center;gap:clamp(10px,4cqw,22px);pointer-events:none;font-family:var(--din);font-size:clamp(13px,3.4cqw,16px);font-variant-numeric:tabular-nums}
+.temps em{margin-right:5px;font-style:normal;font-family:var(--sans);font-size:clamp(12px,2.9cqw,13px);color:var(--dim)}
+
+/* a way's popover */
+.pop{position:absolute;left:4%;right:4%;z-index:6;padding:16px 18px 14px;background:var(--surface);border-radius:12px;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 0 0 1px var(--line),0 18px 40px #00000066}
+.pop::before{content:"";position:absolute;left:18px;right:18px;top:0;height:2px;background:var(--pc,var(--dim));box-shadow:0 0 12px var(--pc,#0000)}
+.pop.live{--pc:var(--glow)}.pop.unz{--pc:var(--pink)}.pop.blown,.pop.range{--pc:var(--red)}
+.pop .ph{display:flex;align-items:baseline;gap:10px;padding-right:30px}
+.pop .ph h2{margin:0;font-family:var(--din);font-size:20px;transform:skewX(-11.9deg)}
+.pop .ph span{font-size:13px;color:var(--pc,var(--dim))}
+.pop .big{font-family:var(--din);font-size:48px;font-weight:700;line-height:1;margin:8px 0 14px;font-variant-numeric:tabular-nums}
+.pop .big small{font-size:20px;color:var(--dim);margin-left:4px}
+.pop dl{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:6px 12px;margin:0;font-size:12px;padding-top:12px;border-top:1px solid var(--line)}
+.pop dt{color:var(--dim)}.pop dd{margin:0;font-family:var(--din);font-size:14px;font-variant-numeric:tabular-nums}
+.pop .x{position:absolute;top:10px;right:10px;padding:0 8px;font-size:18px;border:0;background:none;color:var(--dim)}
+
+.sys{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:center;margin:20px 2px 0;font-size:12px;color:var(--dim)}
+.sys .danger{color:var(--red)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

@@ -39,7 +39,7 @@ The firmware is ESPHome with one external component, `blade_reader`, in
 calculation and takes no ESPHome or ESP-IDF include; the rest is glue. Firmware gates, both run
 from the repo root:
 
-- `make -C firmware test`: the core's tests, on the Mac.
+- `make -C firmware test`: the core's tests and the web page's model tests (with Node), on the Mac.
 - `esphome compile firmware/blade-reader.yaml`: the glue builds. It needs a
   `firmware/secrets.yaml`; a copy of `secrets.example.yaml` with any base64 `api_key` will do.
 
