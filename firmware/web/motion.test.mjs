@@ -24,3 +24,10 @@ test("every animation the page runs is one the browser can run without repaintin
     for (const p of keyframes.get(name)) assert.ok(allowed.includes(p), `"animation:${use}" animates ${p}`)
   }
 })
+
+test("an SVG filter blurs nothing bigger than an LED", () => {
+  // Firefox redraws an SVG filter on the CPU at every zoom step and every new tile, and the art is
+  // drawn four times over; a blur on its copper took zooming from 50 fps to 4.
+  const rules = [...css.matchAll(/([^{}]*)\{[^{}]*filter\s*:\s*url\(/g)].map(([, sel]) => sel.trim())
+  for (const sel of rules) assert.match(sel, /\.led\b/, `${sel} has an SVG filter`)
+})

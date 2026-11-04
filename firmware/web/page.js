@@ -104,7 +104,7 @@ const BOARD = {"viewBox":{"x":-59.8,"y":-58.88,"width":119.6,"height":117.76},"w
 // </board-art>
 
 // The art's own styles travel inside it, so each <use> copy of it is styled too.
-const ART_CSS = ".outline{fill:var(--mask);stroke:var(--mask-edge);stroke-width:.25}.cu-ring{fill:var(--copper);stroke:var(--copper)}.cu-parts{fill:var(--cu-parts);stroke:var(--cu-parts);opacity:.7}.pad{fill:var(--hasl);stroke:var(--hasl)}.via{stroke:#5E656C}.hole{fill:var(--hole)}.comp{fill:none;stroke:var(--comp);stroke-width:.15}.silk{fill:var(--silk);stroke:none}g[id^=w]{--lit:var(--copper);transition:opacity .4s}g[id^=w].live{--lit:var(--glow)}g[id^=w].live :is(.cu-ring,.cu-parts){opacity:var(--k)!important}g[id^=w].unz{--lit:var(--pink);animation:blink 1s steps(1) infinite}g[id^=w].blown,g[id^=w].range{--lit:var(--red)}g[id^=w].range{animation:blink .5s steps(1) infinite}g[id^=w]:is(.live,.unz,.blown,.range) :is(.cu-ring,.cu-parts){fill:var(--lit);stroke:var(--lit);opacity:1;filter:url(#glow)}g[id^=w]:is(.live,.unz,.blown,.range) .pad{fill:color-mix(in srgb,var(--lit) 55%,var(--hasl))}@keyframes blink{50%{opacity:.35}}@media (prefers-reduced-motion:reduce){g[id^=w]{animation:none!important}}"
+const ART_CSS = ".outline{fill:var(--mask);stroke:var(--mask-edge);stroke-width:.25}.cu-ring{fill:var(--copper);stroke:var(--copper)}.cu-parts{fill:var(--cu-parts);stroke:var(--cu-parts);opacity:.7}.pad{fill:var(--hasl);stroke:var(--hasl)}.via{stroke:#5E656C}.hole{fill:var(--hole)}.comp{fill:none;stroke:var(--comp);stroke-width:.15}.silk{fill:var(--silk);stroke:none}g[id^=w]{--lit:var(--copper);transition:opacity .4s}g[id^=w].live{--lit:var(--glow)}g[id^=w].live :is(.cu-ring,.cu-parts){opacity:var(--k)!important}g[id^=w].unz{--lit:var(--pink);animation:blink 1s steps(1) infinite}g[id^=w].blown,g[id^=w].range{--lit:var(--red)}g[id^=w].range{animation:blink .5s steps(1) infinite}g[id^=w]:is(.live,.unz,.blown,.range) :is(.cu-ring,.cu-parts){fill:var(--lit);stroke:var(--lit);opacity:1}g[id^=w]:is(.live,.unz,.blown,.range) .pad{fill:color-mix(in srgb,var(--lit) 55%,var(--hasl))}@keyframes blink{50%{opacity:.35}}@media (prefers-reduced-motion:reduce){g[id^=w]{animation:none!important}}"
   // Each way's brightness comes in from .art, outside the art: WebKit rebuilds every <use> copy,
   // restarting every blink, whenever anything inside the art changes.
   + Array.from({ length: WAYS }, (_, i) => `#w${i + 1}{--k:var(--k${i + 1})}`).join("");
@@ -255,7 +255,7 @@ function paintArt(y) {
       y0 = c + CUT_H;
     }
     bands.push([y0, VB.y + VB.height, 0]);
-    art.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><g id="artg" stroke-linecap="round" stroke-linejoin="round"><style>${ART_CSS}</style>${ART}</g></defs></svg>`
+    art.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><g id="artg" stroke-linecap="round" stroke-linejoin="round"><style>${ART_CSS}</style>${ART}</g></defs></svg>`
       + bands.map(([a, b, g]) => `<svg viewBox="${VB.x} ${a} ${VB.width} ${b - a}" preserveAspectRatio="none" style="height:${((b - a + g) / height()) * 100}%" aria-hidden="true"><use href="#artg"/></svg>`).join("");
     art.dataset.gap = String(ui.gap);
   }
