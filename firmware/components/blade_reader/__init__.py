@@ -13,6 +13,7 @@ from esphome.components import (
     sensor,
     text_sensor,
 )
+from esphome.components import web_server
 from esphome.components.adc.sensor import CONF_SAMPLES, ADCSensor
 import esphome.config_validation as cv
 from esphome.core import CORE
@@ -43,6 +44,24 @@ from esphome.const import (
     UNIT_WATT,
     UNIT_WATT_HOURS,
 )
+
+# The viewport tag has to be in the HTML the yoke serves first. ESPHome's index page has none and
+# takes no extra head content, and page.js takes seconds to arrive from the yoke, so a tag it
+# adds comes too late: a phone has laid the page out 980 px wide by then, and Firefox for Android
+# keeps that page's zoom and inflated text after the tag arrives.
+VIEWPORT = '<meta name=viewport content="width=device-width, initial-scale=1">'
+_build_index_html = web_server.build_index_html
+
+
+def _build_index_html_with_viewport(config):
+    html = _build_index_html(config)
+    after = "<meta charset=UTF-8>" if "<meta charset=UTF-8>" in html else "<head>"
+    if after not in html:
+        raise cv.Invalid("blade_reader: ESPHome's index page has no <head> to put the viewport tag in")
+    return html.replace(after, after + VIEWPORT, 1)
+
+
+web_server.build_index_html = _build_index_html_with_viewport
 
 AUTO_LOAD = ["binary_sensor", "button", "sensor", "text_sensor"]
 DEPENDENCIES = ["output"]

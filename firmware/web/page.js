@@ -387,10 +387,6 @@ function toggleTheme() {
 function boot() {
   document.documentElement.lang = "en-GB";
   document.title = "Blade Reader";
-  const viewport = document.createElement("meta");
-  viewport.name = "viewport";
-  viewport.content = "width=device-width, initial-scale=1";
-  document.head.append(viewport);
   document.querySelector("esp-app")?.remove();
   const app = document.createElement("main");
   app.id = "app";
