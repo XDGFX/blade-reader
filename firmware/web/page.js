@@ -104,7 +104,10 @@ const BOARD = {"viewBox":{"x":-59.8,"y":-58.88,"width":119.6,"height":117.76},"w
 // </board-art>
 
 // The art's own styles travel inside it, so each <use> copy of it is styled too.
-const ART_CSS = ".outline{fill:var(--mask);stroke:var(--mask-edge);stroke-width:.25}.cu-ring{fill:var(--copper);stroke:var(--copper)}.cu-parts{fill:var(--cu-parts);stroke:var(--cu-parts);opacity:.7}.pad{fill:var(--hasl);stroke:var(--hasl)}.via{stroke:#5E656C}.hole{fill:var(--hole)}.comp{fill:none;stroke:var(--comp);stroke-width:.15}.silk{fill:var(--silk);stroke:none}g[id^=w]{--lit:var(--copper);transition:opacity .4s}g[id^=w].live{--lit:var(--glow)}g[id^=w].live :is(.cu-ring,.cu-parts){opacity:var(--k)!important}g[id^=w].unz{--lit:var(--pink);animation:blink 1s steps(1) infinite}g[id^=w].blown,g[id^=w].range{--lit:var(--red)}g[id^=w].range{animation:blink .5s steps(1) infinite}g[id^=w]:is(.live,.unz,.blown,.range) :is(.cu-ring,.cu-parts){fill:var(--lit);stroke:var(--lit);opacity:1;filter:url(#glow)}g[id^=w]:is(.live,.unz,.blown,.range) .pad{fill:color-mix(in srgb,var(--lit) 55%,var(--hasl))}@keyframes blink{50%{opacity:.35}}@media (prefers-reduced-motion:reduce){g[id^=w]{animation:none!important}}";
+const ART_CSS = ".outline{fill:var(--mask);stroke:var(--mask-edge);stroke-width:.25}.cu-ring{fill:var(--copper);stroke:var(--copper)}.cu-parts{fill:var(--cu-parts);stroke:var(--cu-parts);opacity:.7}.pad{fill:var(--hasl);stroke:var(--hasl)}.via{stroke:#5E656C}.hole{fill:var(--hole)}.comp{fill:none;stroke:var(--comp);stroke-width:.15}.silk{fill:var(--silk);stroke:none}g[id^=w]{--lit:var(--copper);transition:opacity .4s}g[id^=w].live{--lit:var(--glow)}g[id^=w].live :is(.cu-ring,.cu-parts){opacity:var(--k)!important}g[id^=w].unz{--lit:var(--pink);animation:blink 1s steps(1) infinite}g[id^=w].blown,g[id^=w].range{--lit:var(--red)}g[id^=w].range{animation:blink .5s steps(1) infinite}g[id^=w]:is(.live,.unz,.blown,.range) :is(.cu-ring,.cu-parts){fill:var(--lit);stroke:var(--lit);opacity:1;filter:url(#glow)}g[id^=w]:is(.live,.unz,.blown,.range) .pad{fill:color-mix(in srgb,var(--lit) 55%,var(--hasl))}@keyframes blink{50%{opacity:.35}}@media (prefers-reduced-motion:reduce){g[id^=w]{animation:none!important}}"
+  // Each way's brightness comes in from .art, outside the art: WebKit rebuilds every <use> copy,
+  // restarting every blink, whenever anything inside the art changes.
+  + Array.from({ length: WAYS }, (_, i) => `#w${i + 1}{--k:var(--k${i + 1})}`).join("");
 
 // ── View ──
 
@@ -246,7 +249,7 @@ function page(y) {
 }
 
 // The art is drawn once per gap, shown through one window per band, and kept; after that only
-// each way's class and brightness change.
+// each way's class changes inside it, and its brightness on .art.
 function paintArt(y) {
   const art = document.querySelector(".art");
   if (art.dataset.gap !== String(ui.gap)) {
@@ -267,7 +270,7 @@ function paintArt(y) {
     if (!g) continue;
     const cls = lit(w);
     if (g.getAttribute("class") !== cls) g.setAttribute("class", cls);
-    g.style.setProperty("--k", (0.35 + 0.65 * Math.sqrt(fullness(w))).toFixed(2));
+    art.style.setProperty(`--k${n}`, (0.35 + 0.65 * Math.sqrt(fullness(w))).toFixed(2));
   }
 }
 
