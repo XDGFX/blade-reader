@@ -3,8 +3,9 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="Licence: CERN-OHL-S-2.0" src="https://img.shields.io/badge/licence-CERN--OHL--S--2.0-e8772e?style=flat-square"></a>
-  <img alt="Status: designing the first board" src="https://img.shields.io/badge/status-designing%20the%20first%20board-16191d?style=flat-square">
+  <a href="LICENSE"><img alt="Hardware licence: CERN-OHL-S-2.0" src="https://img.shields.io/badge/hardware%20licence-CERN--OHL--S--2.0-e8772e?style=flat-square"></a>
+  <a href="firmware/LICENSE"><img alt="Firmware licence: AGPL-3.0-or-later" src="https://img.shields.io/badge/firmware%20licence-AGPL--3.0--or--later-e8772e?style=flat-square"></a>
+  <img alt="Status: rev B in service" src="https://img.shields.io/badge/status-rev%20B%20in%20service-16191d?style=flat-square">
   <img alt="Input: 12 or 24 V" src="https://img.shields.io/badge/input-12%20%2F%2024%20V-686d73?style=flat-square">
   <img alt="Firmware: ESPHome" src="https://img.shields.io/badge/firmware-ESPHome-686d73?style=flat-square">
 </p>
@@ -18,8 +19,8 @@ you where it is going.
 > It reads blade fuses. Any resemblance to a 1982 film is the fault of whoever named it.
 
 > [!NOTE]
-> Blade Reader is being designed. No board has been ordered yet, so everything below describes
-> the intended design, not a tested one.
+> Five rev B yokes have been built, and two have been in service since November 2026. See
+> [Untested](#untested) for what the install hasn't shown yet.
 
 ## How it works
 
@@ -55,10 +56,9 @@ ordered, and is kept at the tag [`rev-a-strip`](https://github.com/XDGFX/blade-r
 
 ## Installing
 
-These notes come from the design, from a 1.6 mm printed plate of the outline, and from yoke B,
-fitted live to a panel on the bench. The plate was fitted to a Blue Sea ST Blade 12 circuit on
-2026-10-11: it dropped on with all 12 holes lined up, cleared the + stud and the mounting screws,
-and the cover went on. No yoke has been installed in service yet.
+These notes come from the design, from a 1.6 mm printed plate of the outline, and from the two
+yokes in service. Both fitted as drawn, and the arms on the 13.5 mm chin have proved stiff
+enough.
 
 The yoke is drawn for a fuse panel mounted positive end down, as Blue Sea draws it. The chin is
 then below the panel, the odd ways are on the left with 11 and 12 nearest the chin, and the
@@ -75,7 +75,8 @@ antenna overhangs, and 13.5 mm below the positive end.
    ±0.6 mm of float at the holes.
 4. **Refit all 12 way screws**, each with its lock washer, and torque them before anything else
    goes on. They are the yoke's only fixing.
-5. **Refit the feed lug with a washer under it**, so that it stands clear of the chin. See below.
+5. **Refit the feed lug, and check it stands clear of the chin.** Some lugs need a washer under
+   them; see below.
 6. **Bolt each circuit's ring terminal to its own way's nut**, with an M4 split spring washer
    under the bolt, to 1.0–1.2 N·m. The numbers are on the fingers. Run the ring's tongue straight
    out, away from the panel, and hold it there while you tighten: within about 20° either way.
@@ -117,10 +118,13 @@ ESP-PROG and the clamp. EN, VDD, GND and IO0 go straight through. The ESP-PROG's
 The feed lug crosses the chin on its way off the + stud, and the whole of the chin's ring face
 is GND copper under solder mask. Mask is not insulation: a lug that rests on the chin can scrape
 through it, and that joins the feed to the ground wire with no fuse between them. So the lug must
-stand clear of the chin, not lie on it. The lug's seat on the stud is level with the parts face,
+stand clear of the chin, not lie on it.
+
+Whether yours does depends on the lug. The lug's seat on the stud is level with the parts face,
 so a flat lug has to rise by the yoke's 1.6 mm or more: a washer about 2 mm thick under it, which
-leaves about 11.9 mm of stud. A lug that steps up from its palm may clear without one; check for
-a visible gap all the way across the chin.
+leaves about 11.9 mm of stud. A lug that steps up from its palm may clear without one. The first
+install's lugs needed none, but lugs vary: look for a visible gap all the way across the chin
+before you put the cover on.
 
 The feed's field moves the reading of whichever way is nearest where the feed leaves the panel,
 by up to about −0.24 A at a 100 A feed. That is way 12 when the feed leaves to the right of the
@@ -134,29 +138,28 @@ on each side. The plate fitted a Blue Sea ST Blade 6 circuit that way, and its c
 
 ### Untested
 
-- **The feed lug over the chin.** No lug has been tried on the plate or on a yoke. The washer and
-  its thickness are worked out from the panel's CAD, not measured.
+- **Other feed lugs.** The first install's lugs cleared the chin without a washer. The washer
+  for a flat lug is worked out from the panel's CAD, not tried.
 - **Any clone.** Both panels the plate was fitted to were Blue Sea's. The yoke fixes the row
   spacing at the ST Blade's 84.2 mm.
 - **A cut yoke on a 6 circuit panel.** Only the plate was cut. Nothing is laid out or checked
   for it.
-- **The yoke's last 6.5 mm.** The chin was shortened from 20 mm to 13.5 after the plate was
-  printed, without a reprint. The inner edge and every hole are as printed; how stiff the arms
-  are on the shorter chin is not.
-- **Everything a plate can't show:** the joints after heat, the room a USB plug needs behind the
-  yoke, and Wi-Fi range with the antenna beside way 11's cable.
+- **The joints over time.** The first yokes went into service in November 2026, so the joints
+  haven't yet been through a season of heat. Keep checking the torques after the first warm runs.
+- **Wi-Fi beyond 5 m.** The antenna sits beside way 11's cable; it holds a connection at 4–5 m,
+  and nothing further has been tried.
 
 ## Repository
 
 | Path | What |
 |---|---|
-| [`docs/design.md`](docs/design.md) | The design as decided so far, with the reasoning and the numbers |
-| [`docs/research/`](docs/research/) | The research behind each decision: sensors, ADC, terminals and copper, power, JLC assembly, panel dimensions |
+| [`docs/design.md`](docs/design.md) | The design as decided, with the reasoning and the numbers |
+| [`docs/research/`](docs/research/) | The research behind each decision: sensors, ADC, terminals and copper, power, the Wi-Fi module, panel dimensions |
 | `docs/assets/` | The banner and renders of the board |
 | [`board/`](board/) | The yoke's [tscircuit](https://tscircuit.com) source: placed and routed, with every check passing. Its Gerbers, BOM and CPL are in `board/fab/` |
 
-The first five yokes were ordered assembled from JLCPCB on 2026-10-12. The ESPHome configuration
-for the first flash is in [`firmware/`](firmware/). How the full firmware behaves is in
+The first five yokes were ordered assembled from JLCPCB on 2026-10-12. The ESPHome firmware and
+how to flash it are in [`firmware/`](firmware/). How the firmware behaves is in
 [`docs/reference/firmware.md`](docs/reference/firmware.md).
 
 ## Licence
