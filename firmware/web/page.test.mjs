@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // The page's model, fed /events messages as a yoke sends them. Run: node --test firmware/web
 import { test } from "node:test"
 import assert from "node:assert/strict"

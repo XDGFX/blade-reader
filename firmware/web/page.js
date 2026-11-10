@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // The yoke's own web page, served as /0.js into an otherwise empty page; see docs/reference/firmware.md.
 "use strict";
 
@@ -234,7 +235,7 @@ function page(y) {
     ${popover(y)}
    </div>
   </div>
-  <div class="sys"><span>Wi-Fi ${fmt(s.wifi, 0, " dBm")}</span><span>ESP32 ${fmt(s.esp32, 0, " °C")}</span><span>Up ${duration(s.uptime)}</span><span>${esc(s.firmware ?? "")}</span></div>
+  <div class="sys"><span>Wi-Fi ${fmt(s.wifi, 0, " dBm")}</span><span>ESP32 ${fmt(s.esp32, 0, " °C")}</span><span>Up ${duration(s.uptime)}</span><span>${esc(s.firmware ?? "")}</span><a href="https://github.com/XDGFX/blade-reader" target="_blank" rel="noopener">Source</a></div>
   <div class="sys"><button data-press="Restart">Restart</button><button class="danger" data-press="Factory Reset">Factory reset</button></div>
   </div>`;
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Pads, holes and courtyard rects as subpaths in hundredths of a mm, relative after their start.
 export type Sub = { x: number; y: number; body: string; ex: number; ey: number }
 const h = (v: number) => Math.round(v * 100)

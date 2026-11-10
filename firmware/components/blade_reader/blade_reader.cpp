@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #include "blade_reader.h"
 
 #include <algorithm>

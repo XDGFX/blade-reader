@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Builds and runs the blade_reader core's tests on the Mac, then the web page's model tests with
 # Node: `make -C firmware test`.
 

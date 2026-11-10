@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #pragma once
 
 // What the core's tests share: sweep builders, a clock to feed them by, and a fake flash.
