@@ -1,4 +1,4 @@
-# Silkscreen design for the strip
+# Silkscreen design
 
 Answers [What makes a strip's silkscreen beautiful, and what can JLC print?](https://github.com/XDGFX/blade-reader/issues/23).
 Read 2026-10-09. Lines marked **[unsourced]** come from general knowledge, not a page read.
@@ -20,7 +20,7 @@ Read 2026-10-09. Lines marked **[unsourced]** come from general knowledge, not a
   disappears silently.
 - **Torque:** the panel's 2.03 N·m on the way screw puts about 55–110 MPa on the finger, well under
   FR-4's flatwise compressive strength. A printed way-screw figure is safe but just repeats the
-  panel's own spec. The figure the strip owns is the output nut torque, 1.0–1.2 N·m.
+  panel's own spec. The figure the board owns is the output nut torque, 1.0–1.2 N·m.
 
 ## Exemplars and the moves that make them work
 
@@ -46,7 +46,7 @@ Read 2026-10-09. Lines marked **[unsourced]** come from general knowledge, not a
 - **Apple, Raspberry Pi:** minimal legends, designators kept in the fab drawing, and a single
   credits line such as "Raspberry Pi 4 Model B © 2018". [unsourced]
 
-**Moves for the strip:**
+**Moves for the board:**
 
 1. **One type system:** a single stroke font in two or three sizes, with labels in all caps. Only
    the wordmark is a polygon (SVG).
@@ -152,5 +152,5 @@ circuit-json-to-gerber 0.0.112, which is bundled in `@tscircuit/cli`.
 - **The real risk is preload loss.** The resin embeds and creeps when warm, more so close to Tg.
   ENIG keeps the faces flat, and HASL would add solder creep on top.
 - **Verdict:** printing the way-screw torque is accurate and safe, but it only repeats the panel's
-  spec. The strip's own number is the output nut torque, 1.0–1.2 N·m from `design.md`. That one is
+  spec. The board's own number is the output nut torque, 1.0–1.2 N·m from `design.md`. That one is
   worth printing if the design wants a torque figure.

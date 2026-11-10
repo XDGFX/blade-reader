@@ -6,9 +6,8 @@ for: "XDGFX/hailey#198 (map XDGFX/hailey#178)"
 # Way monitor: 24 V to 3.3 V supply
 
 Which regulator the **way monitor**'s main strip uses to make 3.3 V from the 24 V house bus,
-what protects it, and whether the three lite strips can run from that rail over cable. The
-main strip holds an ESP32-C3-MINI-1. Across the four strips there are 24 CC6905S8-3FB030 hall
-sensors and 4 CD4051B multiplexers. The supply is taken from one **way** with a jumper or
+and what protects it. The main strip holds an ESP32-C3-MINI-1. Across the four strips there
+are 24 CC6905S8-3FB030 hall sensors and 4 CD4051B multiplexers. The supply is taken from one **way** with a jumper or
 solder bridge. The board is JLC-assembled.
 
 Prices are JLCPCB/LCSC unit prices at qty 1, in USD, read from the JLCPCB parts API on
@@ -30,12 +29,6 @@ each extended part type ([JLCPCB PCBA FAQ][jlc-faq]). Stock moves, so recheck at
 - **Protection:** an SS210 series Schottky for reverse polarity, then an SMBJ33A TVS. Make
   the fuse the panel's own: jumper the board to a **way fitted with a 1–2 A blade**. If no
   such way is free, add a 60 V PTC (C54874024), which costs USD 0.08 plus a third USD 3 fee.
-- **Lite strips:** feed them 3.3 V over the cable. **No local regulator.** A lite strip
-  draws at most 79 mA. Over 0.5 m of 28 AWG that drops 17 mV, or about 0.1 V at the far end
-  of a three-hop daisy chain, and the sensors run down to 3.0 V. The ground drop matters
-  more than the supply drop, because it shows up as a sensor offset of about 0.2 A. That
-  offset is static, so firmware zeroing removes it. Fit 22 µF at each cable entry and
-  100 nF at each sensor.
 
 ## Current budget
 
@@ -168,45 +161,6 @@ Order on the board: **jumper → (F1) → D1 → D2 → C1/C2 → U1.**
   holds the bus. SMBJ33A (600 W, 10/1000 µs) covers that with 12 V of margin under 65 V.
   SMBJ30A (C19077584, clamps 48.4 V) would also suit the LMR51610. Its stand-off is closer
   to the 29.2 V charge voltage.
-
-## Lite strips: 3.3 V over the cable
-
-**Verdict: send 3.3 V; do not regulate on each lite strip.**
-
-Drop, with copper at 1.72 × 10⁻⁸ Ω·m (IEC 60028 annealed copper) and 0.5 m out plus 0.5 m
-back:
-
-| Conductor | Ω/m | One lite strip (79 mA) | Last of three, daisy-chained (237 → 158 → 79 mA) |
-|---|---|---|---|
-| 28 AWG (ribbon / IDC) | 0.213 | 17 mV | 101 mV |
-| 26 AWG | 0.134 | 11 mV | 63 mV |
-| 24 AWG (JST-XH class) | 0.084 | 7 mV | 40 mV |
-
-The worst case is 3.22 V − 0.10 V = 3.12 V at the far strip. That is still above the
-CC6905's 3.0 V minimum and well clear of its 2.8 V lockout. The sensor's zero is fixed, so
-the supply drop does not move readings.
-
-**The ground drop is what matters.** Each lite strip's sensors and mux are referenced to
-the local ground, and the ESP reads them against the main strip's ground. Half the drop
-above is in the return, so on a direct 28 AWG run the offset is about 8 mV. At 44 mV/A
-that is about **0.19 A**, against the ±0.3 A target. It is close to constant, because the
-sensors' I<sub>CC</sub> doesn't depend on measured current. Firmware zeroing removes it, as
-XDGFX/hailey#178 already assumes. To keep it small and steady:
-
-- give each cable **two or more ground conductors**, which halves the offset per extra
-  conductor
-- run a **separate cable to each lite strip** (star) rather than a daisy chain
-- join the cable grounds to the main strip at the buck's output capacitors, not through
-  the ESP's return. That keeps Wi-Fi TX bursts off the lite strips' reference.
-
-**Local decoupling per lite strip:** a 22 µF 6.3 V X5R 0603 (C59461, basic, USD 0.031) at
-the cable entry, 100 nF at each CC6905 V<sub>CC</sub> (the datasheet's typical application:
-C14663 0603 or C1525 0402, basic), and 100 nF at the CD4051B. The main strip gets the same
-100 nF per sensor.
-
-Local regulation would mean three more buck sets, about USD 1.30 each (no new fee types),
-or a second, higher rail on the cable feeding an LDO. Neither earns its place for a few tens
-of mV.
 
 [jlc-faq]: https://jlcpcb.com/help/article/pcb-assembly-faqs
 [c3mini]: https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf
