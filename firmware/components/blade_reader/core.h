@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #pragma once
 
 // The blade_reader core: everything the yoke works out, with no ESPHome or ESP-IDF in it.

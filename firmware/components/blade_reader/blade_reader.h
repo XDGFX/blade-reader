@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #pragma once
 
 // The glue round the core: drives the muxes and ADCs, hands the core each finished sweep and

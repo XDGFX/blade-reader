@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """blade_reader: sweeps every way of the yoke and publishes what the core works out.
 
 The YAML gives the board (select pins, the two ADCs, the mux channel map and the fault LED);

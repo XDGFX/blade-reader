@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // A lint over the page's styles: an old phone must be able to leave the page open. Run: node --test firmware/web
 import { test } from "node:test"
 import assert from "node:assert/strict"

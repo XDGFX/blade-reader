@@ -201,38 +201,8 @@ drawn in copper.
 
 ## Fit
 
-### The way 1 ear today
-
-From `board/lib/outline.tsx` and `board/index.circuit.tsx`, in PCB coordinates (X along the
-strip, way 1 at +X; y outboard from the panel edge):
-
-- The board ends at X 52.01, 18.61 past way 1's centre (X 33.40). Way 1's nut pad reaches X
-  38.05. So the parts face has **13.96 mm along the strip** between the nut pad and the board end,
-  and the body's **25.5 mm** of depth.
-- The MINI-1 lies along the strip. Its 11.2 × 13.2 mm pad area is on the board at X 40.81–52.01,
-  y 1.25–14.45, and its antenna overhangs the board end by 5.4 mm, reaching 24.0 past way 1's
-  centre.
-- Between the nut pad and the module is a corridor 2.76 mm wide. It carries GND, GPIO9, GPIO8
-  and the LED's line, with the test pads, a 10 nF and the LED's resistor.
-- Above the module, in 11.05 mm: the row of three caps at y 15.37, mux 1 (SOIC-16, pads y
-  16.4–23.3, X 41–51), and GPIO2's pull-up at y 24.4. Beside mux 1 are two pull-ups, the LED, the
-  10 µF and two more caps.
-- J1's pogo pads are not in the ear. They sit behind way 1's nut at y 21.6.
-
-So the module has a slot 11.2 long and 13.2 deep. Every millimetre a replacement is deeper moves
-mux 1 and the outboard edge out by the same amount. Every millimetre it is longer on the board
-moves the board end, and the antenna, further along the panel's side.
-
-### Each candidate
-
-| Candidate | On the board | In the ear | Antenna |
-|---|---|---|---|
-| ESP32-C3-WROOM-02 (18 × 20 × 3.2) and DOIT ESPC3-20 | About 14 × 18, with the 6 mm antenna end overhanging | **The body grows.** Lying along the strip as now: 4.8 mm deeper, so the body goes from 25.5 to about 30.3, just over the 30 mm cap; and about 2.8 mm longer, so the strip goes from 104 to about 107. A TSSOP-16 mux 1 (CD4051BPWR, C54587, extended, $0.24, one more $3.07 fee) turned to stand across the strip is about 5 mm deep against the SOIC's 6.9, which wins back about 2 mm: body about 28.4 | Overhang about 6 mm against 5.4. The tip reaches about 27.4 past way 1's centre, 3.4 more than now: about 6 mm from the negative bus screw on one row, against the 9.5 accepted today |
-| ESP32-C3-WROOM-02U (18 × 14.3) | 14.3 × 18, nothing overhangs | Same depth problem, and 0.3 mm longer than the ear | U.FL antenna on a lead, fitted by hand. Only 73 in stock |
-| DOIT ESPC3-02-N2 (17.3 × 15) | About 11.5 × 15 | Would fit with 1.8 mm more depth, but its pins rule it out | — |
-| DOIT ESPC3-12 (24 × 16) | About 17 × 16 | Body about 28.3 deep, strip about 6 mm longer | Tip about 31 past way 1's centre |
-| ESP32-C6-MINI-1U-H4 (13.2 × 12.5) | 13.2 × 12.5 | **Fits with the ear re-laid out**: 1.3 mm longer on the board than the MINI-1's pad area, taken from the corridor or by turning it. A different pad pattern and pin order, so the ear is re-routed | No overhang. U.FL antenna on a lead |
-| Bare ESP32-C3FH4 | Chip, crystal and about 20 passives in roughly 10 × 10 | **Fits the ear as it stands**, re-laid out | See below |
+How each candidate fitted the strip's way 1 ear is left out, since the yoke places its module on
+the chin; it is in this note's git history.
 
 **Chip-down antenna.** The antenna needs an area at the board end with no copper on either face.
 A 3216 chip antenna wants roughly 5 × 10 mm clear; an inverted-F drawn in copper wants about

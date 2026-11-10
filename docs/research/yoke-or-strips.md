@@ -57,7 +57,7 @@ worked on paper in this session.
 - **Risks no plate can retire.** That the chin holds its parts and the arm its lines once
   placed; the mirrored arm's sensors; Wi-Fi range beside the feed cable; accuracy on one ground
   nut; JLC's review of a U outline; flex of the assembled arms.
-- **Renders** (`explore/yoke`, drawn by `board/scripts/yoke-view.ts`; the yoke's silk is a first
+- **Renders** (tag `archive/explore/yoke`, drawn by `board/scripts/yoke-view.ts`; the yoke's silk is a first
   take): [both options on the panel, bare and wired][r1], [detail][r2], [the chin's parts][r3].
 
 **Recommendation:** go on the yoke. Cost is close to even, and the yoke is narrower, one device,
@@ -69,7 +69,9 @@ first before any money is spent.
 decision up: the plate is printed and fitted before the fab order, not before the choice, and
 the arms get no stiffening bar. The outline was then refined so the chin's inner edge follows
 the panel's end 1 mm off all the way round, which makes the yoke 117.6 × 122.3 mm. The strip
-stays order-ready on `main` and is not ordered; whether it is kept for 6-way panels is open.
+was never ordered, and is shelved at the tag
+[`rev-a-strip`](https://github.com/XDGFX/blade-reader/tree/rev-a-strip), where a board for a
+panel of another width would restart.
 
 ## What each option is
 
@@ -250,11 +252,11 @@ map's ruling of 2026-10-10 applied. Notes, each on its own branch:
 - [`yoke-arm-depth/`](https://github.com/XDGFX/blade-reader/tree/prototype/yoke-arm-depth/docs/research/yoke-arm-depth) (`prototype/yoke-arm-depth`)
 - [`yoke-arm-lanes.md`][lanes] (`research/yoke-arm-lanes`)
 - [`yoke-cost.md`][cost] (`research/yoke-cost`)
-- [`board/yoke.circuit.tsx`](https://github.com/XDGFX/blade-reader/blob/explore/yoke/board/yoke.circuit.tsx) and [`board/fab/yoke-plate.stl`](https://github.com/XDGFX/blade-reader/blob/explore/yoke/board/fab/yoke-plate.stl) (`explore/yoke`)
+- [`board/yoke.circuit.tsx`](https://github.com/XDGFX/blade-reader/blob/archive/explore/yoke/board/yoke.circuit.tsx) and [`board/fab/yoke-plate.stl`](https://github.com/XDGFX/blade-reader/blob/archive/explore/yoke/board/fab/yoke-plate.stl) (tag `archive/explore/yoke`)
 
-[r1]: https://github.com/XDGFX/blade-reader/blob/explore/yoke/docs/assets/yoke-installed.svg
-[r2]: https://github.com/XDGFX/blade-reader/blob/explore/yoke/docs/assets/yoke-installed-detail.svg
-[r3]: https://github.com/XDGFX/blade-reader/blob/explore/yoke/docs/assets/yoke-chin-parts.svg
+[r1]: https://github.com/XDGFX/blade-reader/blob/archive/explore/yoke/docs/assets/yoke-installed.svg
+[r2]: https://github.com/XDGFX/blade-reader/blob/archive/explore/yoke/docs/assets/yoke-installed-detail.svg
+[r3]: https://github.com/XDGFX/blade-reader/blob/archive/explore/yoke/docs/assets/yoke-chin-parts.svg
 [cost]: https://github.com/XDGFX/blade-reader/blob/research/yoke-cost/docs/research/yoke-cost.md
 [lanes]: https://github.com/XDGFX/blade-reader/blob/research/yoke-arm-lanes/docs/research/yoke-arm-lanes.md
 [gap]: https://github.com/XDGFX/blade-reader/blob/prototype/yoke-arm-depth/docs/research/yoke-arm-depth/gap.svg

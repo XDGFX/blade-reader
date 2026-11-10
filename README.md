@@ -164,6 +164,11 @@ how to flash it are in [`firmware/`](firmware/). How the firmware behaves is in
 
 ## Licence
 
-The hardware design is licensed under the [CERN Open Hardware Licence v2, Strongly
-Reciprocal](LICENSE). You may build, modify and sell boards made from it. If you distribute a
-modified design, you must publish its source under the same licence.
+Blade Reader is under two licences:
+
+- **Hardware** (`board/`): [CERN-OHL-S-2.0](LICENSE). You may build, modify and sell boards made
+  from it; if you distribute a modified design, you must publish its source under the same
+  licence.
+- **Firmware** (`firmware/`): [AGPL-3.0-or-later](firmware/LICENSE). You may use, modify and share
+  it; if you distribute modified firmware, or let people use it over a network (its web page), you
+  must offer them its source under the same licence.
