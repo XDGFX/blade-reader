@@ -13,9 +13,8 @@ shelved at the tag `rev-a-strip`: read it there, don't bring it back into `board
 ## Conventions
 
 - British English.
-- Work on `main` and push to `main` while the project is pre-release and private. There are no
-  other contributors yet.
-- Issues live in this repo's GitHub Issues, driven with `gh`.
+- Issues live in this repo's GitHub Issues, driven with `gh`. Work lands as a PR, one issue per
+  piece of work; docs and small safe changes go straight to `main`.
 - No raster images except generated board renders under `docs/assets/`.
 - Prices are USD, with the LCSC part code and the date checked. JLC basic, preferred and
   extended status matters: every extended part type costs about $3 per order. That is under $1 a

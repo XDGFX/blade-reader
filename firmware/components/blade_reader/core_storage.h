@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #pragma once
 
 // Where the core keeps records across reboots. The glue implements it over ESPHome's

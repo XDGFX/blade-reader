@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 /* The yoke's own web page, served as /0.css; see docs/reference/firmware.md.
    Amber is current, pink is the accent and "needs you", red is a fault. */
 :root{--din:"DIN Alternate","Bahnschrift","Roboto Condensed","Arial Narrow",sans-serif;
@@ -95,4 +96,5 @@ button:focus-visible,[data-way]:focus-visible{outline:2px solid var(--pink);outl
 
 .sys{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:center;margin:20px 2px 0;font-size:12px;color:var(--dim)}
 .sys .danger{color:var(--red)}
+.sys a{color:inherit;text-underline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

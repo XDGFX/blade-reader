@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // A faked yoke for trying the page without one: load it before page.js (try.html does). It stands
 // in for EventSource and the button POSTs, sending state messages shaped as a yoke sends them,
 // and adds a bar to switch between Normal, Install mode, Faults and No supply. Not served by the

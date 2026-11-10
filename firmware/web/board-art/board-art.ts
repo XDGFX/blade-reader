@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Board art: the yoke's ring face as fitted (chin down, odd ways left), seen through a clear board.
 // tscircuit's PCB frame is the parts face from above, Y up, chin up. Plotting X, Y straight into
 // SVG's y-down frame mirrors it once, which is the ring face seen as fitted.
