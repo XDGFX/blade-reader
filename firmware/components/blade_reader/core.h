@@ -45,7 +45,8 @@ struct WayReading {
   float current_a;
   float power_w;
   float voltage_v;
-  // The way is live, by LIVE_V and DEAD_V. The glue publishes it on change, whatever `publish` says.
+  // The way is live, by LIVE_V, LIVE_AFTER_MS and DEAD_V. The glue publishes it on change,
+  // whatever `publish` says.
   bool live;
   // The way's energy total, published with the group.
   float energy_wh;
@@ -165,6 +166,9 @@ class Core {
   float over_temperature_c_{OVER_TEMPERATURE_C};
   Storage *storage_{nullptr};
   bool live_[WAYS]{};
+  // Whether each way reads LIVE_V or more, and since when.
+  bool high_[WAYS]{};
+  uint32_t high_since_ms_[WAYS]{};
   Zeroing zeroing_[WAYS];
   WayRecord records_[WAYS];
   bool gain_trim_rejected_[WAYS]{};

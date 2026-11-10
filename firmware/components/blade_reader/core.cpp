@@ -23,10 +23,11 @@ float current_a(int way_index, float out_mv, float zero_mv) {
 // Written so NaN fails too.
 bool gain_trim_allowed(float trim) { return trim >= GAIN_TRIM_MIN && trim <= GAIN_TRIM_MAX; }
 
-bool still_live(bool was_live, float voltage_v) {
-  if (voltage_v >= LIVE_V) return true;
+// `high_for_ms` is how long the way has read LIVE_V or more without a break, or 0 if it doesn't.
+bool still_live(bool was_live, float voltage_v, uint32_t high_for_ms) {
   if (voltage_v < DEAD_V) return false;
-  return was_live;
+  if (was_live) return true;
+  return voltage_v >= LIVE_V && high_for_ms >= LIVE_AFTER_MS;
 }
 
 // Gathers values to take their median, kept sorted as they come: std::sort here trips a false
@@ -119,8 +120,12 @@ Readings Core::on_sweep(const Sweep &sweep) {
     way.current_a = current_a(w, out_mv, zero_now_mv_(w)) * records_[w].gain_trim;
     way.voltage_v = sweep.voltage_mv[w] * VOLTAGE_DIVIDER / 1000.0f;
     way.power_w = way.voltage_v * way.current_a;
-    bool live = still_live(live_[w], way.voltage_v);
-    if (live != live_[w]) changed_at_ms_[w] = sweep.now_ms;
+    bool high = way.voltage_v >= LIVE_V;
+    if (high && !high_[w]) high_since_ms_[w] = sweep.now_ms;
+    high_[w] = high;
+    bool live = still_live(live_[w], way.voltage_v, high ? sweep.now_ms - high_since_ms_[w] : 0);
+    // A way confirmed live has been live since it first read LIVE_V.
+    if (live != live_[w]) changed_at_ms_[w] = live ? high_since_ms_[w] : sweep.now_ms;
     live_[w] = live;
     way.live = live;
     way.new_zero = track_zero_(w, sweep, out_mv);

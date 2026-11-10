@@ -120,9 +120,9 @@ TEST_CASE("in install mode the red LED blinks slowly while a live way is unzeroe
   live.start(flash);
   dead.start(flash);
   Sweep s = all_live();
-  CHECK(run(live, s, 0, 0).led == LED_SLOW_BLINK);
+  CHECK(run(live, s, 0, LIVE_AFTER_MS).led == LED_SLOW_BLINK);
   set_volts(s, 7, 0.0f);
-  CHECK(run(dead, s, 0, 0).led == LED_OFF);
+  CHECK(run(dead, s, 0, LIVE_AFTER_MS).led == LED_OFF);
 }
 
 TEST_CASE("an unzeroed live way doesn't blink the red LED once install mode has ended") {

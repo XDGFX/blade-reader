@@ -27,12 +27,14 @@ Both muxes share one select. For each channel: set the select, wait 2 ms, then a
 
 | State | Rule |
 | --- | --- |
-| Live way | 6 V or more |
+| Live way | 6 V or more without a break for 1 s; live from the first of those readings |
 | Dead way | below 2 V |
 | Between | keeps its previous state |
 | Empty way | dead since boot, since the last Clear faults, or since a No supply period; never a fault |
 
 The thresholds are fixed and suit both 12 V and 24 V. ([#108](https://github.com/XDGFX/blade-reader/issues/108))
+
+A way that was dead turns live only after 1 s at 6 V, so one noisy reading can't make an empty way look fitted and then blown. On yoke A, bouncing a lighting controller's connector on way 5 put one sweep at 6 V on way 9, which had no fuse in it, and it read blown. A real fuse holds its voltage far longer, and a fuse fitted onto a short blows within one sweep, so nothing the yoke could catch before is lost. Since the live spell is dated from its first reading at 6 V, a refitted fuse still clears Blown fuse 5 s after it goes in. Cal decided this after that fault, keeping the thresholds of #108.
 
 ## Current
 

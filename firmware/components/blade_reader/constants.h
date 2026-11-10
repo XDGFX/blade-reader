@@ -24,10 +24,12 @@ constexpr float EVEN_ARM_DIVIDER = 0.820f;
 // Each way's voltage reaches its mux through 100 kΩ over 6.8 kΩ.
 constexpr float VOLTAGE_DIVIDER = (100.0f + 6.8f) / 6.8f;
 
-// A way is live from 6 V and dead below 2 V, and keeps its state in between. Both suit 12 V and
-// 24 V panels.
+// A way turns live once it has read 6 V or more for LIVE_AFTER_MS, is dead below 2 V, and keeps
+// its state in between. Both suit 12 V and 24 V panels; the wait keeps a burst of noise from
+// passing for a fitted fuse.
 constexpr float LIVE_V = 6.0f;
 constexpr float DEAD_V = 2.0f;
+constexpr uint32_t LIVE_AFTER_MS = 1000;
 
 // A blown fuse is a live way dead this long while another way stays live, cleared once the way
 // has been live for BLOWN_CLEARS_AFTER_MS.

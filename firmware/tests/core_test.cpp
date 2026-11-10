@@ -40,10 +40,10 @@ TEST_CASE("the panel voltage is the median of the live ways") {
   set_volts(s, 5, 12.2f);
   set_volts(s, 7, 5.9f);   // below live
   set_volts(s, 12, 1.0f);  // dead
-  CHECK(core.on_sweep(s).panel_voltage_v == doctest::Approx(12.2f));
+  CHECK(run(core, s, 0, LIVE_AFTER_MS).panel_voltage_v == doctest::Approx(12.2f));
 
   set_volts(s, 9, 12.4f);
-  CHECK(core.on_sweep(s).panel_voltage_v == doctest::Approx(12.3f));
+  CHECK(run(core, s, 2 * LIVE_AFTER_MS, 3 * LIVE_AFTER_MS).panel_voltage_v == doctest::Approx(12.3f));
 }
 
 TEST_CASE("a way between dead and live keeps its state for the panel voltage") {
@@ -52,15 +52,15 @@ TEST_CASE("a way between dead and live keeps its state for the panel voltage") {
   set_volts(s, 1, 12.0f);
   set_volts(s, 3, 4.0f);  // never live
   set_volts(s, 5, 12.0f);
-  core.on_sweep(s);
+  run(core, s, 0, LIVE_AFTER_MS);
 
   set_volts(s, 5, 4.0f);  // was live, so still live
-  CHECK(core.on_sweep(s).panel_voltage_v == doctest::Approx(8.0f));
+  CHECK(run(core, s, 2 * LIVE_AFTER_MS, 2 * LIVE_AFTER_MS).panel_voltage_v == doctest::Approx(8.0f));
 
   set_volts(s, 5, 1.0f);  // now dead
-  core.on_sweep(s);
+  run(core, s, 3 * LIVE_AFTER_MS, 3 * LIVE_AFTER_MS);
   set_volts(s, 5, 4.0f);
-  CHECK(core.on_sweep(s).panel_voltage_v == doctest::Approx(12.0f));
+  CHECK(run(core, s, 4 * LIVE_AFTER_MS, 4 * LIVE_AFTER_MS).panel_voltage_v == doctest::Approx(12.0f));
 }
 
 TEST_CASE("each diode's Vbe reads as a temperature, VBE_MV_PER_C per °C from VBE_AT_25C_MV at 25 °C") {
@@ -123,12 +123,49 @@ TEST_CASE("the yoke-level readings publish on a meaningful change in panel volta
   CHECK(core.on_sweep(quiet_sweep(0)).publish_board);
   Sweep s = quiet_sweep(PUBLISH_MIN_MS);
   CHECK_FALSE(core.on_sweep(s).publish_board);
-  SUBCASE("panel voltage") { set_volts(s, 1, 12.0f); }
+  const uint32_t check_ms = PUBLISH_MIN_MS + LIVE_AFTER_MS + SWEEP_MS;
+  SUBCASE("panel voltage") {
+    set_volts(s, 1, 12.0f);
+    run_before(core, s, check_ms - LIVE_AFTER_MS, check_ms);  // way 1 turns live at check_ms
+  }
   SUBCASE("temperature") { s.vbe_mv[DIODE_CHIN] += 2.0f * TEMPERATURE_STEP_C * VBE_MV_PER_C; }
-  s.now_ms = 2 * PUBLISH_MIN_MS;
+  s.now_ms = check_ms;
   CHECK(core.on_sweep(s).publish_board);
 }
 
+
+TEST_CASE("a way turns live only after LIVE_AFTER_MS at LIVE_V or more") {
+  Core core;
+  Sweep s = quiet_sweep(0);
+  set_volts(s, 1, LIVE_V);
+  run_before(core, s, 0, LIVE_AFTER_MS);
+  CHECK_FALSE(run(core, s, LIVE_AFTER_MS - SWEEP_MS, LIVE_AFTER_MS - SWEEP_MS).way[0].live);
+  CHECK(run(core, s, LIVE_AFTER_MS, LIVE_AFTER_MS).way[0].live);
+}
+
+TEST_CASE("a spell at LIVE_V shorter than LIVE_AFTER_MS starts the count again") {
+  Core core;
+  Sweep s = quiet_sweep(0);
+  set_volts(s, 1, LIVE_V);
+  run_before(core, s, 0, LIVE_AFTER_MS - SWEEP_MS);
+  set_volts(s, 1, (LIVE_V + DEAD_V) / 2);
+  run(core, s, LIVE_AFTER_MS, LIVE_AFTER_MS);
+  set_volts(s, 1, LIVE_V);
+  CHECK_FALSE(run(core, s, 2 * LIVE_AFTER_MS, 3 * LIVE_AFTER_MS - SWEEP_MS).way[0].live);
+}
+
+// Bouncing a connector on a live way once put one sweep of noise at 6 V on an empty way.
+TEST_CASE("an empty way that reads LIVE_V for one sweep isn't live and is never blown") {
+  Core core;
+  Sweep s = two_live_ways();
+  run(core, s, 0, 2 * LIVE_AFTER_MS);
+  Sweep noise = s;
+  set_volts(noise, 3, LIVE_V);
+  noise.now_ms = 2 * LIVE_AFTER_MS + SWEEP_MS;
+  CHECK_FALSE(core.on_sweep(noise).way[2].live);
+  Readings r = run(core, s, noise.now_ms + SWEEP_MS, noise.now_ms + 2 * BLOWN_AFTER_MS);
+  CHECK_FALSE(r.faults.way[2][WAY_BLOWN]);
+}
 
 TEST_CASE("a way reads live from LIVE_V and dead below DEAD_V, keeping its state in between") {
   Core core;
@@ -137,13 +174,13 @@ TEST_CASE("a way reads live from LIVE_V and dead below DEAD_V, keeping its state
   set_volts(s, 1, between_v);
   CHECK_FALSE(run(core, s, 0, 0).way[0].live);  // dead since boot
   set_volts(s, 1, LIVE_V + 1.0f);
-  CHECK(run(core, s, 1000, 1000).way[0].live);
+  CHECK(run(core, s, 1000, 1000 + LIVE_AFTER_MS).way[0].live);
   set_volts(s, 1, between_v);
-  CHECK(run(core, s, 2000, 2000).way[0].live);
+  CHECK(run(core, s, 3000 + LIVE_AFTER_MS, 3000 + LIVE_AFTER_MS).way[0].live);
   set_volts(s, 1, DEAD_V - 1.0f);
-  CHECK_FALSE(run(core, s, 3000, 3000).way[0].live);
+  CHECK_FALSE(run(core, s, 4000 + LIVE_AFTER_MS, 4000 + LIVE_AFTER_MS).way[0].live);
   set_volts(s, 1, between_v);
-  CHECK_FALSE(run(core, s, 4000, 4000).way[0].live);
+  CHECK_FALSE(run(core, s, 5000 + LIVE_AFTER_MS, 5000 + LIVE_AFTER_MS).way[0].live);
 }
 
 TEST_CASE("a live way that stays dead while another stays live is blown after BLOWN_AFTER_MS") {
