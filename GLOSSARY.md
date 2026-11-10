@@ -99,5 +99,5 @@ _Avoid_: Ring zone, danger zone
 
 **Strip**:
 The rev A board: one 6-way Blade Reader, fitted along one long side of a fuse panel, two to a
-12-way panel. Shelved at the tag `rev-a-strip` and never ordered. Its sensors were numbered
-S1–S6 from its ESP32 end, whichever ways they read.
+12-way panel. Shelved at the tag `rev-a-strip` and never ordered. The older research notes
+describe it.
