@@ -58,7 +58,7 @@ An unzeroed way borrows a zero from its own arm (odd ways 1, 3, …, 11; even wa
 
 ### Install mode
 
-Install mode starts at boot if any way has no zero. It ends when all 12 have one or 1 h after boot, and returns at the next boot if any are still missing. It changes only the LED. The README's install steps give the fuse swaps. The board-level **Not Zeroed** reading lists the ways without a zero, for example `3, 4, 7, 11`, or says `None`. It's never a fault.
+Install mode starts at boot if any way has no zero. It ends when all 12 have one or 1 h after boot, and returns at the next boot if any are still missing. It changes only the LED. The [manual](https://xdgfx.github.io/blade-reader/) gives the steps: zero on the desk, then pull one way's fuse to redo it. The board-level **Not Zeroed** reading lists the ways without a zero, for example `3, 4, 7, 11`, or says `None`. It's never a fault.
 
 ## Temperature tracking
 
