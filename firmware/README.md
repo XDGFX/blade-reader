@@ -136,5 +136,5 @@ Then use `blade-reader-b.local` for that board's updates, with the same `-s` opt
 ## Home Assistant, later
 
 Home Assistant finds the board under Settings, Devices & services, ESPHome. Give it the API key
-from `secrets.yaml`. For updates from Home Assistant's ESPHome add-on, copy `blade-reader.yaml`
-and `secrets.yaml` into its config folder.
+from `secrets.yaml`. For updates from Home Assistant's ESPHome add-on, copy `blade-reader.yaml`,
+`yoke.yaml`, `secrets.yaml`, `components/` and `web/` into its config folder.
