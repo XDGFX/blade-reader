@@ -15,10 +15,6 @@ on:
         description: Name of the uploaded artifact
         value: firmware-image
   workflow_dispatch:
-  pull_request:
-    paths:
-      - firmware/**
-      - .github/workflows/firmware-image.yml
 
 permissions:
   contents: read
