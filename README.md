@@ -69,9 +69,8 @@ antenna overhangs, and 13.5 mm below the positive end.
 1. **Isolate the battery.** The feed lug has to come off, and the + stud is live until you do.
 2. **Strip the positive end.** Take the feed lug off the + stud, lift every circuit's ring
    terminal, and take out all 12 way screws. Keep the lock washer from each screw.
-3. **Lower the yoke on, holding it by the chin.** Never carry or press it by an arm: the arms have
-   no stiffening, and bending an assembled arm a couple of millimetres can crack its capacitors.
-   All 12 fingers go into their pockets together, 9.5 mm fingers into 11.1 mm pockets, with about
+3. **Lower the yoke on.** Handle it gently: it's fragile until it's installed, since the arms have
+   no stiffening and bending one a couple of millimetres can crack its capacitors. All 12 fingers go into their pockets together, 9.5 mm fingers into 11.1 mm pockets, with about
    ±0.6 mm of float at the holes.
 4. **Refit all 12 way screws**, each with its lock washer, and torque them before anything else
    goes on. They are the yoke's only fixing.
