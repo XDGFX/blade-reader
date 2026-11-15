@@ -44,7 +44,7 @@ jobs:
       - run: pip install "esphome==${ESPHOME_VERSION}"
       - name: Compile the generic image
         run: |
-          VERSION=$(git describe --tags --always --dirty)
+          VERSION=$(git describe --tags --match "v*" --always --dirty)
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           esphome -s image_version "$VERSION" compile firmware/blade-reader-generic.yaml
       - name: Package it for ESP Web Tools
