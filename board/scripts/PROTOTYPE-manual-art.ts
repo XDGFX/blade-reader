@@ -24,6 +24,7 @@ const PAD = 14.33
 const LIP = 12.6
 const FUSE_TOP = 26.21
 const POCKET_HALF = 11.11 / 2
+const PITCH = 13.36
 const INNER_C = HALF - 14.5 // where the pockets end at the fuse holder wall
 const LIP_C = HALF - 3.2 // where the pad starts, in from the edge
 const SCREW_INSET = 8.52
@@ -315,38 +316,13 @@ function slab(cam: Cam, poly: P2[], z0: number, z1: number, topCls: string): Fac
   return [...sides.map((s) => s.face), { pts: poly.map(([x, y]) => [x, y, z1] as V), cls: topCls, edges: all(poly.length) }]
 }
 
-function yoke(cam: Cam, scene: Scene, z: number, bend = 0) {
-  // `bend` sags the odd arm's open end down by that many mm, growing with the square of the
-  // distance from the chin: only for the ✗ drawing.
-  const sag = (c: number, a: number) => (bend && c > 30 ? -bend * Math.max(0, a / 100) ** 2 : 0)
-  const mod = MODULE.slice(0, 4).map(toPanel)
-  scene.add(slab(cam, mod, z - 3.2, z, "part"))
-  if (!bend) {
-    scene.add(slab(cam, OUT, z, z + BOARD, "board"))
-  } else {
-    // Bent: cut each half of the yoke into slices along a, so each can sag on its own.
-    const slices = 30
-    const lo = Math.min(...OUT.map((p) => p[1]))
-    const hi = Math.max(...OUT.map((p) => p[1]))
-    for (let i = slices - 1; i >= 0; i--) {
-      const a0 = lo + ((hi - lo) * i) / slices
-      const a1 = lo + ((hi - lo) * (i + 1)) / slices
-      const seam = (p: P2, q: P2) =>
-        (Math.abs(p[0]) < 1e-6 && Math.abs(q[0]) < 1e-6) ||
-        [a0, a1].filter((v) => v > lo + 1e-6 && v < hi - 1e-6).some((v) => Math.abs(p[1] - v) < 1e-6 && Math.abs(q[1] - v) < 1e-6)
-      for (const right of [false, true]) {
-        const part = clipHalf(clipHalf(clipHalf(OUT, 0, 0, right), 1, a0, true), 1, a1, false)
-        if (part.length < 3) continue
-        const faces = piece(cam, part, z, z + BOARD, "board", seam)
-        for (const fc of faces) fc.pts = fc.pts.map(([x, y, h]) => [x, y, h + sag(x, y)] as V)
-        scene.add(faces)
-      }
-    }
-  }
+function yoke(cam: Cam, scene: Scene, z: number) {
+  scene.add(slab(cam, MODULE.slice(0, 4).map(toPanel), z - 3.2, z, "part"))
+  scene.add(slab(cam, OUT, z, z + BOARD, "board"))
   const ring: Face[] = []
   const zt = z + BOARD + 0.01
-  for (const p of CLAMPS.map(toPanel)) ring.push({ pts: circle3(p[0], p[1], zt + sag(p[0], p[1]), 2.7, 20), cls: "hole", edges: all(20) })
-  for (const p of NUTS.map(toPanel)) ring.push(...hexNut(cam, p[0], p[1], zt + sag(p[0], p[1])))
+  for (const p of CLAMPS.map(toPanel)) ring.push({ pts: circle3(p[0], p[1], zt, 2.7, 20), cls: "hole", edges: all(20) })
+  for (const p of NUTS.map(toPanel)) ring.push(...hexNut(cam, p[0], p[1], zt))
   scene.add(ring)
 }
 
@@ -403,10 +379,12 @@ function piece(cam: Cam, poly: P2[], z0: number, z1: number, cls: string, seam: 
   return [...sides.map((s) => s.face), { pts: poly.map(([x, y]) => [x, y, z1] as V), cls, edges }]
 }
 
-/** The yoke seated with its parts face at z, cut into the panel's rows so barriers can hide it. */
-function seatedYoke(cam: Cam, z: number) {
+/** The yoke with its parts face at z, moved da along, cut into the panel's rows so barriers can hide it. */
+function placedYoke(cam: Cam, z: number, da = 0) {
+  const at = (p: { x: number; y: number }): P2 => { const [c, a] = toPanel(p); return [c, a + da] }
+  const out = OUT.map(([c, a]): P2 => [c, a + da])
   const zt = z + BOARD
-  const antenna = MODULE.slice(0, 4).map(toPanel)
+  const antenna = MODULE.slice(0, 4).map(at)
   const bands: { lo: number; hi: number; ri: number }[] = [{ lo: -Infinity, hi: 0, ri: -1 }]
   rows.forEach((r, ri) => bands.push({ lo: ri === 0 ? 0 : r.a0, hi: r.a1, ri }))
   const byRow = new Map<number, Insert[]>()
@@ -420,13 +398,13 @@ function seatedYoke(cam: Cam, z: number) {
     mod = clipHalf(mod, 1, b.hi, false)
     if (mod.length >= 3) list.push({ maxC: Math.max(...mod.map((p) => p[0])), faces: piece(cam, mod, z - 3.2, z, "part", seam) })
     for (const keepRight of [false, true]) {
-      let poly = clipHalf(OUT, 0, 0, keepRight)
+      let poly = clipHalf(out, 0, 0, keepRight)
       if (isFinite(b.lo)) poly = clipHalf(poly, 1, b.lo, true)
       poly = clipHalf(poly, 1, b.hi, false)
       if (poly.length < 3) continue
       const faces = piece(cam, poly, z, zt, "board", seam)
-      for (const p of CLAMPS.map(toPanel)) if (inPoly(poly, p)) faces.push({ pts: circle3(p[0], p[1], zt + 0.01, 2.7, 20), cls: "hole", edges: all(20) })
-      for (const p of NUTS.map(toPanel)) if (inPoly(poly, p)) faces.push(...hexNut(cam, p[0], p[1], zt + 0.01))
+      for (const p of CLAMPS.map(at)) if (inPoly(poly, p)) faces.push({ pts: circle3(p[0], p[1], zt + 0.01, 2.7, 20), cls: "hole", edges: all(20) })
+      for (const p of NUTS.map(at)) if (inPoly(poly, p)) faces.push(...hexNut(cam, p[0], p[1], zt + 0.01))
       list.push({ maxC: Math.max(...poly.map((p) => p[0])), faces })
     }
     byRow.set(b.ri, list)
@@ -441,68 +419,21 @@ function hexNut(cam: Cam, c: number, a: number, z: number): Face[] {
   return [...slab(cam, hex, z, z + 3.2, "top"), { pts: circle3(c, a, z + 3.21, 2, 16), cls: "hole", edges: all(16) }]
 }
 
-// ── Plan view helpers (flat, from above) ──────────────────────────────────────────────────
+// ── Flat helpers ──────────────────────────────────────────────────────────────────────────
 
 const pathOf = (pts: P2[], close = true) => `M${pts.map(([x, y]) => `${f(x)} ${f(y)}`).join("L")}${close ? "Z" : ""}`
 
-function planYoke(bend = 0): string {
-  const pts = OUT.map(([c, a]): P2 => {
-    // The ✗ drawing's bent arm: the odd arm's open end swings out, growing with the square of a.
-    const dx = bend && c > 30 ? bend * Math.max(0, a / 100) ** 2 : 0
-    return [c + dx, -a]
-  })
-  const mod = MODULE.slice(0, 4).map(toPanel).map(([c, a]): P2 => [c, -a])
-  let s = `<path class="part ln" d="${pathOf(mod)}"/><path class="board ln" d="${pathOf(pts)}"/>`
-  for (const p of CLAMPS.map(toPanel)) {
-    const dx = bend && p[0] > 30 ? bend * Math.max(0, p[1] / 100) ** 2 : 0
-    s += `<circle class="hole ln" cx="${f(p[0] + dx)}" cy="${f(-p[1])}" r="2.7"/>`
-  }
-  for (const p of NUTS.map(toPanel)) {
-    const dx = bend && p[0] > 30 ? bend * Math.max(0, p[1] / 100) ** 2 : 0
-    s += `<circle class="top ln" cx="${f(p[0] + dx)}" cy="${f(-p[1])}" r="3.5"/>`
-  }
-  return s
-}
-
-// ── Hand-drawn parts, in screen units of the drawing they sit in ─────────────────────────
-
-/**
- * A right hand pinching an edge between thumb (above) and the side of the index finger
- * (below), drawn at the origin pointing up-left, about 46 × 40 units. `s` scales and `rot`
- * turns it; mirror with `flip`.
- */
-function hand(x: number, y: number, s: number, rot: number, flip = false) {
-  const t = `translate(${f(x)} ${f(y)}) rotate(${f(rot)}) scale(${f(flip ? -s : s)} ${f(s)})`
-  // Palm and curled fingers, then the thumb laid over the edge, then knuckle creases.
-  return `<g class="hand" transform="${t}">
-<path class="skin ln" d="M2 6 C 6 -2, 18 -4, 26 0 C 32 3, 40 4, 44 10 C 48 16, 46 26, 40 32 C 34 38, 22 40, 14 36 C 8 33, 4 28, 2 20 Z"/>
-<path class="ln" d="M14 36 C 16 30, 15 24, 12 20 M22 38 C 24 32, 23 26, 20 22 M30 36 C 32 30, 30 24, 27 21"/>
-<path class="skin ln" d="M26 0 C 20 -6, 10 -9, 2 -8 C -4 -7, -6 -3, -3 0 C 0 3, 8 2, 14 4 C 20 6, 24 6, 26 0 Z"/>
-<path class="ln" d="M-3 0 C -1 -3, 1 -4, 3 -4"/>
-</g>`
-}
-
-/** A fat arrow from p to q, in screen units. */
-function arrow(p: P2, q: P2, w = 4) {
+/** A motion arrow from p to q, in screen units: orange, outlined in the drawing's line. */
+function arrow(p: P2, q: P2, w = 3) {
   const dx = q[0] - p[0]
   const dy = q[1] - p[1]
   const l = Math.hypot(dx, dy)
-  const ux = dx / l
-  const uy = dy / l
-  const nx = -uy
-  const ny = ux
-  const head = w * 2.4
-  const neck: P2 = [q[0] - ux * head, q[1] - uy * head]
-  const pts: P2[] = [
-    [p[0] + nx * w / 2, p[1] + ny * w / 2],
-    [neck[0] + nx * w / 2, neck[1] + ny * w / 2],
-    [neck[0] + nx * w * 1.25, neck[1] + ny * w * 1.25],
-    q,
-    [neck[0] - nx * w * 1.25, neck[1] - ny * w * 1.25],
-    [neck[0] - nx * w / 2, neck[1] - ny * w / 2],
-    [p[0] - nx * w / 2, p[1] - ny * w / 2],
-  ]
-  return `<path class="arrow" d="${pathOf(pts)}"/>`
+  const [ux, uy] = [dx / l, dy / l]
+  const [nx, ny] = [-uy, ux]
+  const neck: P2 = [q[0] - ux * w * 2.6, q[1] - uy * w * 2.6]
+  const at = (b: P2, k: number): P2 => [b[0] + nx * k, b[1] + ny * k]
+  const pts = [at(p, w / 2), at(neck, w / 2), at(neck, w * 1.4), q, at(neck, -w * 1.4), at(neck, -w / 2), at(p, -w / 2)]
+  return `<path class="arrow ln" d="${pathOf(pts)}"/>`
 }
 
 const wrap = (box: number[], body: string, label: string) =>
@@ -512,20 +443,10 @@ const wrap = (box: number[], body: string, label: string) =>
 
 const art: Record<string, string> = {}
 const LIFT = 30
-const BEND = 14 // exaggerated, so the ✗ reads
 const CAM: V = [0.62, -1, 0.95]
 const chinA = Math.min(...OUT.map((p) => p[1]))
 
-/** Two hands on the chin, one each side of the USB socket, in a 3/4 drawing. */
-const chinHands = (pr: (p: V) => P2, zt: number) =>
-  ([[30, false], [-30, true]] as [number, boolean][])
-    .map(([c, fl]) => {
-      const [x, y] = pr([c, chinA + 1, zt])
-      return hand(x - (fl ? -2 : 2), y + 2, 0.62, fl ? -8 : 8, fl)
-    })
-    .join("")
-
-/** The main drawing: the yoke held by its chin in two hands, above the stripped panel. */
+/** The main drawing: the yoke above the stripped panel, arrows down past the chin's corners. */
 {
   const cam = camera(CAM)
   const scene = new Scene()
@@ -539,52 +460,35 @@ const chinHands = (pr: (p: V) => P2, zt: number) =>
   scene.add([], guides)
   yoke(cam, scene, PAD + LIFT)
   const { body, box } = scene.svg(cam, 10, (pr) => {
-    let s = ""
-    for (const c of [HALF + 24, -HALF - 24]) s += arrow(pr([c, 64, PAD + LIFT + 6]), pr([c, 64, PAD + 4]), 3.2)
-    return s + chinHands(pr, PAD + LIFT + BOARD)
+    const top = PAD + LIFT + BOARD
+    return [-52, 52].map((c) => arrow(pr([c, chinA - 3, top - 4]), pr([c, chinA - 3, top - 24]))).join("")
   })
-  art.lift = wrap(box, body, "The yoke held by its chin in two hands, lowered over the stripped fuse panel")
+  art.lift = wrap(box, body, "The yoke lowered onto the stripped fuse panel")
 }
 
-/** The seated yoke, for a small "after" frame. */
+/** The ✓/✗ close-up: the odd arm's first three ways, nearest the chin. */
+const closeUp = (cam: Cam): number[] => {
+  const pts: P2[] = []
+  for (const c of [HALF - 16, HALF + 20]) for (const a of [-2, 52]) for (const z of [8, 28]) pts.push(project(cam, [c, a, z]))
+  const xs = pts.map((p) => p[0])
+  const ys = pts.map((p) => p[1])
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)]
+}
+
+/** ✓: seated, every finger down in its pocket. */
 {
   const cam = camera(CAM)
   const scene = new Scene()
-  panel(cam, scene, { screws: true, ...seatedYoke(cam, PAD + 0.05) })
-  const { body, box } = scene.svg(cam, 6)
-  art.seated = wrap(box, body, "The yoke seated on the fuse panel, every finger in its pocket")
+  panel(cam, scene, { screws: true, ...placedYoke(cam, PAD + 0.05) })
+  art.seated = wrap(closeUp(cam), scene.svg(cam).body, "Seated: every finger down in its pocket, flat on its pad")
 }
 
-/** ✓: the yoke alone, held by the chin. */
+/** ✗: half a pitch off, every finger resting on a barrier. */
 {
   const cam = camera(CAM)
   const scene = new Scene()
-  yoke(cam, scene, 0)
-  const { body, box } = scene.svg(cam, 14, (pr) => chinHands(pr, BOARD))
-  art.heldOk = wrap(box, body, "Held by the chin: right")
-}
-
-/** ✗: the arm sagging when held by its open end. */
-{
-  const cam = camera(CAM)
-  const scene = new Scene()
-  yoke(cam, scene, 0, BEND)
-  const tip = OUT.filter((p) => p[0] > 30).reduce((m, p) => (p[1] > m[1] ? p : m))
-  const { body, box } = scene.svg(cam, 14, (pr) => {
-    const [x, y] = pr([tip[0] - 6, tip[1] - 4, BOARD - BEND])
-    const [cx, cy] = pr([HALF + 10, 48, BOARD - BEND * 0.23])
-    return hand(x, y, 0.62, 200) + `<path class="crack" d="M${f(cx)} ${f(cy)}l3 -2l-2 -3l3 -2"/>`
-  })
-  art.heldNo = wrap(box, body, "Held by an arm: wrong, the arm bends")
-}
-
-/** Plan ✓ and ✗, for a flat style. */
-{
-  const ok = planYoke() + hand(-30, 7, 0.5, 90, false) + hand(30, 7, 0.5, -90, true)
-  art.planOk = wrap([-70, -112, 140, 150], ok, "Held by the chin: right")
-  const tipY = -Math.max(...OUT.map((p) => p[1]))
-  const no = planYoke() + hand(50, tipY - 2, 0.5, 90, false) + `<path class="crack" d="M47 -50l3 -2l-2 -3l3 -2"/>`
-  art.planNo = wrap([-70, -122, 140, 160], no, "Held by an arm: wrong")
+  panel(cam, scene, { screws: true, ...placedYoke(cam, 22.95, -PITCH / 2) })
+  art.resting = wrap(closeUp(cam), scene.svg(cam).body, "Wrong: the fingers resting on the barriers, not in their pockets")
 }
 
 /** The detail: one finger in its pocket, from above, with the fit dimensions. */
