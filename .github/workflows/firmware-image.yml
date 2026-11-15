@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Builds the generic image (firmware/blade-reader-generic.yaml) and its ESP Web Tools manifest,
+# and uploads them as the artifact `firmware-image`: manifest.json and blade-reader.factory.bin,
+# at the artifact's root.
+#
+# The manual's Pages workflow calls this and serves the artifact at /firmware/, so the Install
+# button's manifest is https://xdgfx.github.io/blade-reader/firmware/manifest.json. This file
+# deploys nothing: a repo has one Pages site, and that workflow owns it.
+name: Firmware image
+
+on:
+  workflow_call:
+    outputs:
+      artifact:
+        description: Name of the uploaded artifact
+        value: firmware-image
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - firmware/**
+      - .github/workflows/firmware-image.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      # The version the gates were last run with; move it with them.
+      ESPHOME_VERSION: 2026.10.2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Cache the ESP-IDF toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: platformio-${{ env.ESPHOME_VERSION }}
+      - run: pip install "esphome==${ESPHOME_VERSION}"
+      - name: Compile the generic image
+        run: |
+          VERSION=$(git describe --tags --always --dirty)
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          esphome -s image_version "$VERSION" compile firmware/blade-reader-generic.yaml
+      - name: Package it for ESP Web Tools
+        run: >
+          python3 -I firmware/scripts/web_image.py
+          firmware/.esphome/build/blade-reader/build/firmware.factory.bin
+          "$VERSION" dist/firmware
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-image
+          path: dist/firmware/
+          if-no-files-found: error
