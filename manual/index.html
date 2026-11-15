@@ -1,0 +1,324 @@
+<!doctype html>
+<!--
+  The Blade Reader manual. Each art placeholder (two braces, "art:", a name) becomes that drawing from
+  board/manual/drawings.ts when the site is built: run `bun run manual` in board/, then open
+  manual/dist/index.html.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blade Reader manual</title>
+<meta name="description" content="Fitting a Blade Reader yoke to a Blue Sea ST Blade fuse panel, from the box to Home Assistant.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M6 4v18a6 6 0 0 0 6 6h8a6 6 0 0 0 6-6V4' fill='none' stroke='%23e8772e' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<!-- Marks shared by every step. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="warn" viewBox="0 0 28 25"><path d="M14 2 L26 23 H2 Z M14 9.5 V15.5 M14 19.2 V19.4"/></symbol>
+  <symbol id="tick" viewBox="-10 -10 20 20"><path d="M-5 0.5 L-1.5 4 L5.5 -4"/></symbol>
+  <symbol id="cross" viewBox="-10 -10 20 20"><path d="M-4.5 -4.5 L4.5 4.5 M4.5 -4.5 L-4.5 4.5"/></symbol>
+</svg>
+
+<main class="page">
+
+<div>
+  <header class="cover">
+    <div class="kicker">Blade Reader · yoke rev B</div>
+    <h1>The manual</h1>
+    <p>You have a yoke in your hands. This takes it from the box to every way showing in Home Assistant.</p>
+    <p class="kicker">For the Blue Sea ST Blade 12 circuit (5026)</p>
+  </header>
+  <ol class="toc">
+    <li><a href="#flash"><b>1</b>Flash it<span>on the desk</span></a></li>
+    <li><a href="#zero"><b>2</b>Zero it<span>on the desk</span></a></li>
+    <li><a href="#install"><b>3</b>Install it<span>9 steps</span></a></li>
+    <li><a href="#rezero"><b>4</b>Redo one way's zero<span>when you need to</span></a></li>
+    <li><a href="#ha"><b>5</b>Home Assistant</a></li>
+    <li><a href="#recovery"><b>6</b>Recovery<span>if it won't update</span></a></li>
+  </ol>
+</div>
+
+<!-- ═══ 1 ═══════════════════════════════════════════════════════════════════════════════ -->
+<section class="chapter" id="flash">
+  <header>
+    <div class="kicker">Chapter 1 · on the desk</div>
+    <h2>Flash it</h2>
+    <p>Over USB-C, from a Mac, before it goes anywhere near the panel.</p>
+  </header>
+
+  <article class="step">
+    <div class="head"><div class="num">1</div><div>
+      <div class="crumb">Flash · step 1 of 3</div>
+      <p class="cap"><b>Install ESPHome and fill in the secrets.</b></p>
+    </div></div>
+    <div class="body">
+<pre><code>brew install uv
+uv tool install --python 3.13 esphome
+uv tool update-shell
+
+git clone https://github.com/XDGFX/blade-reader.git
+cd blade-reader/firmware
+cp secrets.example.yaml secrets.yaml
+openssl rand -base64 32     # paste the result in as api_key</code></pre>
+      <p>In <code>secrets.yaml</code>: your Wi-Fi (2.4 GHz only), a web login for the yoke's page, and a fallback password of eight characters or more.</p>
+    </div>
+    <p class="warn"><svg><use href="#warn"/></svg><span>Keep a copy of <code>secrets.yaml</code> in your password manager: without its key, updates go back over USB.</span></p>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">2</div><div>
+      <div class="crumb">Flash · step 2 of 3</div>
+      <p class="cap"><b>Plug it in and flash.</b> A data cable into the socket on the chin; no buttons to press.</p>
+    </div></div>
+    <div class="main art narrow">{{art:desk}}</div>
+    <div class="body">
+<pre><code>ls /dev/cu.usbmodem*
+esphome run blade-reader.yaml --device /dev/cu.usbmodemXXXX</code></pre>
+      <p>No port listed? The cable only carries power: try another.</p>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">3</div><div>
+      <div class="crumb">Flash · step 3 of 3</div>
+      <p class="cap"><b>Check it's on Wi-Fi.</b> The log shows an IP address, then a reading from every way.</p>
+    </div></div>
+    <div class="body">
+      <p>The green LED blinks while something's wrong, such as no Wi-Fi, and goes out once it's connected. Open <a href="http://blade-reader-a.local">blade-reader-a.local</a> and log in with the web login. If macOS asks, allow your terminal on the local network; if the name won't open, use the IP address from the log.</p>
+      <p>Then prove an update over Wi-Fi while the cable is still in reach:</p>
+<pre><code>esphome run blade-reader.yaml --device blade-reader-a.local</code></pre>
+      <p>A second yoke needs its own name, given before <code>run</code> every time, and is then <code>blade-reader-b.local</code>:</p>
+<pre><code>esphome -s name blade-reader-b -s friendly_name "Blade Reader B" run blade-reader.yaml</code></pre>
+    </div>
+  </article>
+</section>
+
+<!-- ═══ 2 ═══════════════════════════════════════════════════════════════════════════════ -->
+<section class="chapter" id="zero">
+  <header>
+    <div class="kicker">Chapter 2 · on the desk</div>
+    <h2>Zero it</h2>
+    <p>Each way's sensor reads a little even with no current. Its zero is that reading, and every reading after has it taken off.</p>
+  </header>
+
+  <article class="step">
+    <div class="head"><div class="num">1</div><div>
+      <div class="crumb">Zero · step 1 of 1</div>
+      <p class="cap"><b>Leave it on USB for a minute.</b> With nothing on its ways, all 12 zero at once.</p>
+    </div></div>
+    <div class="body">
+      <p>About {{s:ZERO_DEAD_MS}} seconds after it starts, the red LED blinks fast for {{s:ZERO_MEAN_MS}} seconds while the zeros are taken, then goes out. It's done when <b>Not Zeroed</b> reads <b>None</b> on the yoke's page.</p>
+      <p>The zeros are saved straight away. They survive updates and the move to the panel; only a factory reset clears them.</p>
+    </div>
+  </article>
+</section>
+
+<!-- ═══ 3 ═══════════════════════════════════════════════════════════════════════════════ -->
+<section class="chapter" id="install">
+  <header>
+    <div class="kicker">Chapter 3 · at the panel</div>
+    <h2>Install it</h2>
+    <p>The yoke wraps the panel's positive end, ring face out and parts face towards the bulkhead. It needs 16.7 mm beside each long side, 22.7 mm where the Wi-Fi antenna overhangs, and 13.5 mm past the positive end.</p>
+    <p>The drawings show the panel lying on a bench. On a bulkhead, Blue Sea's way up is positive end down, and then the silkscreen reads upright.</p>
+  </header>
+
+  <article class="step">
+    <div class="head"><div class="num">1</div><div>
+      <div class="crumb">Install · step 1 of 9</div>
+      <p class="cap"><b>Isolate the battery.</b></p>
+    </div></div>
+    <p class="warn"><svg><use href="#warn"/></svg><span>The feed has to come off, and the + stud is live until you do.</span></p>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">2</div><div>
+      <div class="crumb">Install · step 2 of 9</div>
+      <p class="cap"><b>Strip the positive end.</b> Feed lug off the + stud, every circuit's ring lifted, all 12 way screws out.</p>
+    </div></div>
+    <div class="main art">{{art:strip}}</div>
+    <div class="body"><p>Keep each screw's lock washer.</p></div>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">3</div><div>
+      <div class="crumb">Install · step 3 of 9</div>
+      <p class="cap"><b>Lower the yoke on.</b> All 12 fingers go into their pockets together.</p>
+    </div></div>
+    <div class="main art">{{art:lower}}</div>
+    <div class="pair">
+      <figure class="frame ok"><span class="mark"><svg><use href="#tick"/></svg></span><div class="art">{{art:seated}}</div><figcaption>Every finger down in its pocket.</figcaption></figure>
+      <figure class="frame no"><span class="mark"><svg><use href="#cross"/></svg></span><div class="art">{{art:resting}}</div><figcaption>Resting on the barriers: lift it and line it up.</figcaption></figure>
+    </div>
+    <p class="warn"><svg><use href="#warn"/></svg><span>Handle it gently: the yoke is fragile until it's installed.</span></p>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">4</div><div>
+      <div class="crumb">Install · step 4 of 9</div>
+      <p class="cap"><b>Refit all 12 way screws,</b> each on its lock washer, and tighten them before anything else goes on.</p>
+    </div></div>
+    <div class="main art">{{art:screws}}</div>
+    <div class="body"><p>They're the yoke's only fixing. There's no torque figure for them yet: do them up as firmly as the panel's own screws.</p></div>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">5</div><div>
+      <div class="crumb">Install · step 5 of 9</div>
+      <p class="cap"><b>Refit the feed lug, and check it stands clear of the chin.</b></p>
+    </div></div>
+    <div class="main art">{{art:lug}}</div>
+    <div class="body"><p>Look for a gap all the way across. Lugs vary: a flat one needs a washer about 2 mm thick under it.</p></div>
+    <p class="warn"><svg><use href="#warn"/></svg><span>A lug touching the chin shorts the feed to ground.</span></p>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">6</div><div>
+      <div class="crumb">Install · step 6 of 9</div>
+      <p class="cap"><b>Bolt each circuit's ring to its own way's nut,</b> 1.0–1.2 N·m, with an M4 split spring washer under the bolt.</p>
+    </div></div>
+    <div class="main art">{{art:rings}}</div>
+    <div class="main art narrow">{{art:ringAngle}}</div>
+    <div class="body">
+      <p>The way numbers are on the fingers. Run each tongue straight out, within about 20° either way, and hold it there while you tighten.</p>
+      <p>M4 rings for 4–6 mm² cable at most. Tie the cables to the bulkhead within about 100 mm.</p>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">7</div><div>
+      <div class="crumb">Install · step 7 of 9</div>
+      <p class="cap"><b>Fit the ground wire:</b> from the nut marked GND to the panel's negative bus.</p>
+    </div></div>
+    <div class="body"><p>The GND nut is on the arm beside way 12, next to the chin.</p></div>
+    <div class="main art">{{art:ground}}</div>
+    <p class="warn"><svg><use href="#warn"/></svg><span>Fit it before plugging anything into the USB socket or the PROG pads.</span></p>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">8</div><div>
+      <div class="crumb">Install · step 8 of 9</div>
+      <p class="cap"><b>Put the cover on</b> and restore the battery.</p>
+    </div></div>
+    <div class="main art">{{art:cover}}</div>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">9</div><div>
+      <div class="crumb">Install · step 9 of 9</div>
+      <p class="cap"><b>Re-torque after the first warm run.</b> The yoke settles under the screws.</p>
+    </div></div>
+    <div class="body"><p>After the first run under load, isolate the battery again and recheck every way screw and every ring's bolt.</p></div>
+  </article>
+</section>
+
+<!-- ═══ 4 ═══════════════════════════════════════════════════════════════════════════════ -->
+<section class="chapter" id="rezero">
+  <header>
+    <div class="kicker">Chapter 4 · when you need to</div>
+    <h2>Redo one way's zero</h2>
+    <p>For a way that reads a little with nothing on, or when the red LED blinks slowly after start-up: that means a live way has no zero yet.</p>
+  </header>
+
+  <article class="step">
+    <div class="head"><div class="num">1</div><div>
+      <div class="crumb">Redo a zero · step 1 of 1</div>
+      <p class="cap"><b>Pull its fuse for {{s:ZERO_DEAD_MS+ZERO_MEAN_MS}} seconds,</b> then put it back.</p>
+    </div></div>
+    <div class="main art">{{art:pullFuse}}</div>
+    <div class="main art">{{art:zeroTimeline}}</div>
+    <div class="body"><p>The red LED goes steady when the way goes dead, blinks fast while the zero is taken, and goes steady again once it's saved. Put the fuse back after the blinking stops: back in sooner, and that attempt is dropped. It stays steady for {{s:BLOWN_CLEARS_AFTER_MS}} seconds after the fuse is back, then goes out.</p></div>
+  </article>
+</section>
+
+<!-- ═══ 5 ═══════════════════════════════════════════════════════════════════════════════ -->
+<section class="chapter" id="ha">
+  <header>
+    <div class="kicker">Chapter 5</div>
+    <h2>Home Assistant</h2>
+    <p>The yoke is one device in Home Assistant, with all 12 ways on it.</p>
+  </header>
+
+  <article class="step">
+    <div class="head"><div class="num">1</div><div>
+      <div class="crumb">Home Assistant · step 1 of 3</div>
+      <p class="cap"><b>Add it.</b> In Settings, Devices &amp; services, it shows up under Discovered: Configure it.</p>
+    </div></div>
+    <div class="body"><p>When it asks for the encryption key, give it the <code>api_key</code> from <code>secrets.yaml</code>.</p></div>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">2</div><div>
+      <div class="crumb">Home Assistant · step 2 of 3</div>
+      <p class="cap"><b>Find the ways</b> on the Blade Reader device.</p>
+    </div></div>
+    <div class="body">
+      <table>
+        <tr><th>Each way</th><td><code>Way 7: Current</code>, <code>Power</code>, <code>Energy</code>, <code>Live</code>, <code>Blown Fuse</code></td></tr>
+        <tr><th>The yoke</th><td><code>Panel Voltage</code>, <code>Fault Text</code>, <code>Not Zeroed</code>, <code>Temperature: …</code></td></tr>
+        <tr><th>Buttons</th><td><code>Clear Faults</code>, <code>Restart</code>, <code>Factory Reset</code></td></tr>
+      </table>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">3</div><div>
+      <div class="crumb">Home Assistant · step 3 of 3</div>
+      <p class="cap"><b>Name your ways in Home Assistant,</b> such as "Way 7: Bilge pump".</p>
+    </div></div>
+    <div class="body"><p>The yoke keeps no names of its own: rename each way's entities there.</p></div>
+  </article>
+</section>
+
+<!-- ═══ 6 ═══════════════════════════════════════════════════════════════════════════════ -->
+<section class="chapter" id="recovery">
+  <header>
+    <div class="kicker">Chapter 6 · if it won't update</div>
+    <h2>Recovery</h2>
+    <p>When USB and Wi-Fi updates both fail, flash it through the PROG pads with an Espressif ESP-PROG.</p>
+  </header>
+
+  <article class="step">
+    <div class="head"><div class="num">1</div><div>
+      <div class="crumb">Recovery · step 1 of 2</div>
+      <p class="cap"><b>Clamp the ESP-PROG on the PROG pads</b> with a 2×3, 2.54 mm pogo clamp, slid on from the chin's edge. Set its power jumper to 5 V.</p>
+    </div></div>
+    <div class="main art narrow">{{art:progPads}}</div>
+    <div class="body">
+      <table>
+        <tr><th>ESP-PROG</th><th>Pad</th></tr>
+        <tr><td>EN</td><td>EN</td></tr>
+        <tr><td>VDD</td><td>VDD</td></tr>
+        <tr><td>GND</td><td>GND</td></tr>
+        <tr><td>IO0</td><td>IO0</td></tr>
+        <tr><td>TXD</td><td class="swap">RXD</td></tr>
+        <tr><td>RXD</td><td class="swap">TXD</td></tr>
+      </table>
+      <p>TXD and RXD swap; the rest go straight through. No button to hold: the ESP-PROG starts it in its bootloader.</p>
+    </div>
+    <p class="warn"><svg><use href="#warn"/></svg><span>Do this off the panel. On it, fit the ground wire first and run the Mac on battery.</span></p>
+  </article>
+
+  <article class="step">
+    <div class="head"><div class="num">2</div><div>
+      <div class="crumb">Recovery · step 2 of 2</div>
+      <p class="cap"><b>Flash it as before,</b> through the ESP-PROG's serial port.</p>
+    </div></div>
+    <div class="body">
+<pre><code>ls /dev/cu.usbserial*
+esphome run blade-reader.yaml --device /dev/cu.usbserial-XXXX1</code></pre>
+      <p>The ESP-PROG shows two ports; the serial one is the second.</p>
+    </div>
+  </article>
+</section>
+
+<footer class="foot">
+  Blade Reader · yoke rev B · <a href="https://github.com/XDGFX/blade-reader">github.com/XDGFX/blade-reader</a>. The drawings are generated from the board's own outline, so they match it.
+</footer>
+</main>
+</body>
+</html>

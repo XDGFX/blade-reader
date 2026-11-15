@@ -101,3 +101,10 @@ _Avoid_: Ring zone, danger zone
 The rev A board: one 6-way Blade Reader, fitted along one long side of a fuse panel, two to a
 12-way panel. Shelved at the tag `rev-a-strip` and never ordered. The older research notes
 describe it.
+
+## Documents
+
+**Manual**:
+The webpage you follow once a yoke is in your hands, from flashing to Home Assistant, published
+at xdgfx.github.io/blade-reader from `manual/`. The README is the brochure you read before buying.
+_Avoid_: Guide, instructions, install notes
