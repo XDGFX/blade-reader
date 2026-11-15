@@ -16,6 +16,10 @@ shelved at the tag `rev-a-strip`: read it there, don't bring it back into `board
 - Issues live in this repo's GitHub Issues, driven with `gh`. Work lands as a PR, one issue per
   piece of work; docs and small safe changes go straight to `main`.
 - No raster images except generated board renders under `docs/assets/`.
+- A change to how a yoke is flashed, zeroed, installed or recovered updates the manual,
+  `manual/index.html`, in the same PR. Its drawings are generated from the board by
+  `board/manual/`; `bun run manual` in `board/` builds the site into `manual/dist/`, and
+  `.github/workflows/manual.yml` publishes it from `main`.
 - Prices are USD, with the LCSC part code and the date checked. JLC basic, preferred and
   extended status matters: every extended part type costs about $3 per order. That is under $1 a
   board at 4 boards, so weigh it against what avoiding it costs (board area, routing, accuracy,

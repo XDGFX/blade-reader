@@ -1,0 +1,49 @@
+# Builds the manual from manual/ and the board's own geometry, and publishes it to GitHub Pages
+# from main. Pull requests build it, so a board change that breaks a drawing fails there.
+name: Manual
+
+on:
+  push:
+    branches: [main]
+    paths: ["manual/**", "board/**", "firmware/components/blade_reader/constants.h", ".github/workflows/manual.yml"]
+  pull_request:
+    paths: ["manual/**", "board/**", "firmware/components/blade_reader/constants.h", ".github/workflows/manual.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: board
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run manual
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: manual/dist
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
