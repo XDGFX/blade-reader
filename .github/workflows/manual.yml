@@ -1,20 +1,25 @@
-# Builds the manual from manual/ and the board's own geometry, and publishes it to GitHub Pages
-# from main. Pull requests build it, so a board change that breaks a drawing fails there.
+# Builds the manual from manual/ and the board's own geometry, with the generic firmware image
+# its Install button flashes under firmware/, and publishes it to GitHub Pages from main. Pull
+# requests build it, so a change that breaks a drawing or the image fails there.
 name: Manual
 
 on:
   push:
     branches: [main]
-    paths: ["manual/**", "board/**", "firmware/components/blade_reader/constants.h", ".github/workflows/manual.yml"]
+    paths: ["manual/**", "board/**", "firmware/**", ".github/workflows/manual.yml", ".github/workflows/firmware-image.yml"]
   pull_request:
-    paths: ["manual/**", "board/**", "firmware/components/blade_reader/constants.h", ".github/workflows/manual.yml"]
+    paths: ["manual/**", "board/**", "firmware/**", ".github/workflows/manual.yml", ".github/workflows/firmware-image.yml"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  firmware:
+    uses: ./.github/workflows/firmware-image.yml
+
   build:
+    needs: firmware
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,6 +32,10 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run manual
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.firmware.outputs.artifact }}
+          path: manual/dist/firmware
       - uses: actions/upload-pages-artifact@v3
         with:
           path: manual/dist

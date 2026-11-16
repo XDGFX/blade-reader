@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M6 4v18a6 6 0 0 0 6 6h8a6 6 0 0 0 6-6V4' fill='none' stroke='%23e8772e' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -48,52 +49,37 @@
   <header>
     <div class="kicker">Chapter 1 · on the desk</div>
     <h2>Flash it</h2>
-    <p>Over USB-C, from a Mac, before it goes anywhere near the panel.</p>
+    <p>Over USB-C, from Chrome or Edge on a computer, before it goes anywhere near the panel. Safari and Firefox can't reach a USB port.</p>
   </header>
 
   <article class="step">
     <div class="head"><div class="num">1</div><div>
       <div class="crumb">Flash · step 1 of 3</div>
-      <p class="cap"><b>Install ESPHome and fill in the secrets.</b></p>
+      <p class="cap"><b>Plug it in.</b> A data cable into the socket on the chin; no buttons to press.</p>
     </div></div>
-    <div class="body">
-<pre><code>brew install uv
-uv tool install --python 3.13 esphome
-uv tool update-shell
-
-git clone https://github.com/XDGFX/blade-reader.git
-cd blade-reader/firmware
-cp secrets.example.yaml secrets.yaml
-openssl rand -base64 32     # paste the result in as api_key</code></pre>
-      <p>In <code>secrets.yaml</code>: your Wi-Fi (2.4 GHz only), a web login for the yoke's page, and a fallback password of eight characters or more.</p>
-    </div>
-    <p class="warn"><svg><use href="#warn"/></svg><span>Keep a copy of <code>secrets.yaml</code> in your password manager: without its key, updates go back over USB.</span></p>
+    <div class="main art narrow">{{art:desk}}</div>
+    <div class="body"><p>If the next step finds no port, the cable only carries power: try another.</p></div>
   </article>
 
   <article class="step">
     <div class="head"><div class="num">2</div><div>
       <div class="crumb">Flash · step 2 of 3</div>
-      <p class="cap"><b>Plug it in and flash.</b> A data cable into the socket on the chin; no buttons to press.</p>
+      <p class="cap"><b>Press Install,</b> pick the yoke's port, then give it your Wi-Fi when it asks.</p>
     </div></div>
-    <div class="main art narrow">{{art:desk}}</div>
     <div class="body">
-<pre><code>ls /dev/cu.usbmodem*
-esphome run blade-reader.yaml --device /dev/cu.usbmodemXXXX</code></pre>
-      <p>No port listed? The cable only carries power: try another.</p>
+      <p class="install"><esp-web-install-button manifest="firmware/manifest.json"><button slot="activate">Install</button><span slot="unsupported">This browser can't flash over USB: open this page in Chrome or Edge on a computer.</span><span slot="not-allowed">Flashing needs this page over HTTPS.</span></esp-web-install-button></p>
+      <p>Wi-Fi is 2.4 GHz only. Missed the question? The yoke opens its own network, named after it, while it has no Wi-Fi: join that and pick yours.</p>
     </div>
+    <p class="warn"><svg><use href="#warn"/></svg><span>It trusts your network: anyone on it can reach the yoke. For a login and keys of your own, <a href="https://github.com/XDGFX/blade-reader/tree/main/firmware#first-flash-from-a-mac">build it yourself</a>.</span></p>
   </article>
 
   <article class="step">
     <div class="head"><div class="num">3</div><div>
       <div class="crumb">Flash · step 3 of 3</div>
-      <p class="cap"><b>Check it's on Wi-Fi.</b> The log shows an IP address, then a reading from every way.</p>
+      <p class="cap"><b>Check it's on Wi-Fi.</b> The green LED blinks while something's wrong, and goes out once it's connected.</p>
     </div></div>
     <div class="body">
-      <p>The green LED blinks while something's wrong, such as no Wi-Fi, and goes out once it's connected. Open <a href="http://blade-reader-a.local">blade-reader-a.local</a> and log in with the web login. If macOS asks, allow your terminal on the local network; if the name won't open, use the IP address from the log.</p>
-      <p>Then prove an update over Wi-Fi while the cable is still in reach:</p>
-<pre><code>esphome run blade-reader.yaml --device blade-reader-a.local</code></pre>
-      <p>A second yoke needs its own name, given before <code>run</code> every time, and is then <code>blade-reader-b.local</code>:</p>
-<pre><code>esphome -s name blade-reader-b -s friendly_name "Blade Reader B" run blade-reader.yaml</code></pre>
+      <p>Its page is at <code>blade-reader-</code> and six letters and digits of its own, then <code>.local</code>; the installer offers a link to it. If the name won't open, use the yoke's IP address from your router.</p>
     </div>
   </article>
 </section>
@@ -248,7 +234,7 @@ esphome run blade-reader.yaml --device /dev/cu.usbmodemXXXX</code></pre>
       <div class="crumb">Home Assistant · step 1 of 3</div>
       <p class="cap"><b>Add it.</b> In Settings, Devices &amp; services, it shows up under Discovered: Configure it.</p>
     </div></div>
-    <div class="body"><p>When it asks for the encryption key, give it the <code>api_key</code> from <code>secrets.yaml</code>.</p></div>
+    <div class="body"><p>Home Assistant gives it a key of its own as it adds it. Built it yourself? Give it the <code>api_key</code> from your <code>secrets.yaml</code> when it asks.</p></div>
   </article>
 
   <article class="step">
@@ -306,12 +292,11 @@ esphome run blade-reader.yaml --device /dev/cu.usbmodemXXXX</code></pre>
   <article class="step">
     <div class="head"><div class="num">2</div><div>
       <div class="crumb">Recovery · step 2 of 2</div>
-      <p class="cap"><b>Flash it as before,</b> through the ESP-PROG's serial port.</p>
+      <p class="cap"><b>Flash it as before,</b> choosing the ESP-PROG's serial port.</p>
     </div></div>
     <div class="body">
-<pre><code>ls /dev/cu.usbserial*
-esphome run blade-reader.yaml --device /dev/cu.usbserial-XXXX1</code></pre>
-      <p>The ESP-PROG shows two ports; the serial one is the second.</p>
+      <p>Press <a href="#flash">Install</a> again, or run <code>esphome</code> if you built it yourself. The ESP-PROG shows two ports; the serial one is the second.</p>
+<pre><code>esphome run blade-reader.yaml --device /dev/cu.usbserial-XXXX1</code></pre>
     </div>
   </article>
 </section>

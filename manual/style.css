@@ -158,3 +158,11 @@ td.swap { color: var(--orange); font-weight: 700; }
   .foot { display: none; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ── The Install button ──────────────────────────────────────────────────────────────── */
+
+.install { margin: 14px 0; }
+.install button { font: 700 18px/1 "Atkinson Hyperlegible", system-ui, sans-serif; color: #16191d; background: var(--orange); border: 2px solid var(--rule); border-radius: 999px; padding: 14px 28px; cursor: pointer; }
+.install button:hover { filter: brightness(1.05); }
+.install span { display: block; padding: 10px 12px; border-left: 4px solid var(--orange); background: var(--code); }
+@media print { .install { display: none; } }

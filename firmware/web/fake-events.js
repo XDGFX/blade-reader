@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // A faked yoke for trying the page without one: load it before page.js (try.html does). It stands
-// in for EventSource and the button POSTs, sending state messages shaped as a yoke sends them,
-// and adds a bar to switch between Normal, Install mode, Faults and No supply. Not served by the
-// yoke.
+// in for EventSource, the button POSTs and /password, sending state messages shaped as a yoke
+// sends them, and adds a bar to switch between Normal, Install mode, Faults and No supply. Not
+// served by the yoke.
 "use strict";
 (() => {
   const qs = new URLSearchParams(location.search);
@@ -78,6 +78,13 @@
 
   const realFetch = fetch;
   window.fetch = (url, opts) => {
+    // As the generic image: no password until one is set, which lasts the tab's session as a
+    // yoke's lasts across reboots. ?password=set starts with one.
+    if (url === "/password") {
+      if (opts?.method === "POST") sessionStorage.setItem("fakePassword", "set");
+      const set = (sessionStorage.getItem("fakePassword") || qs.get("password")) === "set";
+      return Promise.resolve(Response.json({ set }));
+    }
     const m = /^\/button\/(.+)\/press$/.exec(url);
     if (!m) return realFetch(url, opts);
     const name = decodeURIComponent(m[1]);

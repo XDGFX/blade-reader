@@ -1,7 +1,20 @@
 # Firmware
 
-`blade-reader.yaml` is Blade Reader's ESPHome configuration. It holds the board, and the
-`blade_reader` component in `components/` does the rest. It does three jobs:
+`yoke.yaml` holds the board, and the `blade_reader` component in `components/` does the rest.
+Two ESPHome configurations build it into an image:
+
+- **`blade-reader-generic.yaml`, the generic image,** is what the manual's Install button
+  flashes from the browser. It holds no secret: Wi-Fi is set straight after flashing, Home
+  Assistant sets the API key when it adopts the board, and the page has no login until the owner
+  sets a password. The page asks for one at first boot and can skip it; once set, it is kept in
+  flash until a factory reset, and the page's login (username `admin`) and OTA updates ask for it.
+  Until then the board trusts the network it is on. CI builds it (`.github/workflows/firmware-image.yml`), and
+  `scripts/web_image.py` writes its ESP Web Tools manifest.
+- **`blade-reader.yaml`, the secrets image,** is built with your own `secrets.yaml`, as below,
+  and locks the board to your keys and login.
+
+`docs/design.md` (First flash) weighs the two. The rest of this page is the secrets image, which
+does three jobs:
 
 - **Updates over Wi-Fi.** After the first flash over USB-C, every update goes over Wi-Fi,
   encrypted with the API key in `secrets.yaml`. Safe mode means a bad update can also be undone
@@ -25,6 +38,9 @@ The component's calculations are a hardware-free core with tests that run on a M
 `make -C firmware test` from the repo root.
 
 ## First flash from a Mac
+
+A board on the generic image moves to this one over USB-C, as below, not over Wi-Fi: this image's
+updates are encrypted with your key, and the generic image can't take that first one.
 
 ### 1. Install ESPHome
 
@@ -122,5 +138,5 @@ Then use `blade-reader-b.local` for that board's updates, with the same `-s` opt
 ## Home Assistant, later
 
 Home Assistant finds the board under Settings, Devices & services, ESPHome. Give it the API key
-from `secrets.yaml`. For updates from Home Assistant's ESPHome add-on, copy `blade-reader.yaml`
-and `secrets.yaml` into its config folder.
+from `secrets.yaml`. For updates from Home Assistant's ESPHome add-on, copy `blade-reader.yaml`,
+`yoke.yaml`, `secrets.yaml`, `components/` and `web/` into its config folder.

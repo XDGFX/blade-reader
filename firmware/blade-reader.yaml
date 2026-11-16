@@ -1,39 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Blade Reader yoke, rev B: ESPHome configuration.
+# Blade Reader yoke, rev B: ESPHome configuration built with your own secrets.yaml.
 #
-# Flash once over USB-C, then update over Wi-Fi. See firmware/README.md.
-# This file holds the board. The blade_reader component in components/ owns the sweep, every
-# calculation and every way's entities; its behaviour is in docs/reference/firmware.md.
-# The pin map and multiplexer channels follow board/index.circuit.tsx, board/lib/root.tsx and
-# board/lib/root-even.tsx.
+# Flash once over USB-C, then update over Wi-Fi. See firmware/README.md. The board itself is in
+# yoke.yaml; this file adds the Wi-Fi, keys and web login, all from secrets.yaml. Boards flashed
+# from the browser run blade-reader-generic.yaml instead (docs/design.md, First flash).
 
 substitutions:
   name: blade-reader-a
   friendly_name: Blade Reader A
 
-esphome:
-  name: ${name}
-  friendly_name: ${friendly_name}
-
-esp32:
-  board: esp32-c3-devkitm-1
-  variant: esp32c3
-  flash_size: 4MB
-  framework:
-    type: esp-idf
-
-# Energy totals are written on this batch and before a reboot or OTA update, so power loss or a
-# crash loses up to 5 minutes of energy. Zeros are written as soon as they change.
-preferences:
-  flash_write_interval: 5min
-
-external_components:
-  - source:
-      type: local
-      path: components
-
-logger:
-  hardware_uart: USB_SERIAL_JTAG
+packages:
+  yoke: !include yoke.yaml
 
 wifi:
   ssid: !secret wifi_ssid
@@ -48,124 +25,15 @@ captive_portal:
 api:
   encryption:
     key: !secret api_key
-  # The board runs on its own until Home Assistant connects, so it mustn't reboot without one.
-  reboot_timeout: 0s
-  actions:
-    # Logs every way's stored record.
-    - action: dump_state
-      then:
-        - lambda: id(blade).dump_state();
-    # Sets a way's (1 to 12) gain trim, within 0.90 to 1.10, and stores it at once.
-    - action: set_gain_trim
-      variables:
-        way: int
-        trim: float
-      then:
-        - lambda: id(blade).set_gain_trim(way, trim);
 
 # Updates over Wi-Fi, encrypted with the api key above.
 ota:
   - platform: esphome
     encryption: {}
 
-# The yoke's own page at http://<name>.local, from web/ (docs/reference/firmware.md). Not
-# local: true, which serves ESPHome's stock page instead. No firmware upload on it.
 web_server:
-  port: 80
-  version: 3
-  ota: false
-  js_include: web/page.js
-  css_include: web/page.css
-  js_url: ""
-  css_url: ""
   # Covers the page, /events and the buttons. Named, as the default moves to digest in 2027.1.
   auth:
     type: digest
     username: !secret web_username
     password: !secret web_password
-
-# Boots into a bare OTA-only mode after repeated failed boots, so a bad update can be undone
-# over Wi-Fi without the USB port.
-safe_mode:
-
-status_led:
-  pin: GPIO1
-
-# Red fault LED, from 3V3, lit when GPIO8 is low. GPIO8 is a strapping pin; its pull-up holds it
-# high at boot. blade_reader drives it.
-output:
-  - platform: gpio
-    id: fault_led
-    pin:
-      number: GPIO8
-      inverted: true
-      ignore_strapping_warning: true
-
-# Each arm's mux common, read at the 12 dB range. blade_reader reads them in turn, a raw sample at
-# a time: it averages 64 a channel and flags any at the rail as clipped.
-sensor:
-  - platform: adc
-    id: adc_odd
-    pin: GPIO4
-    attenuation: 12db
-    raw: true
-    update_interval: never
-    internal: true
-  - platform: adc
-    id: adc_even
-    pin: GPIO3
-    attenuation: 12db
-    raw: true
-    update_interval: never
-    internal: true
-  - platform: internal_temperature
-    name: "Temperature: ESP32"
-  - platform: wifi_signal
-    name: "Wi-Fi Signal"
-    update_interval: 60s
-  # The web page counts install mode down to an hour after boot from it.
-  - platform: uptime
-    name: "Uptime"
-    update_interval: 60s
-
-# Two 74HC4067s share their selects: S0 to S3 on GPIO7, 10, 5 and 6. Mux 1 reads the odd arm,
-# its common on GPIO4; mux 2 the even arm, its common on GPIO3. Odd ways are on mux 1 and even
-# ways on mux 2. The odd arm's sense line falls with load and reaches mux 1 undivided; the even
-# arm's rises with load and is divided by 0.820 before mux 2. Voltages are 100 kΩ over 6.8 kΩ.
-blade_reader:
-  id: blade
-  select_pins: [GPIO7, GPIO10, GPIO5, GPIO6]
-  odd_arm_adc: adc_odd
-  even_arm_adc: adc_even
-  fault_led: fault_led
-  # The hottest diode at this is Over temperature, cleared 5 K below.
-  over_temperature: 85°C
-  ways:  # ways 1 to 12, in order
-    - { sense: 6, voltage: 7 }
-    - { sense: 6, voltage: 9 }
-    - { sense: 4, voltage: 5 }
-    - { sense: 7, voltage: 10 }
-    - { sense: 2, voltage: 3 }
-    - { sense: 4, voltage: 11 }
-    - { sense: 9, voltage: 8 }
-    - { sense: 3, voltage: 13 }
-    - { sense: 11, voltage: 10 }
-    - { sense: 2, voltage: 14 }
-    - { sense: 13, voltage: 12 }
-    - { sense: 5, voltage: 15 }
-  # Diode-connected MMBT3904s: the chin's and the odd arm's on mux 1, the even arm's on mux 2.
-  diodes: { chin: 1, odd_arm: 14, even_arm: 8 }
-  # Inputs tied to GND, to watch the zero shift with the radio.
-  spares: { odd_arm: 0, even_arm: 0 }
-
-text_sensor:
-  - platform: version
-    name: "Firmware"
-
-# Factory reset erases all of the board's flash, blade_reader's zeros with it, so the next boot
-# is in install mode.
-button:
-  - platform: restart
-    name: "Restart"
-  - platform: factory_reset
-    name: "Factory Reset"
