@@ -1,38 +1,41 @@
-// Every drawing in the manual, by name. Each is an SVG string; the build inlines them.
+// Every drawing in the manual, by name. Each is an SVG string; the build inlines them. What
+// moves in a step is drawn in the highlight; the rest stays in grey line.
 
 import {
-  ARM_DEPTH, BOARD, CHIN_A, CLAMP_HOLES, DECK, FUSE_TOP, GND_NUT, HALF, MODULE_HEIGHT, NEG_SCREWS_A, NEG_STUD_A, NUT,
-  NUT_OUT, OUTPUT_NUTS, PAD, PITCH, PROG_PADS, SCREW_INSET, STUD_A, USB_C, YOKE_OUTLINE, hexagon, wayAt,
+  ARM_DEPTH, BOARD, CHIN_A, CLAMP_HOLES, DECK, FUSE_TOP, GND_NUT, HALF, NEG_SCREWS_A, NEG_STUD_A, NUT, NUT_OUT,
+  OUTPUT_NUTS, PAD, PROG_PADS, SCREW_INSET, STUD_A, USB_C, YOKE_OUTLINE, endA, hexagon, wayAt,
   type P2, type V,
 } from "./geometry"
 import { firmwareSeconds } from "./firmware"
 import { arrow, leader, pathOf, svg, text } from "./marks"
 import { cable, cover, feedLug, fuse, FUSE_C, ringTerminal, usbPlug, wayScrew } from "./props"
 import {
-  Camera, VIEW, Scene, type OnYoke, type Standing, circle, clipHalf, cluster, cylinder, drawPanel, drawYoke, flat, fmt,
+  Camera, HL, VIEW, Scene, type OnYoke, type Standing, circle, clipHalf, cluster, cylinder, drawPanel, drawYoke, flat, fmt,
   standing, yokePieces,
 } from "./render"
 
 const cam = new Camera(VIEW)
 const pr = cam.project
-/** How high the yoke is held above the panel while it's lowered on. */
+/** How high the board is held above the panel while it's lowered on. */
 const LIFT = 30
 const WAYS = Array.from({ length: 12 }, (_, i) => i + 1)
 const fuseAt = (n: number): P2 => [Math.sign(wayAt(n)[0]) * FUSE_C, wayAt(n)[1]]
-/** Where the yoke's ring face is once seated. */
+/** Where the board's top face is once seated. */
 const RING = PAD + BOARD
+/** The washer under a flat feed lug, the README's 2 mm. */
+const LUG_WASHER = 2
 
 type PanelState = {
-  /** The way screws' holes are showing: no yoke and no screws. */
-  holes?: boolean
-  /** Ways whose fuse is out, lifted this far (0 hides it). */
+  /** The way screws: in the panel, lifted out this far (highlighted), or gone. */
+  screws?: "in" | "out" | number
+  /** Ways whose fuse is out, lifted this far and highlighted. */
   pulled?: Map<number, number>
-  /** A ring under the left negative bus screw nearest the ways, for the ground wire. */
+  /** A ring under the negative bus screw nearest the board, for the ground wire. */
   groundRing?: boolean
 }
 
-/** What stands on a bare panel: studs, negative bus screws, fuses, and the screw holes. */
-function panelThings(cam: Camera, s: PanelState = {}): Standing[] {
+/** What stands on the panel: studs, negative bus screws, fuses, and the way screws or their holes. */
+function panelThings(s: PanelState = {}): Standing[] {
   const things: Standing[] = []
   const stud = (a: number, boss: boolean) =>
     cluster(cam, [
@@ -45,127 +48,172 @@ function panelThings(cam: Camera, s: PanelState = {}): Standing[] {
       const c = side * (HALF - SCREW_INSET)
       const ringed = s.groundRing && side < 0 && a === NEG_SCREWS_A[0]
       const z = ringed ? PAD + 0.9 : PAD
-      const g = ringed ? cluster(cam, [ringTerminal(cam, [c, a], PAD, [-1, 0], { length: 4, bolt: false, cls: "ground" }), wayScrew(cam, [c, a], z)]) : wayScrew(cam, [c, a], z)
+      const g = ringed ? cluster(cam, [ringTerminal(cam, [c, a], PAD, [-1, 0], { length: 4, bolt: false, hl: true }), wayScrew(cam, [c, a], z)]) : wayScrew(cam, [c, a], z)
       things.push(standing(circle(c, a, 4.1), g))
     }
   }
   for (const n of WAYS) {
     const lift = s.pulled?.get(n)
-    if (lift === 0) continue
     const at = fuseAt(n)
-    things.push(standing([[at[0] - 9.55, at[1]], [at[0] + 9.55, at[1]]], fuse(cam, at, lift ?? 0)))
-    if (s.holes) {
-      const [c, a] = wayAt(n)
-      things.push(standing(circle(c, a, 2.1), [flat(circle(c, a, 2.1), PAD + 0.01)]))
-    }
+    things.push(standing([[at[0] - 9.55, at[1]], [at[0] + 9.55, at[1]]], fuse(cam, at, lift ?? 0, lift !== undefined)))
+    const [c, a] = wayAt(n)
+    if (s.screws === "in") things.push(standing(circle(c, a, 4.1), wayScrew(cam, [c, a], PAD)))
+    else if (s.screws !== undefined) things.push(standing(circle(c, a, 2.1), [flat(circle(c, a, 2.1), PAD + 0.01)]))
   }
   return things
 }
 
-type YokeState = { screws?: boolean; rings?: boolean; da?: number; z?: number }
+type BoardState = { screws?: boolean | "hl"; rings?: boolean | "hl"; hl?: boolean }
 
-/** The seated yoke's pieces, with screws on its fingers and rings on its nuts if asked. */
-function seated(cam: Camera, y: YokeState = {}): Standing[] {
+/** The seated board's pieces, with screws on its fingers and rings on its nuts if asked. */
+function seated(b: BoardState = {}): Standing[] {
   const extra: OnYoke[] = []
-  if (y.screws) for (const p of CLAMP_HOLES) extra.push({ at: p, group: (z) => wayScrew(cam, p, z) })
-  if (y.rings) {
+  if (b.screws) for (const p of CLAMP_HOLES) extra.push({ at: p, group: (z) => wayScrew(cam, p, z, b.screws === "hl") })
+  if (b.rings) {
     for (const p of OUTPUT_NUTS) {
-      extra.push({ at: p, group: (z) => ringTerminal(cam, p, z + NUT.height + 0.02, [Math.sign(p[0]), 0], { length: 22 }) })
+      extra.push({ at: p, group: (z) => ringTerminal(cam, p, z + 0.02, [Math.sign(p[0]), 0], { length: 22, hl: b.rings === "hl" }) })
     }
   }
-  return yokePieces(cam, y.z ?? PAD, { da: y.da, extra })
+  return yokePieces(cam, PAD, { extra, hl: b.hl })
 }
 
 /**
- * The feed lug on its stud, on a washer `washer` thick and lifted `lift`. Its cable crosses the
- * chin, so it is filed in front of the panel and drawn after the chin.
+ * The feed lug on its stud, on a washer `washer` thick. Its cable crosses the board's end, so it
+ * is filed in front of the panel and drawn after the board.
  */
-const lug = (washer: number, lift = 0): Standing => ({ a: -1, maxC: 9, group: feedLug(cam, washer, lift) })
+const lug = (washer: number, opts: { lift?: number; hl?: boolean } = {}): Standing => ({ a: -1, maxC: 9, group: feedLug(cam, washer, opts) })
 
-/** The installed yoke: seated, screwed, lug on, rings on. */
-const installed = (cam: Camera, panel: PanelState = {}): Standing[] => [
-  ...panelThings(cam, panel),
-  ...seated(cam, { screws: true, rings: true }),
-  lug(2),
-]
+/** Fitted: seated, screwed, lug on, rings on. */
+const fitted = (panel: PanelState = {}): Standing[] => [...panelThings(panel), ...seated({ screws: true, rings: true }), lug(LUG_WASHER)]
 
 /** The viewBox round a box in the world. */
-function crop(cam: Camera, lo: V, hi: V, pad = 2): number[] {
+function crop(lo: V, hi: V, pad = 2): number[] {
   const pts: P2[] = []
-  for (const x of [lo[0], hi[0]]) for (const y of [lo[1], hi[1]]) for (const z of [lo[2], hi[2]]) pts.push(cam.project([x, y, z]))
+  for (const x of [lo[0], hi[0]]) for (const y of [lo[1], hi[1]]) for (const z of [lo[2], hi[2]]) pts.push(pr([x, y, z]))
   const xs = pts.map((p) => p[0])
   const ys = pts.map((p) => p[1])
   return [Math.min(...xs) - pad, Math.min(...ys) - pad, Math.max(...xs) - Math.min(...xs) + 2 * pad, Math.max(...ys) - Math.min(...ys) + 2 * pad]
 }
 
-/** A 3/4 drawing: panel and things, then whatever `after` draws on top. */
+/** A 3/4 drawing: the panel and what stands on it, then whatever `after` adds on top. */
 function view(label: string, things: Standing[], opts: { after?: (s: Scene) => void; crop?: [V, V]; pad?: number } = {}) {
   const scene = new Scene(cam)
   drawPanel(scene, things)
   opts.after?.(scene)
-  const clip = opts.crop ? crop(scene.cam, ...opts.crop) : undefined
+  const clip = opts.crop ? crop(...opts.crop) : undefined
   const { body, box } = scene.render(opts.pad ?? 8, clip)
   return svg(clip ?? box, body, label, !!clip)
 }
 
+/** A label with a leader from a point in the world, offset (dx, dy) on the page. */
+const callout = (s: Scene, p: V, dx: number, dy: number, label: string) => {
+  const q = pr(p)
+  s.overlay.push(leader(q, [q[0] + dx, q[1] + dy], label, dx < 0 ? "end" : "start"))
+}
+
 export const drawings: Record<string, string> = {}
 
-// ── On the desk ─────────────────────────────────────────────────────────────────────────
+/** The cover: Blade Reader fitted, every cable on its terminal. */
+drawings.hero = view("Blade Reader fitted to a Blue Sea ST Blade fuse panel, every circuit's cable on its own terminal", fitted())
+
+// ── What's what ─────────────────────────────────────────────────────────────────────────
+
+drawings.partsBoard = (() => {
+  const scene = new Scene(cam)
+  drawYoke(scene, 0)
+  const t = BOARD
+  const finger = CLAMP_HOLES.reduce((m, p) => (p[0] > 0 && p[1] < m[1] ? p : m), [0, Infinity] as P2)
+  callout(scene, [finger[0] - 7, finger[1], t], -30, 22, "finger")
+  const nut = OUTPUT_NUTS.reduce((m, p) => (p[0] > 0 && p[1] > m[1] ? p : m), [0, -Infinity] as P2)
+  callout(scene, [nut[0], nut[1], t], 24, -12, "terminal")
+  callout(scene, [GND_NUT[0], GND_NUT[1], t], 26, 8, "GND terminal")
+  callout(scene, [USB_C[0], USB_C[1], -1], -14, 22, "USB-C socket")
+  const { body, box } = scene.render(30)
+  box[2] += 46 // room for the GND terminal's label, past the board's right-hand edge
+  return svg(box, body, "Blade Reader: a finger, a circuit nut, the GND nut and the USB-C socket")
+})()
+
+drawings.partsPanel = view("The fuse panel: the + stud and feed lug, a screw, a pocket, a fuse and the negative bus", [...panelThings({ screws: "in" }), lug(0)], {
+  pad: 30,
+  after: (s) => {
+    callout(s, [0, STUD_A, FUSE_TOP], 30, -16, "+ stud")
+    callout(s, [0, STUD_A - 14, PAD + 4], 34, 10, "feed lug")
+    const [c, a] = wayAt(9)
+    callout(s, [c, a, PAD + 3.4], -30, 8, "screw")
+    callout(s, [c - 4.5, a + 4, PAD], -34, 22, "pocket")
+    const f = fuseAt(1)
+    callout(s, [f[0], f[1], FUSE_TOP + 10], -20, -34, "fuse")
+    callout(s, [-(HALF - SCREW_INSET), NEG_SCREWS_A[2], PAD + 3.4], 30, -12, "negative bus")
+  },
+})
+
+// ── On your desk ────────────────────────────────────────────────────────────────────────
 
 drawings.desk = (() => {
   const scene = new Scene(cam)
-  const z = MODULE_HEIGHT
-  drawYoke(scene, z)
-  scene.add(usbPlug(cam, USB_C, z - 1.6))
+  drawYoke(scene, 3.2)
+  scene.add(usbPlug(cam, USB_C, 1.6))
   const { body, box } = scene.render(8)
-  return svg(box, body, "The yoke on the desk, a USB-C cable in the socket on its chin")
+  return svg(box, body, "A USB-C cable plugged into the socket on Blade Reader's end")
 })()
 
-// ── Install ─────────────────────────────────────────────────────────────────────────────
+// ── At the fuse panel ───────────────────────────────────────────────────────────────────
 
-drawings.strip = view(
-  "The positive end stripped: feed lug off, every ring lifted, all 12 way screws out",
-  [...panelThings(cam, { holes: true }), lug(0, 22)],
-  {
-    after: (s) => {
-      const out = [11, 12, 9]
-      for (const n of out) s.add(wayScrew(cam, wayAt(n), PAD + 18))
-      s.overlay.push(arrow(pr([0, STUD_A, FUSE_TOP + 8]), pr([0, STUD_A, FUSE_TOP + 24])))
-      for (const n of out) {
-        const [c, a] = wayAt(n)
-        s.overlay.push(arrow(pr([c + Math.sign(c) * 9, a, PAD + 4]), pr([c + Math.sign(c) * 9, a, PAD + 18])))
-      }
-    },
+/** A battery isolator switch turned to off, drawn by hand. */
+drawings.isolator = (() => {
+  // A rotary battery switch from the front: the housing, OFF and ON marks, and the knob's
+  // lever turned from ON to OFF.
+  const at = (deg: number, r: number): P2 => [r * Math.cos((deg * Math.PI) / 180), r * Math.sin((deg * Math.PI) / 180)]
+  const off = -135
+  const on = -45
+  let s = `<circle class="top ln" r="24"/><circle class="side ln" r="11"/>`
+  for (const d of [off, on]) s += `<path class="ln" d="M${fmt(at(d, 19)[0])} ${fmt(at(d, 19)[1])}L${fmt(at(d, 23)[0])} ${fmt(at(d, 23)[1])}"/>`
+  s += text([at(off, 30)[0], at(off, 30)[1]], "OFF", "end", "label") + text([at(on, 30)[0], at(on, 30)[1]], "ON", "start", "label")
+  s += `<rect class="hl ln" x="-3.5" y="-17" width="7" height="34" rx="3.5" transform="rotate(${off + 90})"/><circle class="hole ln" r="2.5"/>`
+  // The turn, as a thin arc with a head, outside the housing.
+  const R = 34
+  const a0 = on - 6
+  const a1 = off + 12
+  const [x0, y0] = at(a0, R)
+  const [x1, y1] = at(a1, R)
+  s += `<path class="turn" d="M${fmt(x0)} ${fmt(y0)}A${R} ${R} 0 0 0 ${fmt(x1)} ${fmt(y1)}"/>`
+  const tip = at(a1 - 8, R)
+  s += `<path class="arrow ln" d="${pathOf([tip, at(a1 + 1, R - 3.5), at(a1 + 1, R + 3.5)])}"/>`
+  return svg([-48, -46, 96, 76], s, "A battery isolator switch turned from ON to OFF")
+})()
+
+drawings.lugOff = view("The feed lug lifted off the + stud", [...panelThings({ screws: "in" }), lug(0, { lift: 22, hl: true })], {
+  after: (s) => s.overlay.push(arrow(pr([0, STUD_A, FUSE_TOP + 8]), pr([0, STUD_A, FUSE_TOP + 24]))),
+})
+
+drawings.screwsOut = view("All 12 screws lifted out of the panel", panelThings({ screws: "out" }), {
+  after: (s) => {
+    for (const n of WAYS) s.add(wayScrew(cam, wayAt(n), PAD + 18, true))
+    for (const n of [11, 12]) {
+      const [c, a] = wayAt(n)
+      s.overlay.push(arrow(pr([c + Math.sign(c) * 9, a, PAD + 4]), pr([c + Math.sign(c) * 9, a, PAD + 18])))
+    }
   },
-)
+})
 
 drawings.lower = (() => {
   const scene = new Scene(cam)
-  drawPanel(scene, panelThings(cam, { holes: true }))
-  // Guides from the end fingers' holes down to their screw holes, under the lifted yoke.
+  drawPanel(scene, panelThings({ screws: "out" }))
+  // Guides from the end fingers' holes down to their screw holes, under the lifted board.
   for (const n of [11, 12, 1, 2]) {
     const [c, a] = wayAt(n)
     const p = pr([c, a, PAD])
     const q = pr([c, a, PAD + LIFT])
     scene.raw(`<path class="guide" d="M${fmt(p[0])} ${fmt(p[1])}L${fmt(q[0])} ${fmt(q[1])}"/>`)
   }
-  drawYoke(scene, PAD + LIFT)
+  drawYoke(scene, PAD + LIFT, { hl: true })
   const t = PAD + LIFT + BOARD
   for (const c of [-52, 52]) scene.overlay.push(arrow(pr([c, CHIN_A - 3, t - 4]), pr([c, CHIN_A - 3, t - 24])))
   const { body, box } = scene.render(10)
-  return svg(box, body, "The yoke lowered onto the stripped fuse panel")
+  return svg(box, body, "Blade Reader lowered onto the fuse panel, a finger into each pocket")
 })()
 
-/** The ✓/✗ close-up: the odd arm's first three ways, nearest the chin. */
-const NEAR: [V, V] = [[HALF - 16, -2, 8], [HALF + 20, 52, 28]]
-drawings.seated = view("Seated: every finger down in its pocket", [...panelThings(cam), ...seated(cam)], { crop: NEAR })
-drawings.resting = view(
-  "Wrong: the fingers resting on the barriers, not in their pockets",
-  [...panelThings(cam), ...seated(cam, { z: 22.95, da: -PITCH / 2 })],
-  { crop: NEAR },
-)
-
-drawings.screws = view("All 12 way screws back in, each on its lock washer", [...panelThings(cam), ...seated(cam, { screws: true })], {
+drawings.screwsIn = view("All 12 screws back in, each on its washer", [...panelThings(), ...seated({ screws: "hl" })], {
   after: (s) => {
     for (const n of [11, 12]) {
       const [c, a] = wayAt(n)
@@ -174,55 +222,95 @@ drawings.screws = view("All 12 way screws back in, each on its lock washer", [..
   },
 })
 
-drawings.lug = view("The feed lug back on its stud on a washer, clear of the chin", [...panelThings(cam), ...seated(cam, { screws: true }), lug(2)], {
+drawings.lugOn = view("The feed lug back on the + stud", [...panelThings(), ...seated({ screws: true }), lug(LUG_WASHER, { hl: true })], {
   crop: [[-44, -40, 6], [44, 30, 32]],
-  after: (s) => {
-    // The gap between the chin's ring face and the lug, at the chin's inner edge.
-    const a = Math.min(...YOKE_OUTLINE.filter((p) => Math.abs(p[0]) < 1).map((p) => p[1])) + 1
-    const p = pr([-8.5, a, RING])
-    const q = pr([-8.5, a, PAD + 2])
-    s.overlay.push(leader([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], [p[0] - 14, p[1] + 9], "clear gap", "end"))
-  },
 })
 
-drawings.rings = view("Each circuit's ring on its own way's nut, the cable straight out", installed(cam))
+/**
+ * The feed lug from the side, cut through the + stud: ✓ with a gap between it and the board,
+ * ✗ resting on the board, which bends as the nut is done up. Drawn to scale, a along the page
+ * with the board's end on the left, h up.
+ */
+function lugSection(ok: boolean) {
+  const X = (a: number) => a
+  const Y = (h: number) => -h
+  const P = (a: number, h: number): P2 => [X(a), Y(h)]
+  const end = endA(0)
+  const inner = Math.min(...YOKE_OUTLINE.filter((p) => Math.abs(p[0]) < 1).map((p) => p[1]))
+  const box = (a0: number, a1: number, h0: number, h1: number, cls: string) => `<path class="${cls} ln" d="${pathOf([P(a0, h0), P(a1, h0), P(a1, h1), P(a0, h1)])}"/>`
+  // The panel: its end deck, the stud's boss and the stud.
+  let s = box(end, 26, 6, DECK, "side") + box(STUD_A - 9, STUD_A + 9, DECK, DECK + 0.8, "side") + box(STUD_A - 5.25, STUD_A + 5.25, DECK + 0.8, PAD, "side")
+  s += box(STUD_A - 2.4, STUD_A + 2.4, PAD, FUSE_TOP, "metal")
+  // The board's end, bowed down at its tip when the lug sits on it.
+  const bend = ok ? 0 : 3
+  const tip = CHIN_A
+  const under = (a: number) => PAD - bend * ((inner - a) / (inner - tip)) ** 2
+  const n = 12
+  const top: P2[] = []
+  const bottom: P2[] = []
+  for (let i = 0; i <= n; i++) {
+    const a = inner + ((tip - inner) * i) / n
+    top.push(P(a, under(a) + BOARD))
+    bottom.push(P(a, under(a)))
+  }
+  s += `<path class="board ln" d="${pathOf([...top, ...bottom.reverse()])}"/>`
+  // The lug: on a washer with a gap, or resting on the board's edge with none under it.
+  const R = 7
+  const t = 1.5
+  const z = ok ? PAD + LUG_WASHER : RING
+  if (ok) s += box(STUD_A - 6.5, STUD_A + 6.5, PAD, PAD + LUG_WASHER, HL)
+  // The lug's ring round the stud, its tongue, then the cable's crimp running out over the board.
+  const crimp = STUD_A - R - 2
+  s += `<path class="hl ln" d="${pathOf([P(STUD_A + R, z), P(STUD_A + 2.6, z), P(STUD_A + 2.6, z + t), P(STUD_A + R, z + t)])}"/>`
+  s += `<path class="hl ln" d="${pathOf([P(STUD_A - 2.6, z), P(crimp, z), P(crimp, z + t), P(STUD_A - 2.6, z + t)])}"/>`
+  s += `<rect class="hl ln" x="${fmt(X(-30))}" y="${fmt(Y(z + 10))}" width="${fmt(crimp + 30)}" height="10" rx="2"/>`
+  s += box(STUD_A - 4, STUD_A + 4, z + t, z + t + 2.9, "metal")
+  s += ok
+    ? leader(P((inner + tip) / 2, (RING + z) / 2), P((inner + tip) / 2 - 2, 4), "gap", "end")
+    : leader(P(inner - 4, RING), P(inner - 2, 4), "on the board", "start")
+  return svg([-24, Y(30), 50, 30], s, ok ? "Right: a gap between the feed lug and the board" : "Wrong: the feed lug sitting on the board, which bends it as the nut is done up", false, 10)
+}
+drawings.lugGap = lugSection(true)
+drawings.lugTouching = lugSection(false)
 
-/** One nut from above: the ring's tongue straight out, within about 20° either way. */
+drawings.rings = view("Each circuit's cable bolted to its own nut, the cable straight out", [...panelThings(), ...seated({ screws: true, rings: "hl" }), lug(LUG_WASHER)])
+
+/** One nut from above: the cable straight out, within about 20° either way. */
 drawings.ringAngle = (() => {
-  // From above, the panel's edge on the left: the arm runs from it out past the nut.
+  // From above, the panel's edge on the left: the board runs from it out past the nut.
   const r = 4.6
   const ang = (20 * Math.PI) / 180
   const L = 30
   const edge = -NUT_OUT
   let s = `<path class="board ln" d="${pathOf([[edge, -15], [edge + ARM_DEPTH, -15], [edge + ARM_DEPTH, 15], [edge, 15]])}"/>`
   s += `<path class="ln" d="M${fmt(edge)} -19V19"/>`
-  s += `<path class="top ln" d="${pathOf(hexagon(0, 0, NUT.flats))}"/>`
-  s += `<path class="metal ln" d="${pathOf([[r * 0.5, -2.6], [r + 9, -2.6], [r + 9, 2.6], [r * 0.5, 2.6]])}"/>`
-  s += `<circle class="metal ln" r="${r}"/><circle class="hole ln" r="2.2"/>`
-  s += `<path class="cable ln" d="${pathOf([[r + 9, -2.9], [L + 8, -2.9], [L + 8, 2.9], [r + 9, 2.9]])}"/>`
+  s += `<circle class="metal ln" r="${NUT.pad}"/>`
+  s += `<path class="hl ln" d="${pathOf([[r * 0.5, -2.6], [r + 9, -2.6], [r + 9, 2.6], [r * 0.5, 2.6]])}"/>`
+  s += `<circle class="hl ln" r="${r}"/><circle class="hole ln" r="2.2"/>`
+  s += `<path class="hl ln" d="${pathOf([[r + 9, -2.9], [L + 8, -2.9], [L + 8, 2.9], [r + 9, 2.9]])}"/>`
   s += `<path class="guide" d="M0 0L${fmt(L * Math.cos(ang))} ${fmt(-L * Math.sin(ang))}M0 0L${fmt(L * Math.cos(ang))} ${fmt(L * Math.sin(ang))}"/>`
   s += `<path class="ln thin" d="M${fmt((L - 4) * Math.cos(ang))} ${fmt(-(L - 4) * Math.sin(ang))}A${L - 4} ${L - 4} 0 0 1 ${fmt((L - 4) * Math.cos(ang))} ${fmt((L - 4) * Math.sin(ang))}"/>`
-  s += text([L - 2, -12], "20°") + text([L - 2, 15], "20°")
-  s += text([edge - 1, -20.5], "panel edge", "start", "small")
-  return svg([edge - 3, -25, L + 8 - edge + 6, 46], s, "The ring's tongue straight out from the panel, within about 20° either way")
+  s += text([L - 2, -12], "20°", "start", "label") + text([L - 2, 18], "20°", "start", "label")
+  s += text([edge - 1, -20.5], "panel edge", "start", "label")
+  return svg([edge - 3, -27, L + 8 - edge + 6, 50], s, "The cable straight out from the panel, within about 20° either way")
 })()
 
-drawings.ground = view("The ground wire from the nut marked GND to the panel's negative bus", installed(cam, { groundRing: true }), {
+drawings.ground = view("The ground wire from the GND nut to the panel's negative bus", fitted({ groundRing: true }), {
   after: (s) => {
     const [c, a] = GND_NUT
     const zt = RING + 0.01
-    s.add(ringTerminal(cam, [c, a], zt + NUT.height + 0.02, [-1, 0], { length: 8, cls: "ground" }))
-    const zA = zt + NUT.height + 0.47 + 2.2
+    s.add(ringTerminal(cam, [c, a], zt + 0.02, [-1, 0], { length: 8, hl: true }))
+    const zA = zt + 0.47 + 2.2
     const zB = PAD + 0.45 + 2.2
     const n0 = NEG_SCREWS_A[0]
-    s.add(cable(cam, [[c - 23.6, a, zA], [-80, 14, zA], [-80, 96, 22], [-62, n0, 20], [-HALF + SCREW_INSET - 15.6, n0, zB]], 2.9, "ground"))
-    s.overlay.push(leader(pr([c, a, zt + NUT.height]), [pr([c, a, 0])[0] - 18, pr([c, a, 0])[1] + 22], "GND", "end"))
+    s.add(cable(cam, [[c - 23.6, a, zA], [-80, 14, zA], [-80, 96, 22], [-62, n0, 20], [-HALF + SCREW_INSET - 15.6, n0, zB]], 2.9, true))
+    callout(s, [c, a, zt], 18, 22, "GND")
   },
 })
 
 drawings.cover = (() => {
   const scene = new Scene(cam)
-  drawPanel(scene, installed(cam))
+  drawPanel(scene, fitted())
   const z = FUSE_TOP + 34
   scene.add(cover(cam, z))
   for (const c of [-HALF - 10, HALF + 10]) scene.overlay.push(arrow(pr([c, 120, z + 6]), pr([c, 120, z - 18])))
@@ -230,9 +318,9 @@ drawings.cover = (() => {
   return svg(box, body, "The cover going back on over the panel")
 })()
 
-// ── Redo one way's zero ─────────────────────────────────────────────────────────────────
+// ── If something's wrong ────────────────────────────────────────────────────────────────
 
-drawings.pullFuse = view("One way's fuse pulled out", installed(cam, { pulled: new Map([[7, 22]]) }), {
+drawings.pullFuse = view("One circuit's fuse pulled out", fitted({ pulled: new Map([[7, 22]]) }), {
   after: (s) => {
     const [c, a] = fuseAt(7)
     s.overlay.push(arrow(pr([c + 13, a, FUSE_TOP + 6]), pr([c + 13, a, FUSE_TOP + 26])))
@@ -289,6 +377,6 @@ drawings.progPads = (() => {
       s += `<text class="pin" transform="translate(${fmt(x + 0.4)} ${fmt(row > 0 ? -0.55 : 3.8)}) rotate(-90)">${names[col * 2 + i]}</text>`
     }
   }
-  s += text([0, edgeY - 1.5], "chin edge", "middle", "label")
-  return svg([-12, edgeY - 5, 24, 18], s, "The PROG pads on the chin's parts face: EN, VDD, TXD, GND, RXD, IO0")
+  s += text([0, edgeY - 1.5], "board edge", "middle", "label")
+  return svg([-12, edgeY - 5, 24, 20], s, "The PROG pads on the underside of Blade Reader's end: EN, VDD, TXD, GND, RXD, IO0", true)
 })()

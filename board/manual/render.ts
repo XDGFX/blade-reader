@@ -3,8 +3,8 @@
 // (the seated yoke, screws, fuses) are drawn in the right order between its cells.
 
 import {
-  BOARD, C_BREAKS, CLAMP_HOLES, CLAMP_HOLE_R, DECK, LENGTH, MODULE_BOX, MODULE_HEIGHT, MOUNTS, NUT,
-  OUTPUT_NUTS, ROWS, YOKE_OUTLINE, cellTop, endA, hexagon, type P2, type V,
+  BOARD, C_BREAKS, CLAMP_HOLES, CLAMP_HOLE_R, CLAMP_LAND_R, DECK, GND_NUT, LENGTH, MODULE_BOX, MODULE_HEIGHT, MOUNTS, NUT, SILK,
+  OUTPUT_NUTS, ROWS, YOKE_OUTLINE, cellTop, endA, type P2, type V,
 } from "./geometry"
 
 export const fmt = (n: number) => (Math.abs(n) < 5e-3 ? "0" : n.toFixed(2))
@@ -32,7 +32,9 @@ export class Camera {
     this.r = norm(cross([0, 0, 1], this.k))
     this.u = cross(this.k, this.r)
   }
-  project = (p: V): P2 => [dot(p, this.r), -dot(p, this.u)]
+  // Panel coordinates are mirrored against the real panel (c is the parts face's −x), so the
+  // page mirrors them back: odd ways on the left and the silkscreen reading true.
+  project = (p: V): P2 => [-dot(p, this.r), -dot(p, this.u)]
   depth = (p: V) => dot(p, this.k)
 }
 
@@ -42,10 +44,21 @@ export const VIEW: V = [0.62, -1, 0.95]
 // ── Faces and the painter's list ────────────────────────────────────────────────────────
 
 /** A planar face, its corners in order, and which of its edges (i to i+1) to stroke. */
-export type Face = { pts: V[]; cls: string; edges: boolean[] }
+/**
+ * A planar face, its corners in order, and which of its edges (i to i+1) to stroke. Silkscreen
+ * uses the two variants: `holes` cuts rings out of a fill, and `width` makes it an open stroke
+ * that wide, in mm on the face.
+ */
+export type Face = { pts: V[]; cls: string; edges: boolean[]; holes?: V[][]; width?: number }
 export type Group = Face[]
 
 export const all = (n: number, on = true) => Array.from({ length: n }, () => on)
+/** The highlight class marks what moves in a step; its sides take a darker shade of it. */
+export const HL = "hl"
+// A highlighted board keeps its black mask and gets an orange outline instead of a fill.
+const HL_BOARD = "board hl-board"
+const sideOf = (cls: string) => (cls === HL ? "hl-side" : cls === "board" ? "board-side" : cls === HL_BOARD ? "board-side hl-board" : "side")
+const lnOf = (cls: string) => (cls.includes("hl-board") ? "ln hl-ln" : "ln")
 const centroid = (pts: V[]): V => {
   const s = pts.reduce((m, p) => [m[0] + p[0], m[1] + p[1], m[2] + p[2]] as V, [0, 0, 0] as V)
   return [s[0] / pts.length, s[1] / pts.length, s[2] / pts.length]
@@ -83,9 +96,18 @@ export class Scene {
         const ys = q.map((p) => p[1])
         if (clip && (Math.max(...xs) < clip[0] || Math.min(...xs) > clip[0] + clip[2] || Math.max(...ys) < clip[1] || Math.min(...ys) > clip[1] + clip[3])) continue
         minX = Math.min(minX, ...xs); maxX = Math.max(maxX, ...xs); minY = Math.min(minY, ...ys); maxY = Math.max(maxY, ...ys)
+        if (face.width !== undefined) {
+          body += `<path class="${face.cls}" stroke-width="${fmt(face.width)}" d="M${q.map(xy).join("L")}"/>`
+          continue
+        }
+        if (face.holes) {
+          const rings = [q, ...face.holes.map((h) => h.map(this.cam.project))]
+          body += `<path class="${face.cls}" fill-rule="evenodd" d="${rings.map((r) => `M${r.map(xy).join("L")}Z`).join("")}"/>`
+          continue
+        }
         const outline = `M${q.map(xy).join("L")}Z`
         if (face.edges.every(Boolean)) {
-          body += `<path class="${face.cls} ln" d="${outline}"/>`
+          body += `<path class="${face.cls} ${lnOf(face.cls)}" d="${outline}"/>`
           continue
         }
         body += `<path class="${face.cls}" d="${outline}"/>`
@@ -93,7 +115,7 @@ export class Scene {
         face.edges.forEach((on, i) => {
           if (on) lines += `M${xy(q[i])}L${xy(q[(i + 1) % q.length])}`
         })
-        if (lines) body += `<path class="ln" d="${lines}"/>`
+        if (lines) body += `<path class="${lnOf(face.cls)}" d="${lines}"/>`
       }
     }
     return { body: body + this.overlay.join(""), box: [minX - pad, minY - pad, maxX - minX + 2 * pad, maxY - minY + 2 * pad] }
@@ -135,7 +157,7 @@ export function convex(cam: Camera, faces: { pts: V[]; smooth?: boolean; cls?: s
       if (other === undefined || !vis[other]) return true
       return !(f.smooth && faces[other].smooth)
     })
-    out.push({ pts: f.pts, cls: f.cls ?? (f.smooth ? "side" : cls), edges })
+    out.push({ pts: f.pts, cls: f.cls ?? (f.smooth ? sideOf(cls) : cls), edges })
   })
   return out
 }
@@ -249,7 +271,7 @@ function slabPiece(cam: Camera, poly: P2[], z0: number, z1: number, cls: string,
     const n: V = ccw ? [e[1], -e[0], 0] : [-e[1], e[0], 0]
     if (dot(n, cam.k) <= 1e-6) continue
     sides.push({
-      face: { pts: [[p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1]], cls: "side", edges: all(4) },
+      face: { pts: [[p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1]], cls: sideOf(cls), edges: all(4) },
       d: cam.depth([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, 0]),
     })
   }
@@ -360,10 +382,39 @@ export function drawPanel(scene: Scene, things: Standing[] = []) {
 // ── The yoke ────────────────────────────────────────────────────────────────────────────
 
 /** An M4 output nut standing on the ring face at z. */
-const outputNut = (cam: Camera, c: number, a: number, z: number): Group => [
-  ...prism(cam, hexagon(c, a, NUT.flats), z, z + NUT.height),
-  flat(circle(c, a, 2, 16), z + NUT.height + 0.01),
+/** A terminal's tinned pad and hole, on the ring face at z. */
+const terminalPad = (c: number, a: number, z: number): Group => [
+  flat(circle(c, a, NUT.pad, 24), z, "metal"),
+  flat(circle(c, a, NUT.hole, 20), z + 0.01),
 ]
+
+/**
+ * The silkscreen on one piece of the yoke: strokes cut to the piece's band and half, fills
+ * kept whole and filed under the piece their first point falls in.
+ */
+function silkOn(poly: P2[], band: { lo: number; hi: number }, right: boolean, move: (p: P2) => P2, z: number): Face[] {
+  const inside = (p: P2) => p[1] >= band.lo && p[1] <= band.hi && (right ? p[0] >= 0 : p[0] <= 0)
+  const lift = (p: P2): V => [p[0], p[1], z]
+  const faces: Face[] = []
+  for (const s of SILK.strokes) {
+    let run: P2[] = []
+    const pts = s.pts.map(move)
+    const flush = () => {
+      if (run.length > 1) faces.push({ pts: run.map(lift), cls: "silk-ln", edges: [], width: s.w })
+      run = []
+    }
+    for (let i = 0; i < pts.length; i++) {
+      if (inside(pts[i])) run.push(pts[i])
+      else flush()
+    }
+    flush()
+  }
+  for (const rings of SILK.fills) {
+    const [outer, ...holes] = rings.map((r) => r.map(move))
+    if (inPoly(poly, outer[0]) || inside(outer[0])) faces.push({ pts: outer.map(lift), cls: "silk", edges: [], holes: holes.map((h) => h.map(lift)) })
+  }
+  return faces
+}
 
 /** Something fixed to the yoke's ring face: drawn with whichever piece holds `at`. */
 export type OnYoke = { at: P2; group: (zTop: number) => Group }
@@ -371,16 +422,17 @@ export type OnYoke = { at: P2; group: (zTop: number) => Group }
 /**
  * The yoke with its parts face at z and moved `da` along, cut into the panel's rows so the
  * panel can hide the parts of it that sit lower than a barrier. `extra` adds things fixed to
- * the ring face, such as screws and rings.
+ * the ring face, such as screws and rings; `hl` draws the board in the highlight.
  */
-export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: OnYoke[] } = {}): Standing[] {
+export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: OnYoke[]; hl?: boolean } = {}): Standing[] {
   const da = opts.da ?? 0
   const move = ([c, a]: P2): P2 => [c, a + da]
   const out = YOKE_OUTLINE.map(move)
   const zt = z + BOARD
+  const terminals = [...OUTPUT_NUTS, GND_NUT].map(move)
   const fixed: OnYoke[] = [
-    ...CLAMP_HOLES.map((p) => ({ at: p, group: (t: number) => [flat(circle(p[0], p[1], CLAMP_HOLE_R, 20), t + 0.01)] })),
-    ...OUTPUT_NUTS.map((p) => ({ at: p, group: (t: number) => outputNut(cam, p[0], p[1], t + 0.01) })),
+    ...CLAMP_HOLES.map((p) => ({ at: p, group: (t: number) => [flat(circle(p[0], p[1], CLAMP_LAND_R, 24), t + 0.005, "metal"), flat(circle(p[0], p[1], CLAMP_HOLE_R, 20), t + 0.01)] })),
+    ...[...OUTPUT_NUTS, GND_NUT].map((p) => ({ at: p, group: (t: number) => terminalPad(p[0], p[1], t + 0.01) })),
     ...(opts.extra ?? []),
   ].map((x) => ({ at: move(x.at), group: x.group }))
   const bands: { lo: number; hi: number }[] = [{ lo: -Infinity, hi: 0 }, ...ROWS.map((r, i) => ({ lo: i === 0 ? 0 : r.a0, hi: r.a1 }))]
@@ -396,7 +448,10 @@ export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: 
     for (const right of [false, true]) {
       const poly = cut(clipHalf(out, 0, 0, right))
       if (poly.length < 3) continue
-      const group = slabPiece(cam, poly, z, zt, "board", seam)
+      // The terminals' nuts hang under the board, so they go first.
+      const nuts = terminals.filter((p) => inPoly(poly, p)).map((p) => cylinder(cam, p[0], p[1], NUT.r, z - NUT.height, z, "metal"))
+      const group = [...cluster(cam, nuts), ...slabPiece(cam, poly, z, zt, opts.hl ? HL_BOARD : "board", seam)]
+      group.push(...silkOn(poly, b, right, move, zt + 0.005))
       const on = fixed.filter((x) => inPoly(poly, x.at)).sort((x, y) => cam.depth([...x.at, 0]) - cam.depth([...y.at, 0]))
       for (const x of on) group.push(...x.group(zt))
       things.push({ a: mid, maxC: Math.max(...poly.map((p) => p[0])), group })
@@ -406,9 +461,9 @@ export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: 
 }
 
 /** The yoke on its own (on the desk, or lifted clear of everything), parts face at z. */
-export function drawYoke(scene: Scene, z: number, extra: OnYoke[] = []) {
+export function drawYoke(scene: Scene, z: number, opts: { extra?: OnYoke[]; hl?: boolean } = {}) {
   // Far bands first; the sort is stable, so within a band the module stays under the board.
-  const pieces = yokePieces(scene.cam, z, { extra })
+  const pieces = yokePieces(scene.cam, z, opts)
   pieces.sort((x, y) => y.a - x.a)
   for (const p of pieces) scene.add(p.group)
 }

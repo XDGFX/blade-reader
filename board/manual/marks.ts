@@ -37,5 +37,5 @@ export const leader = (p: P2, t: P2, s: string, anchor = "start") =>
  * The SVG for a drawing. `--label` sets its labels to a 26th of its width, so they read the
  * same at any crop; `cropped` clips what lies past the box.
  */
-export const svg = (box: number[], body: string, label: string, cropped = false) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.map(fmt).join(" ")}" role="img" aria-label="${label}"${cropped ? ` class="crop"` : ""} style="--label:${fmt(box[2] / 26)}px">${body}</svg>`
+export const svg = (box: number[], body: string, label: string, cropped = false, perWidth = 26) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.map(fmt).join(" ")}" role="img" aria-label="${label}"${cropped ? ` class="crop"` : ""} style="--label:${fmt(box[2] / perWidth)}px">${body}</svg>`
