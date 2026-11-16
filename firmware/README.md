@@ -1,6 +1,6 @@
 # Firmware
 
-`blade-reader.yaml` is the yoke's ESPHome configuration. It holds the board, and the
+`blade-reader.yaml` is Blade Reader's ESPHome configuration. It holds the board, and the
 `blade_reader` component in `components/` does the rest. It does three jobs:
 
 - **Updates over Wi-Fi.** After the first flash over USB-C, every update goes over Wi-Fi,
@@ -8,7 +8,7 @@
   over Wi-Fi.
 - **Its own page.** `http://blade-reader-a.local`, behind the web login in `secrets.yaml`,
   shows the fuse panel live, guides install mode and shows the fault text, with or without Home
-  Assistant. It is in `web/`; open `web/try.html` in a browser to try it without a yoke.
+  Assistant. It is in `web/`; open `web/try.html` in a browser to try it without a board.
   `esphome logs` shows the readings in a terminal.
 - **Ready for Home Assistant.** When Home Assistant is set up it discovers the board, and you
   give it the same API key. Nothing on the board changes.
