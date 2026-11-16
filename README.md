@@ -19,23 +19,23 @@ you where it is going.
 > It reads blade fuses. Any resemblance to a 1982 film is the fault of whoever named it.
 
 > [!NOTE]
-> Five rev B yokes have been built, and two have been in service since November 2026. See
+> Five rev B boards have been built, and two have been in service since November 2026. See
 > [Untested](#untested) for what the install hasn't shown yet.
 
 ## How it works
 
-The board is a **yoke**: one board for all 12 ways, fitted round the positive end of the fuse
-panel. An arm runs along each long side, and the chin joins them past the panel's end. Each arm
+Blade Reader is one board for all 12 ways, fitted round the positive end of the fuse panel. An
+arm runs along each long side, and the two join past the panel's end. Each arm
 is shaped like a comb: one finger slides sideways into each way's pocket and is clamped under
 the panel's own output screw. Current runs from the panel, along the finger, through a
 hall-effect sensor, and out to an M4 nut on the arm, where the circuit's existing ring terminal
 lands. No re-crimping, and the panel's cover still goes back on.
 
 - **Sensing:** one hall-effect sensor per way, on its own current path: about 1.1 mΩ of the
-  yoke's copper and up to 0.6 mΩ in the sensor. It is rated to 30 A per way, and none of the
-  panel's bus current crosses the yoke.
-- **Brains:** one ESP32-C3 on the chin, running ESPHome, reporting over Wi-Fi. A yoke is one
-  Home Assistant device reading all 12 ways.
+  board's copper and up to 0.6 mΩ in the sensor. It is rated to 30 A per way, and none of the
+  panel's bus current crosses the board.
+- **Brains:** one ESP32-C3 past the panel's end, running ESPHome, reporting over Wi-Fi. Each
+  Blade Reader is one Home Assistant device reading all 12 ways.
 - **Power:** taken from whichever ways are live, through a diode on each, with a fuse on the
   board and one ground wire to the negative bus. It accepts 12 V and 24 V systems.
 - **Accuracy:** aiming for about ±0.3 A, after zeroing each way in firmware and correcting for
@@ -57,27 +57,27 @@ ordered, and is kept at the tag [`rev-a-strip`](https://github.com/XDGFX/blade-r
 ### On a 6 circuit panel
 
 Unsupported, but possible. Clip off the parts between each arm's third and fourth fingers,
-counting from the chin, and cut both arms there, which leaves the three fingers nearest the chin
-on each side. The plate fitted a Blue Sea ST Blade 6 circuit that way, and its cover went on.
+counting from the joined end, and cut both arms there, which leaves the three fingers nearest
+that end on each side. The plate fitted a Blue Sea ST Blade 6 circuit that way, and its cover went on.
 
 ## Installing
 
-**Got one? [Start here: the manual](https://xdgfx.github.io/blade-reader/).** It takes a yoke
-from the box to Home Assistant: flashing, zeroing, fitting, and recovery.
+**Got one? [Start here: the manual](https://xdgfx.github.io/blade-reader/).** It goes from
+the box to every circuit in Home Assistant.
 
 Before you buy, check the space round the panel. With the panel mounted positive end down, as
-Blue Sea draws it, the yoke needs 16.7 mm beside each long side, 22.7 mm at the lower left
+Blue Sea draws it, Blade Reader needs 16.7 mm beside each long side, 22.7 mm at the lower left
 where the ESP32's antenna overhangs, and 13.5 mm below the positive end.
 
 ### Untested
 
-- **Other feed lugs.** The first install's lugs cleared the chin without a washer. The washer
+- **Other feed lugs.** The first install's lugs cleared the board without a washer. The washer
   for a flat lug is worked out from the panel's CAD, not tried.
-- **Any clone.** Both panels the plate was fitted to were Blue Sea's. The yoke fixes the row
+- **Any clone.** Both panels the plate was fitted to were Blue Sea's. The board fixes the row
   spacing at the ST Blade's 84.2 mm.
-- **A cut yoke on a 6 circuit panel.** Only the plate was cut. Nothing is laid out or checked
+- **A cut board on a 6 circuit panel.** Only the plate was cut. Nothing is laid out or checked
   for it.
-- **The joints over time.** The first yokes went into service in November 2026, so the joints
+- **The joints over time.** The first boards went into service in November 2026, so the joints
   haven't yet been through a season of heat. Keep checking the torques after the first warm runs.
 - **Wi-Fi beyond 5 m.** The antenna sits beside way 11's cable; it holds a connection at 4–5 m,
   and nothing further has been tried.
@@ -89,10 +89,10 @@ where the ESP32's antenna overhangs, and 13.5 mm below the positive end.
 | [`docs/design.md`](docs/design.md) | The design as decided, with the reasoning and the numbers |
 | [`docs/research/`](docs/research/) | The research behind each decision: sensors, ADC, terminals and copper, power, the Wi-Fi module, panel dimensions |
 | `docs/assets/` | The banner and renders of the board |
-| [`board/`](board/) | The yoke's [tscircuit](https://tscircuit.com) source: placed and routed, with every check passing. Its Gerbers, BOM and CPL are in `board/fab/` |
+| [`board/`](board/) | The board's [tscircuit](https://tscircuit.com) source: placed and routed, with every check passing. Its Gerbers, BOM and CPL are in `board/fab/` |
 | [`manual/`](manual/) | The manual's page, published at [xdgfx.github.io/blade-reader](https://xdgfx.github.io/blade-reader/). Its drawings are drawn from the board by `board/manual/` |
 
-The first five yokes were ordered assembled from JLCPCB on 2026-10-12. The ESPHome firmware and
+The first five boards were ordered assembled from JLCPCB on 2026-10-12. The ESPHome firmware and
 how to flash it are in [`firmware/`](firmware/). How the firmware behaves is in
 [`docs/reference/firmware.md`](docs/reference/firmware.md).
 
