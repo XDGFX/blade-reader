@@ -78,3 +78,17 @@ test("install mode counts down to an hour of uptime, between Uptime updates too"
 test("no install while every way has a zero", () => {
   assert.equal(yoke({ ...board(), ...allWays({ live: true }) }).install, null)
 })
+
+// The same rules as the core's check_password (tests/password_test.cpp), plus the repeat.
+const passwordProblem = vm.runInContext("passwordProblem", context)
+
+test("a new password is 8 to 64 printable ASCII characters, typed the same twice", () => {
+  assert.equal(passwordProblem("12345678", "12345678"), null)
+  assert.equal(passwordProblem("correct horse ~!@#", "correct horse ~!@#"), null)
+  assert.equal(passwordProblem("a".repeat(64), "a".repeat(64)), null)
+  assert.match(passwordProblem("1234567", "1234567"), /8 characters or more/)
+  assert.match(passwordProblem("a".repeat(65), "a".repeat(65)), /64 characters or fewer/)
+  assert.match(passwordProblem("café au lait", "café au lait"), /US keyboard/)
+  assert.match(passwordProblem("tab\there!", "tab\there!"), /US keyboard/)
+  assert.match(passwordProblem("12345678", "12345679"), /don't match/)
+})

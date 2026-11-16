@@ -5,8 +5,10 @@ Two ESPHome configurations build it into an image:
 
 - **`blade-reader-generic.yaml`, the generic image,** is what the manual's Install button
   flashes from the browser. It holds no secret: Wi-Fi is set straight after flashing, Home
-  Assistant sets the API key when it adopts the board, and the page has no login. It trusts the
-  network it is on. CI builds it (`.github/workflows/firmware-image.yml`), and
+  Assistant sets the API key when it adopts the board, and the page has no login until the owner
+  sets a password. The page asks for one at first boot and can skip it; once set, it is kept in
+  flash until a factory reset, and the page's login (username `admin`) and OTA updates ask for it.
+  Until then the board trusts the network it is on. CI builds it (`.github/workflows/firmware-image.yml`), and
   `scripts/web_image.py` writes its ESP Web Tools manifest.
 - **`blade-reader.yaml`, the secrets image,** is built with your own `secrets.yaml`, as below,
   and locks the board to your keys and login.
