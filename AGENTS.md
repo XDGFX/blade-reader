@@ -20,7 +20,7 @@ shelved at the tag `rev-a-strip`: read it there, don't bring it back into `board
   `manual/index.html`, in the same PR. Its drawings are generated from the board by
   `board/manual/`; `bun run manual` in `board/` builds the site into `manual/dist/`, and
   `.github/workflows/manual.yml` publishes it from `main`. Write it to
-  `docs/research/manual-writing.md`, and never say yoke, chin or parts face in it or in the
+  `docs/research/manual-writing.md`, and never say yoke or parts face in it or in the
   READMEs: say Blade Reader or the board.
 - Prices are USD, with the LCSC part code and the date checked. JLC basic, preferred and
   extended status matters: every extended part type costs about $3 per order. That is under $1 a

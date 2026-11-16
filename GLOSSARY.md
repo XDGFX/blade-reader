@@ -55,7 +55,7 @@ _Avoid_: Calibration mode, setup mode
 
 **Yoke**:
 One 12-way Blade Reader board, fitted round the positive end of a 12-way fuse panel: two arms
-joined by the chin. An internal word, like chin and parts face: user-facing text, the READMEs
+joined by the chin. An internal word, like parts face: user-facing text, the READMEs
 and the manual, says Blade Reader or the board.
 _Avoid_: U board, frame, module; board (when the fitted unit is meant) in design notes
 
