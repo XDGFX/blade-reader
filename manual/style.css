@@ -19,8 +19,9 @@
   --hole: #c9c8c4;
   --metal: #e6e8ea;
   --cable: #8c9197;
-  --ground: #2f6b3e;
-  --fuse: #f2d48c;
+  --fuse: #ecebe8;
+  --hl: #f7c9a4;
+  --hl-side: #eaa877;
   --cover: #f4f3f0;
 }
 
@@ -38,8 +39,9 @@
     --hole: #4a5058;
     --metal: #3a4048;
     --cable: #6d737a;
-    --ground: #5aa86d;
-    --fuse: #8a6f2c;
+    --fuse: #2b3036;
+    --hl: #8a4a1e;
+    --hl-side: #6d3a17;
     --cover: #2a2f35;
   }
 }
@@ -63,13 +65,14 @@ pre code { background: none; padding: 0; }
 
 /* ── Cover and contents ──────────────────────────────────────────────────────────────── */
 
-.cover h1 { font-size: 40px; line-height: 1; margin: 8px 0 10px; letter-spacing: -0.02em; }
+.cover h1 { margin: 0 0 12px; }
+.cover h1 img { display: block; width: 100%; height: auto; }
 .cover p { margin: 0 0 10px; max-width: 34ch; font-size: 19px; }
 .cover .kicker { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--grey); }
 .toc { list-style: none; padding: 0; margin: 24px 0 8px; border-top: 2px solid var(--rule); counter-reset: toc; }
 .toc li { border-bottom: 1px solid color-mix(in srgb, var(--rule) 25%, transparent); }
 .toc a { display: flex; gap: 14px; padding: 12px 0; text-decoration: none; font-size: 18px; }
-.toc b { width: 1.4em; text-align: right; }
+.toc b { min-width: 3.2em; white-space: nowrap; }
 .toc span { color: var(--grey); margin-left: auto; font-size: 14px; align-self: center; }
 
 /* ── Chapters ────────────────────────────────────────────────────────────────────────── */
@@ -87,13 +90,19 @@ pre code { background: none; padding: 0; }
 .step .head { display: flex; align-items: flex-start; gap: 16px; }
 .step .num { font-size: 88px; line-height: 0.8; font-weight: 700; letter-spacing: -0.04em; flex: none; min-width: 0.6em; }
 .step .crumb { font-size: 13px; color: var(--grey); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
-.step .cap { font-size: 19px; line-height: 1.3; margin: 6px 0 0; max-width: 34ch; }
+.step .cap { font-size: 21px; line-height: 1.25; font-weight: 700; margin: 6px 0 0; max-width: 30ch; }
+h3.cap { margin: 0 0 12px; }
 .step .body { margin: 12px 0 0; }
 .step .body p { margin: 8px 0; max-width: 60ch; }
 .step .main { margin: 18px -8px 8px; }
 .step .main.narrow { max-width: 420px; margin-left: auto; margin-right: auto; }
 
-.warn { display: flex; gap: 10px; align-items: center; margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--rule); font-size: 16px; }
+.warn, .notice { display: flex; gap: 10px; align-items: center; margin: 16px 0; padding: 10px 12px; border: 2px solid var(--rule); border-radius: 10px; font-size: 16px; }
+.warn b, .notice b { text-transform: uppercase; letter-spacing: 0.06em; margin-right: 6px; }
+.check { display: flex; gap: 8px; align-items: center; margin: 12px 0 0; font-size: 17px; }
+.check svg { width: 22px; height: 22px; flex: none; color: var(--ok); }
+.aside { color: var(--grey); font-size: 15px; }
+.need { margin: 0; padding-left: 1.2em; font-size: 18px; line-height: 1.6; }
 .warn svg { width: 26px; height: 23px; flex: none; color: var(--orange); }
 /* The shared marks: styled on the symbols, since rules can't reach into a <use>. */
 symbol path { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
@@ -128,10 +137,12 @@ td.swap { color: var(--orange); font-weight: 700; }
 .art svg .hole { fill: var(--hole); }
 .art svg .metal { fill: var(--metal); }
 .art svg .cable, .art svg .plug { fill: var(--cable); }
-.art svg .ground { fill: var(--ground); }
 .art svg .fuse { fill: var(--fuse); }
+.art svg .hl { fill: var(--hl); }
+.art svg .hl-side { fill: var(--hl-side); }
 .art svg .cover { fill: var(--cover); }
 .art svg .arrow { fill: var(--orange); }
+.art svg .turn { fill: none; stroke: var(--orange); stroke-width: calc(var(--lw) * 2.2); stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .art svg .guide { stroke: var(--orange); stroke-width: calc(var(--lw) * 0.8); stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 .art svg .led { fill: var(--no); }
 .art svg .dot { fill: var(--line); }
@@ -144,7 +155,7 @@ td.swap { color: var(--orange); font-weight: 700; }
 
 @page { size: A4; margin: 14mm; }
 @media print {
-  :root { --paper: #fff; --ink: #16191d; --line: #16191d; --rule: #16191d; --face: #fff; --side: #ecebe8; --side2: #d9d8d4; --hole: #c9c8c4; --metal: #e6e8ea; --cable: #8c9197; --ground: #2f6b3e; --fuse: #f2d48c; --cover: #f4f3f0; --code: #f3f2ef; }
+  :root { --paper: #fff; --ink: #16191d; --line: #16191d; --rule: #16191d; --face: #fff; --side: #ecebe8; --side2: #d9d8d4; --hole: #c9c8c4; --metal: #e6e8ea; --cable: #8c9197; --fuse: #ecebe8; --hl: #f7c9a4; --hl-side: #eaa877; --cover: #f4f3f0; --code: #f3f2ef; }
   body { font-size: 12pt; }
   .page { max-width: none; padding: 0; }
   /* Each chapter starts a page and shares it with its first step; every other step gets its own. */

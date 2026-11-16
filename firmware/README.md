@@ -19,7 +19,7 @@ does three jobs:
   over Wi-Fi.
 - **Its own page.** `http://blade-reader-a.local`, behind the web login in `secrets.yaml`,
   shows the fuse panel live, guides install mode and shows the fault text, with or without Home
-  Assistant. It is in `web/`; open `web/try.html` in a browser to try it without a yoke.
+  Assistant. It is in `web/`; open `web/try.html` in a browser to try it without a board.
   `esphome logs` shows the readings in a terminal.
 - **Ready for Home Assistant.** When Home Assistant is set up it discovers the board, and you
   give it the same API key. Nothing on the board changes.
@@ -37,7 +37,7 @@ The component's calculations are a hardware-free core with tests that run on a M
 
 ## First flash from a Mac
 
-A yoke on the generic image moves to this one over USB-C, as below, not over Wi-Fi: this image's
+A board on the generic image moves to this one over USB-C, as below, not over Wi-Fi: this image's
 updates are encrypted with your key, and the generic image can't take that first one.
 
 ### 1. Install ESPHome

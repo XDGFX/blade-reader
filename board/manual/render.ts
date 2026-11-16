@@ -3,8 +3,8 @@
 // (the seated yoke, screws, fuses) are drawn in the right order between its cells.
 
 import {
-  BOARD, C_BREAKS, CLAMP_HOLES, CLAMP_HOLE_R, DECK, LENGTH, MODULE_BOX, MODULE_HEIGHT, MOUNTS, NUT,
-  OUTPUT_NUTS, ROWS, YOKE_OUTLINE, cellTop, endA, hexagon, type P2, type V,
+  BOARD, C_BREAKS, CLAMP_HOLES, CLAMP_HOLE_R, DECK, GND_NUT, LENGTH, MODULE_BOX, MODULE_HEIGHT, MOUNTS, NUT,
+  OUTPUT_NUTS, ROWS, YOKE_OUTLINE, cellTop, endA, type P2, type V,
 } from "./geometry"
 
 export const fmt = (n: number) => (Math.abs(n) < 5e-3 ? "0" : n.toFixed(2))
@@ -46,6 +46,9 @@ export type Face = { pts: V[]; cls: string; edges: boolean[] }
 export type Group = Face[]
 
 export const all = (n: number, on = true) => Array.from({ length: n }, () => on)
+/** The highlight class marks what moves in a step; its sides take a darker shade of it. */
+export const HL = "hl"
+const sideOf = (cls: string) => (cls === HL ? "hl-side" : "side")
 const centroid = (pts: V[]): V => {
   const s = pts.reduce((m, p) => [m[0] + p[0], m[1] + p[1], m[2] + p[2]] as V, [0, 0, 0] as V)
   return [s[0] / pts.length, s[1] / pts.length, s[2] / pts.length]
@@ -135,7 +138,7 @@ export function convex(cam: Camera, faces: { pts: V[]; smooth?: boolean; cls?: s
       if (other === undefined || !vis[other]) return true
       return !(f.smooth && faces[other].smooth)
     })
-    out.push({ pts: f.pts, cls: f.cls ?? (f.smooth ? "side" : cls), edges })
+    out.push({ pts: f.pts, cls: f.cls ?? (f.smooth ? sideOf(cls) : cls), edges })
   })
   return out
 }
@@ -249,7 +252,7 @@ function slabPiece(cam: Camera, poly: P2[], z0: number, z1: number, cls: string,
     const n: V = ccw ? [e[1], -e[0], 0] : [-e[1], e[0], 0]
     if (dot(n, cam.k) <= 1e-6) continue
     sides.push({
-      face: { pts: [[p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1]], cls: "side", edges: all(4) },
+      face: { pts: [[p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1]], cls: sideOf(cls), edges: all(4) },
       d: cam.depth([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, 0]),
     })
   }
@@ -360,9 +363,10 @@ export function drawPanel(scene: Scene, things: Standing[] = []) {
 // ── The yoke ────────────────────────────────────────────────────────────────────────────
 
 /** An M4 output nut standing on the ring face at z. */
-const outputNut = (cam: Camera, c: number, a: number, z: number): Group => [
-  ...prism(cam, hexagon(c, a, NUT.flats), z, z + NUT.height),
-  flat(circle(c, a, 2, 16), z + NUT.height + 0.01),
+/** A terminal's tinned pad and hole, on the ring face at z. */
+const terminalPad = (c: number, a: number, z: number): Group => [
+  flat(circle(c, a, NUT.pad, 24), z, "metal"),
+  flat(circle(c, a, NUT.hole, 20), z + 0.01),
 ]
 
 /** Something fixed to the yoke's ring face: drawn with whichever piece holds `at`. */
@@ -371,16 +375,17 @@ export type OnYoke = { at: P2; group: (zTop: number) => Group }
 /**
  * The yoke with its parts face at z and moved `da` along, cut into the panel's rows so the
  * panel can hide the parts of it that sit lower than a barrier. `extra` adds things fixed to
- * the ring face, such as screws and rings.
+ * the ring face, such as screws and rings; `hl` draws the board in the highlight.
  */
-export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: OnYoke[] } = {}): Standing[] {
+export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: OnYoke[]; hl?: boolean } = {}): Standing[] {
   const da = opts.da ?? 0
   const move = ([c, a]: P2): P2 => [c, a + da]
   const out = YOKE_OUTLINE.map(move)
   const zt = z + BOARD
+  const terminals = [...OUTPUT_NUTS, GND_NUT].map(move)
   const fixed: OnYoke[] = [
     ...CLAMP_HOLES.map((p) => ({ at: p, group: (t: number) => [flat(circle(p[0], p[1], CLAMP_HOLE_R, 20), t + 0.01)] })),
-    ...OUTPUT_NUTS.map((p) => ({ at: p, group: (t: number) => outputNut(cam, p[0], p[1], t + 0.01) })),
+    ...[...OUTPUT_NUTS, GND_NUT].map((p) => ({ at: p, group: (t: number) => terminalPad(p[0], p[1], t + 0.01) })),
     ...(opts.extra ?? []),
   ].map((x) => ({ at: move(x.at), group: x.group }))
   const bands: { lo: number; hi: number }[] = [{ lo: -Infinity, hi: 0 }, ...ROWS.map((r, i) => ({ lo: i === 0 ? 0 : r.a0, hi: r.a1 }))]
@@ -396,7 +401,9 @@ export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: 
     for (const right of [false, true]) {
       const poly = cut(clipHalf(out, 0, 0, right))
       if (poly.length < 3) continue
-      const group = slabPiece(cam, poly, z, zt, "board", seam)
+      // The terminals' nuts hang under the board, so they go first.
+      const nuts = terminals.filter((p) => inPoly(poly, p)).map((p) => cylinder(cam, p[0], p[1], NUT.r, z - NUT.height, z, "metal"))
+      const group = [...cluster(cam, nuts), ...slabPiece(cam, poly, z, zt, opts.hl ? HL : "board", seam)]
       const on = fixed.filter((x) => inPoly(poly, x.at)).sort((x, y) => cam.depth([...x.at, 0]) - cam.depth([...y.at, 0]))
       for (const x of on) group.push(...x.group(zt))
       things.push({ a: mid, maxC: Math.max(...poly.map((p) => p[0])), group })
@@ -406,9 +413,9 @@ export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: 
 }
 
 /** The yoke on its own (on the desk, or lifted clear of everything), parts face at z. */
-export function drawYoke(scene: Scene, z: number, extra: OnYoke[] = []) {
+export function drawYoke(scene: Scene, z: number, opts: { extra?: OnYoke[]; hl?: boolean } = {}) {
   // Far bands first; the sort is stable, so within a band the module stays under the board.
-  const pieces = yokePieces(scene.cam, z, { extra })
+  const pieces = yokePieces(scene.cam, z, opts)
   pieces.sort((x, y) => y.a - x.a)
   for (const p of pieces) scene.add(p.group)
 }

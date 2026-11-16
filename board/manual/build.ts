@@ -24,4 +24,5 @@ if (unused.length) throw new Error(`drawings the manual doesn't use: ${unused.jo
 mkdirSync(out, { recursive: true })
 writeFileSync(join(out, "index.html"), html)
 cpSync(join(src, "style.css"), join(out, "style.css"))
+cpSync(join(src, "../docs/assets/banner.svg"), join(out, "banner.svg"))
 console.log(`manual/dist: ${used.size} drawings, ${(html.length / 1024).toFixed(0)} KB`)

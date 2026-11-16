@@ -89,8 +89,8 @@ export const PROG_PADS = toPanel(J1_AT)
 /** The USB-C socket's middle on the chin's outer edge, on the parts face (J2). */
 export const CHIN_A = Math.min(...YOKE_OUTLINE.map((p) => p[1]))
 export const USB_C: P2 = [25, CHIN_A]
-/** An M4 output nut, 7 across flats and 3.2 tall. */
-export const NUT = { flats: 7, height: 3.2 }
+/** A terminal: the SMT nut (SMTSO-M4) on the parts face, and its tinned pad and hole on the ring face. */
+export const NUT = { r: 8.74 / 2, height: 4, pad: 4.685, hole: 6.4 / 2 }
 /** How far out from the panel's edge the output nuts sit, and how deep the arm is. */
 export const NUT_OUT = Math.abs(OUTPUT_NUTS[0][0]) - HALF
 export { ARM_DEPTH }
