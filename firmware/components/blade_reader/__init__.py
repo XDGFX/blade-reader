@@ -14,8 +14,9 @@ from esphome.components import (
     sensor,
     text_sensor,
 )
-from esphome.components import web_server
+from esphome.components import web_server, web_server_base
 from esphome.components.adc.sensor import CONF_SAMPLES, ADCSensor
+from esphome.components.esphome.ota import ESPHomeOTAComponent
 import esphome.config_validation as cv
 from esphome.core import CORE
 import esphome.final_validate as fv
@@ -80,9 +81,14 @@ CONF_VOLTAGE = "voltage"
 CONF_DIODES = "diodes"
 CONF_SPARES = "spares"
 CONF_ENTITIES = "entities"
+CONF_OWNER_PASSWORD = "owner_password"
+CONF_OTA_ID = "ota_id"
+# The page's login username, as in secrets.example.yaml and owner_password.h.
+OWNER_USERNAME = "admin"
 
 blade_reader_ns = cg.esphome_ns.namespace("blade_reader")
 BladeReader = blade_reader_ns.class_("BladeReader", cg.Component)
+OwnerPassword = blade_reader_ns.class_("OwnerPassword", cg.Component)
 ClearFaultsButton = blade_reader_ns.class_(
     "ClearFaultsButton", button.Button, cg.Parented.template(BladeReader)
 )
@@ -248,6 +254,16 @@ CONFIG_SCHEMA = cv.All(
             cv.Required(CONF_SPARES): cv.Schema(
                 {cv.Required(key): MUX_CHANNEL for key, _, _, _ in SPARES}
             ),
+            # The generic image's password, set from the page (owner_password.h).
+            cv.Optional(CONF_OWNER_PASSWORD): cv.Schema(
+                {
+                    cv.GenerateID(): cv.declare_id(OwnerPassword),
+                    cv.Required(CONF_OTA_ID): cv.use_id(ESPHomeOTAComponent),
+                    cv.GenerateID(web_server_base.CONF_WEB_SERVER_BASE_ID): cv.use_id(
+                        web_server_base.WebServerBase
+                    ),
+                }
+            ).extend(cv.COMPONENT_SCHEMA),
         }
     ).extend(cv.COMPONENT_SCHEMA),
     _make_entities,
@@ -274,12 +290,53 @@ def _validate_adcs(config):
     return config
 
 
-FINAL_VALIDATE_SCHEMA = _validate_adcs
+def _validate_owner_password(config):
+    """The password is set at run time, so OTA must compile its password check and the web
+    server must have no login of its own."""
+    if (owner := config.get(CONF_OWNER_PASSWORD)) is None:
+        return config
+    full_config = fv.full_config.get()
+    ota = next(
+        (c for c in full_config.get("ota", []) if c.get(CONF_ID) == owner[CONF_OTA_ID]),
+        None,
+    )
+    if ota is None or "password" not in ota or "encryption" in ota:
+        raise cv.Invalid(
+            f"{CONF_OTA_ID} needs an esphome OTA with password: \"\" and no encryption",
+            [CONF_OWNER_PASSWORD, CONF_OTA_ID],
+        )
+    if "auth" in full_config.get("web_server", {}):
+        raise cv.Invalid(
+            "web_server auth sets a fixed login; drop it to use owner_password",
+            [CONF_OWNER_PASSWORD],
+        )
+    return config
+
+
+FINAL_VALIDATE_SCHEMA = cv.All(_validate_adcs, _validate_owner_password)
+
+
+async def _owner_password_to_code(config):
+    cg.add_define("USE_BLADE_READER_OWNER_PASSWORD")
+    # The web server's login, with no password until one is set: the server lets every request
+    # through while the password is null. Digest, as the secrets image's.
+    cg.add_define("USE_WEBSERVER_AUTH")
+    cg.add_define("USE_WEBSERVER_AUTH_DIGEST")
+    ota = await cg.get_variable(config[CONF_OTA_ID])
+    base = await cg.get_variable(config[web_server_base.CONF_WEB_SERVER_BASE_ID])
+    var = cg.new_Pvariable(config[CONF_ID], ota, base)
+    await cg.register_component(var, config)
+    # Before web_server's setup adds its handlers, which take the login only if a username is set.
+    cg.add(base.set_auth_username(OWNER_USERNAME))
+    cg.add(base.add_handler(var))
+    cg.add(var.load())
 
 
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
+    if CONF_OWNER_PASSWORD in config:
+        await _owner_password_to_code(config[CONF_OWNER_PASSWORD])
 
     for bit, pin_config in enumerate(config[CONF_SELECT_PINS]):
         cg.add(var.set_select_pin(bit, await cg.gpio_pin_expression(pin_config)))

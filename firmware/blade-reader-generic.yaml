@@ -2,9 +2,10 @@
 # Blade Reader yoke, rev B: the generic image, flashed from the browser with ESP Web Tools.
 #
 # One image for every yoke, so it holds no secret: Wi-Fi is set at first boot over Improv or the
-# fallback access point, Home Assistant sets the API key when it adopts the board, and the page
-# has no login. docs/design.md (First flash) says why and what that leaves open. The board itself
-# is in yoke.yaml. CI builds this file (.github/workflows/firmware-image.yml).
+# fallback access point, Home Assistant sets the API key when it adopts the board, and the owner
+# may set a password from the page, which then guards the page and OTA updates. docs/design.md
+# (First flash) says why and what that leaves open. The board itself is in yoke.yaml. CI builds
+# this file (.github/workflows/firmware-image.yml).
 
 substitutions:
   name: blade-reader
@@ -37,6 +38,19 @@ improv_serial:
 api:
   encryption: {}
 
-# Takes the API key once Home Assistant has set it, and plain uploads either way.
+# Takes the API key once Home Assistant has set it, and plain uploads either way: with the owner's
+# password once one is set. The empty password builds the check in for blade_reader to arm.
 ota:
   - platform: esphome
+    id: ota_esphome
+    password: ""
+
+# The page offers to set a password until one is set; the login is "admin" (owner_password.h).
+blade_reader:
+  owner_password:
+    ota_id: ota_esphome
+
+# blade_reader doesn't start in safe mode, so OTA is given the stored password here.
+safe_mode:
+  on_safe_mode:
+    - lambda: blade_reader::apply_stored_password_to_ota(id(ota_esphome));

@@ -96,6 +96,21 @@ function readYoke(store, now) {
   };
 }
 
+// ── Password: the generic image's /password; the secrets image has none ──
+
+// As the core's core_password.h.
+const PASSWORD_MIN = 8;
+const PASSWORD_MAX = 64;
+
+// What's wrong with a new password and its repeat, in words for the page, or null.
+function passwordProblem(password, again) {
+  if (password.length < PASSWORD_MIN) return `Use ${PASSWORD_MIN} characters or more.`;
+  if (password.length > PASSWORD_MAX) return `Use ${PASSWORD_MAX} characters or fewer.`;
+  if (!/^[\x20-\x7e]*$/.test(password)) return "Use letters, digits, spaces and the symbols on a US keyboard only.";
+  if (password !== again) return "The two don't match.";
+  return null;
+}
+
 // ── Board art ──
 
 // <board-art> Written by board-art/board-art.ts from the routed circuit.json. Don't edit by hand.
@@ -113,7 +128,9 @@ const ART_VARS = [...new Set([...ART_CSS.matchAll(/var\((--[\w-]+)/g)].map(([, v
 // ── View ──
 
 // connected starts true so the warning shows only once /events has failed.
-const ui = { yoke: null, open: null, openPos: "", gap: 0, theme: "dark", themePref: null, connected: true };
+const ui = { yoke: null, open: null, openPos: "", gap: 0, theme: "dark", themePref: null, connected: true,
+  // offered: the yoke serves /password. open: the form was opened from the foot of the page.
+  pw: { offered: false, set: false, open: false, skipped: false, error: "", done: false } };
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const fmt = (x, d = 1, unit = "") => (x == null || Number.isNaN(+x) ? "–" : `${(+x).toFixed(d)}${unit}`);
@@ -173,6 +190,24 @@ function installNote(inst) {
   return `<div class="install"><b>${what}</b><span>${dead}${ends}</span></div>`;
 }
 
+// Asked for until a password is set or the prompt is skipped for this visit; the foot of the page
+// opens it again. A form morphs like the rest: what has been typed is the inputs' value, which
+// morph leaves alone.
+function passwordForm() {
+  const p = ui.pw;
+  if (p.done) return '<div class="pw"><b>Password set</b><span>Log in as admin with it. Reloading…</span></div>';
+  if (!p.offered || !(p.open || (!p.set && !p.skipped))) return "";
+  const why = p.set ? "The page and OTA updates will ask for the new one."
+    : "Until you set one, anyone on this network can open this page, press its buttons and update the yoke's firmware. Once set, the page and OTA updates ask for it. The username is admin.";
+  return `<form class="pw" data-pw><b>${p.set ? "Change the password" : "Set a password"}</b><span>${why}</span>
+    <input type="text" name="username" value="admin" autocomplete="username" hidden>
+    <input type="password" name="password" autocomplete="new-password" placeholder="New password" aria-label="New password" maxlength="${PASSWORD_MAX}">
+    <input type="password" name="again" autocomplete="new-password" placeholder="Same again" aria-label="New password again" maxlength="${PASSWORD_MAX}">
+    ${p.error ? `<span class="err" role="alert">${esc(p.error)}</span>` : ""}
+    <div class="row"><button type="submit" class="go">Set password</button><button type="button" data-pw-skip>${p.open ? "Cancel" : "Skip for now"}</button></div>
+    ${p.open ? "" : "<span>Skip it and you can set one later from the foot of this page.</span>"}</form>`;
+}
+
 function reading(w, n) {
   const p = BOARD.ways[n];
   const odd = n % 2 === 1;
@@ -221,7 +256,7 @@ function page(y) {
   const t = y.temperatures;
   const s = y.system;
   const op = BOARD.opening;
-  return `<div class="wrap">${head(y)}
+  return `<div class="wrap">${head(y)}${passwordForm()}
   <div class="case"><span class="boss b1"></span><span class="boss b2"></span><span class="boss b3"></span><span class="boss b4"></span>
    <div class="mould"><span>↑</span><span>up</span><span>↑</span></div>
    <div class="stage" style="aspect-ratio:${VB.width}/${height()}">
@@ -236,7 +271,7 @@ function page(y) {
    </div>
   </div>
   <div class="sys"><span>Wi-Fi ${fmt(s.wifi, 0, " dBm")}</span><span>ESP32 ${fmt(s.esp32, 0, " °C")}</span><span>Up ${duration(s.uptime)}</span><span>${esc(s.firmware ?? "")}</span><a href="https://github.com/XDGFX/blade-reader" target="_blank" rel="noopener">Source</a></div>
-  <div class="sys"><button data-press="Restart">Restart</button><button class="danger" data-press="Factory Reset">Factory reset</button></div>
+  <div class="sys"><button data-press="Restart">Restart</button><button class="danger" data-press="Factory Reset">Factory reset</button>${ui.pw.offered ? `<button data-pw-open>${ui.pw.set ? "Change password" : "Set a password"}</button>` : ""}</div>
   </div>`;
 }
 
@@ -371,6 +406,37 @@ function press(name) {
   fetch(`/button/${encodeURIComponent(name)}/press`, { method: "POST" });
 }
 
+function openPassword() {
+  Object.assign(ui.pw, { open: true, error: "" });
+  render();
+  document.querySelector("[data-pw] [name=password]")?.focus();
+}
+// Skipping lasts this visit, so the prompt is back next time, and after a factory reset.
+function skipPassword() {
+  Object.assign(ui.pw, { open: false, skipped: true, error: "" });
+  try {
+    sessionStorage.setItem("passwordSkipped", "1");
+  } catch {}
+  render();
+}
+// Once the yoke has the password, every request needs it: reloading brings up the browser's login.
+async function submitPassword(form) {
+  const p = ui.pw;
+  p.error = passwordProblem(form.password.value, form.again.value) ?? "";
+  if (!p.error) {
+    try {
+      const res = await fetch("/password", { method: "POST", body: new URLSearchParams({ password: form.password.value }) });
+      if (res.ok) {
+        p.done = true;
+        setTimeout(() => location.reload(), 1500);
+      } else p.error = (await res.text()) || "The yoke didn't take it. Try again.";
+    } catch {
+      p.error = "Couldn't reach the yoke. Try again.";
+    }
+  }
+  render();
+}
+
 // The theme follows the phone until the button is pressed; then that choice is kept, on that phone.
 function applyTheme() {
   ui.theme = ui.themePref || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
@@ -403,12 +469,19 @@ function boot() {
   });
 
   addEventListener("click", (e) => {
-    const t = e.target.closest("[data-way],[data-press],[data-close],[data-theme-toggle]");
+    const t = e.target.closest("[data-way],[data-press],[data-close],[data-theme-toggle],[data-pw-open],[data-pw-skip]");
     if (t?.dataset.way) openWay(+t.dataset.way, t);
     else if (t?.dataset.press) press(t.dataset.press);
     else if (t?.hasAttribute("data-close")) closeWay();
     else if (t?.hasAttribute("data-theme-toggle")) toggleTheme();
+    else if (t?.hasAttribute("data-pw-open")) openPassword();
+    else if (t?.hasAttribute("data-pw-skip")) skipPassword();
     else if (ui.open && !e.target.closest(".pop")) closeWay();
+  });
+  addEventListener("submit", (e) => {
+    if (!e.target.matches("[data-pw]")) return;
+    e.preventDefault();
+    submitPassword(e.target);
   });
   addEventListener("keydown", (e) => {
     if (e.key === "Escape" && ui.open) closeWay();
@@ -423,6 +496,18 @@ function boot() {
   });
   // The install countdown moves between Uptime updates.
   setInterval(schedule, 10000);
+
+  try {
+    ui.pw.skipped = sessionStorage.getItem("passwordSkipped") === "1";
+  } catch {}
+  fetch("/password")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => {
+      if (!j) return;
+      Object.assign(ui.pw, { offered: true, set: !!j.set });
+      schedule();
+    })
+    .catch(() => {});
 
   const events = new EventSource("/events");
   events.addEventListener("open", () => {
