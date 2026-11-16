@@ -3,7 +3,7 @@
 // (the seated yoke, screws, fuses) are drawn in the right order between its cells.
 
 import {
-  BOARD, C_BREAKS, CLAMP_HOLES, CLAMP_HOLE_R, DECK, GND_NUT, LENGTH, MODULE_BOX, MODULE_HEIGHT, MOUNTS, NUT,
+  BOARD, C_BREAKS, CLAMP_HOLES, CLAMP_HOLE_R, CLAMP_LAND_R, DECK, GND_NUT, LENGTH, MODULE_BOX, MODULE_HEIGHT, MOUNTS, NUT, SILK,
   OUTPUT_NUTS, ROWS, YOKE_OUTLINE, cellTop, endA, type P2, type V,
 } from "./geometry"
 
@@ -32,7 +32,9 @@ export class Camera {
     this.r = norm(cross([0, 0, 1], this.k))
     this.u = cross(this.k, this.r)
   }
-  project = (p: V): P2 => [dot(p, this.r), -dot(p, this.u)]
+  // Panel coordinates are mirrored against the real panel (c is the parts face's −x), so the
+  // page mirrors them back: odd ways on the left and the silkscreen reading true.
+  project = (p: V): P2 => [-dot(p, this.r), -dot(p, this.u)]
   depth = (p: V) => dot(p, this.k)
 }
 
@@ -42,13 +44,18 @@ export const VIEW: V = [0.62, -1, 0.95]
 // ── Faces and the painter's list ────────────────────────────────────────────────────────
 
 /** A planar face, its corners in order, and which of its edges (i to i+1) to stroke. */
-export type Face = { pts: V[]; cls: string; edges: boolean[] }
+/**
+ * A planar face, its corners in order, and which of its edges (i to i+1) to stroke. Silkscreen
+ * uses the two variants: `holes` cuts rings out of a fill, and `width` makes it an open stroke
+ * that wide, in mm on the face.
+ */
+export type Face = { pts: V[]; cls: string; edges: boolean[]; holes?: V[][]; width?: number }
 export type Group = Face[]
 
 export const all = (n: number, on = true) => Array.from({ length: n }, () => on)
 /** The highlight class marks what moves in a step; its sides take a darker shade of it. */
 export const HL = "hl"
-const sideOf = (cls: string) => (cls === HL ? "hl-side" : "side")
+const sideOf = (cls: string) => (cls === HL ? "hl-side" : cls === "board" ? "board-side" : "side")
 const centroid = (pts: V[]): V => {
   const s = pts.reduce((m, p) => [m[0] + p[0], m[1] + p[1], m[2] + p[2]] as V, [0, 0, 0] as V)
   return [s[0] / pts.length, s[1] / pts.length, s[2] / pts.length]
@@ -86,6 +93,15 @@ export class Scene {
         const ys = q.map((p) => p[1])
         if (clip && (Math.max(...xs) < clip[0] || Math.min(...xs) > clip[0] + clip[2] || Math.max(...ys) < clip[1] || Math.min(...ys) > clip[1] + clip[3])) continue
         minX = Math.min(minX, ...xs); maxX = Math.max(maxX, ...xs); minY = Math.min(minY, ...ys); maxY = Math.max(maxY, ...ys)
+        if (face.width !== undefined) {
+          body += `<path class="${face.cls}" stroke-width="${fmt(face.width)}" d="M${q.map(xy).join("L")}"/>`
+          continue
+        }
+        if (face.holes) {
+          const rings = [q, ...face.holes.map((h) => h.map(this.cam.project))]
+          body += `<path class="${face.cls}" fill-rule="evenodd" d="${rings.map((r) => `M${r.map(xy).join("L")}Z`).join("")}"/>`
+          continue
+        }
         const outline = `M${q.map(xy).join("L")}Z`
         if (face.edges.every(Boolean)) {
           body += `<path class="${face.cls} ln" d="${outline}"/>`
@@ -369,6 +385,34 @@ const terminalPad = (c: number, a: number, z: number): Group => [
   flat(circle(c, a, NUT.hole, 20), z + 0.01),
 ]
 
+/**
+ * The silkscreen on one piece of the yoke: strokes cut to the piece's band and half, fills
+ * kept whole and filed under the piece their first point falls in.
+ */
+function silkOn(poly: P2[], band: { lo: number; hi: number }, right: boolean, move: (p: P2) => P2, z: number): Face[] {
+  const inside = (p: P2) => p[1] >= band.lo && p[1] <= band.hi && (right ? p[0] >= 0 : p[0] <= 0)
+  const lift = (p: P2): V => [p[0], p[1], z]
+  const faces: Face[] = []
+  for (const s of SILK.strokes) {
+    let run: P2[] = []
+    const pts = s.pts.map(move)
+    const flush = () => {
+      if (run.length > 1) faces.push({ pts: run.map(lift), cls: "silk-ln", edges: [], width: s.w })
+      run = []
+    }
+    for (let i = 0; i < pts.length; i++) {
+      if (inside(pts[i])) run.push(pts[i])
+      else flush()
+    }
+    flush()
+  }
+  for (const rings of SILK.fills) {
+    const [outer, ...holes] = rings.map((r) => r.map(move))
+    if (inPoly(poly, outer[0]) || inside(outer[0])) faces.push({ pts: outer.map(lift), cls: "silk", edges: [], holes: holes.map((h) => h.map(lift)) })
+  }
+  return faces
+}
+
 /** Something fixed to the yoke's ring face: drawn with whichever piece holds `at`. */
 export type OnYoke = { at: P2; group: (zTop: number) => Group }
 
@@ -384,7 +428,7 @@ export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: 
   const zt = z + BOARD
   const terminals = [...OUTPUT_NUTS, GND_NUT].map(move)
   const fixed: OnYoke[] = [
-    ...CLAMP_HOLES.map((p) => ({ at: p, group: (t: number) => [flat(circle(p[0], p[1], CLAMP_HOLE_R, 20), t + 0.01)] })),
+    ...CLAMP_HOLES.map((p) => ({ at: p, group: (t: number) => [flat(circle(p[0], p[1], CLAMP_LAND_R, 24), t + 0.005, "metal"), flat(circle(p[0], p[1], CLAMP_HOLE_R, 20), t + 0.01)] })),
     ...[...OUTPUT_NUTS, GND_NUT].map((p) => ({ at: p, group: (t: number) => terminalPad(p[0], p[1], t + 0.01) })),
     ...(opts.extra ?? []),
   ].map((x) => ({ at: move(x.at), group: x.group }))
@@ -404,6 +448,7 @@ export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: 
       // The terminals' nuts hang under the board, so they go first.
       const nuts = terminals.filter((p) => inPoly(poly, p)).map((p) => cylinder(cam, p[0], p[1], NUT.r, z - NUT.height, z, "metal"))
       const group = [...cluster(cam, nuts), ...slabPiece(cam, poly, z, zt, opts.hl ? HL : "board", seam)]
+      group.push(...silkOn(poly, b, right, move, zt + 0.005))
       const on = fixed.filter((x) => inPoly(poly, x.at)).sort((x, y) => cam.depth([...x.at, 0]) - cam.depth([...y.at, 0]))
       for (const x of on) group.push(...x.group(zt))
       things.push({ a: mid, maxC: Math.max(...poly.map((p) => p[0])), group })

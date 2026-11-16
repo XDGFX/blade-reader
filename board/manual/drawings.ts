@@ -120,26 +120,26 @@ drawings.partsBoard = (() => {
   drawYoke(scene, 0)
   const t = BOARD
   const finger = CLAMP_HOLES.reduce((m, p) => (p[0] > 0 && p[1] < m[1] ? p : m), [0, Infinity] as P2)
-  callout(scene, [finger[0] - 7, finger[1], t], 30, 22, "finger")
+  callout(scene, [finger[0] - 7, finger[1], t], -30, 22, "finger")
   const nut = OUTPUT_NUTS.reduce((m, p) => (p[0] > 0 && p[1] > m[1] ? p : m), [0, -Infinity] as P2)
-  callout(scene, [nut[0], nut[1], t], -24, -12, "terminal")
-  callout(scene, [GND_NUT[0], GND_NUT[1], t], 4, 30, "GND terminal")
-  callout(scene, [USB_C[0], USB_C[1], -1], 14, 22, "USB-C socket")
-  const { body, box } = scene.render(46)
+  callout(scene, [nut[0], nut[1], t], 24, -12, "terminal")
+  callout(scene, [GND_NUT[0], GND_NUT[1], t], 10, 26, "GND terminal")
+  callout(scene, [USB_C[0], USB_C[1], -1], -14, 22, "USB-C socket")
+  const { body, box } = scene.render(30)
   return svg(box, body, "Blade Reader: a finger, a circuit nut, the GND nut and the USB-C socket")
 })()
 
 drawings.partsPanel = view("The fuse panel: the + stud and feed lug, a screw, a pocket, a fuse and the negative bus", [...panelThings({ screws: "in" }), lug(0)], {
   pad: 30,
   after: (s) => {
-    callout(s, [0, STUD_A, FUSE_TOP], -30, -16, "+ stud")
-    callout(s, [0, STUD_A - 14, PAD + 4], -34, 10, "feed lug")
+    callout(s, [0, STUD_A, FUSE_TOP], 30, -16, "+ stud")
+    callout(s, [0, STUD_A - 14, PAD + 4], 34, 10, "feed lug")
     const [c, a] = wayAt(9)
-    callout(s, [c, a, PAD + 3.4], 30, 8, "screw")
-    callout(s, [c - 4.5, a + 4, PAD], 34, 22, "pocket")
+    callout(s, [c, a, PAD + 3.4], -30, 8, "screw")
+    callout(s, [c - 4.5, a + 4, PAD], -34, 22, "pocket")
     const f = fuseAt(1)
-    callout(s, [f[0], f[1], FUSE_TOP + 10], 20, -34, "fuse")
-    callout(s, [-(HALF - SCREW_INSET), NEG_SCREWS_A[2], PAD + 3.4], -30, -12, "negative bus")
+    callout(s, [f[0], f[1], FUSE_TOP + 10], -20, -34, "fuse")
+    callout(s, [-(HALF - SCREW_INSET), NEG_SCREWS_A[2], PAD + 3.4], 30, -12, "negative bus")
   },
 })
 
@@ -300,7 +300,7 @@ drawings.ground = view("The ground wire from the GND nut to the panel's negative
     const zB = PAD + 0.45 + 2.2
     const n0 = NEG_SCREWS_A[0]
     s.add(cable(cam, [[c - 23.6, a, zA], [-80, 14, zA], [-80, 96, 22], [-62, n0, 20], [-HALF + SCREW_INSET - 15.6, n0, zB]], 2.9, true))
-    callout(s, [c, a, zt], -18, 22, "GND")
+    callout(s, [c, a, zt], 18, 22, "GND")
   },
 })
 

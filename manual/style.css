@@ -14,6 +14,9 @@
   --line: #16191d;
   --lw: 1.25px;
   --face: #fff;
+  --mask: #1d2023;
+  --mask-side: #0d0e10;
+  --silk: #f4f3ee;
   --side: #ecebe8;
   --side2: #d9d8d4;
   --hole: #c9c8c4;
@@ -131,7 +134,11 @@ td.swap { color: var(--orange); font-weight: 700; }
 .art svg path, .art svg circle, .art svg rect { fill: none; stroke: none; }
 .art svg .ln { stroke: var(--line); stroke-width: var(--lw); stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .art svg .thin { stroke-width: calc(var(--lw) * 0.6); }
-.art svg .top, .art svg .board, .art svg .pad { fill: var(--face); }
+.art svg .top, .art svg .pad { fill: var(--face); }
+.art svg .board { fill: var(--mask); }
+.art svg .board-side { fill: var(--mask-side); }
+.art svg .silk { fill: var(--silk); }
+.art svg .silk-ln { fill: none; stroke: var(--silk); stroke-linecap: round; stroke-linejoin: round; }
 .art svg .side { fill: var(--side); }
 .art svg .side2, .art svg .part { fill: var(--side2); }
 .art svg .hole { fill: var(--hole); }

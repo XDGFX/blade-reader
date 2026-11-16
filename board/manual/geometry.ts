@@ -4,7 +4,8 @@
 // X = c, across from the centreline (odd ways at +c); Y = a, along from the positive end;
 // Z = h, up from the panel's mounting face. All in mm.
 
-import { ARM_DEPTH, CLAMPS, GROUND_NUT, J1_AT, MODULE, NUTS, OUTLINE, PANEL_END, WAYS_A, pcb } from "../index.circuit"
+import { ARM_DEPTH, CLAMPS, GROUND_NUT, J1_AT, MODULE, NUTS, OUTLINE, PANEL_END, WAYS_A, YOKE, pcb } from "../index.circuit"
+import { ringFace } from "../lib/ring-face"
 
 export type V = [number, number, number]
 export type P2 = [number, number]
@@ -99,3 +100,14 @@ export const hexagon = (c: number, a: number, flats: number, turn = 0): P2[] => 
   const r = flats / Math.sqrt(3)
   return Array.from({ length: 6 }, (_, i) => [c + r * Math.cos((i * Math.PI) / 3 + turn), a + r * Math.sin((i * Math.PI) / 3 + turn)])
 }
+/** The ring face's silkscreen, as the board has it: strokes of a width, and fills with holes. */
+export const SILK = (() => {
+  const art = ringFace(YOKE)
+  const at = (p: { x: number; y: number }) => toPanel(p)
+  return {
+    strokes: art.strokes.map((s) => ({ pts: s.pts.map(at), w: s.w })),
+    fills: art.fills.map((rings) => rings.map((r) => r.map(at))),
+  }
+})()
+/** The tinned land round each finger's clamp hole. */
+export const CLAMP_LAND_R = 4.065
