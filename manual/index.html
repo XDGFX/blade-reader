@@ -13,7 +13,7 @@
 <meta name="description" content="Fitting Blade Reader to a Blue Sea ST Blade fuse panel and adding it to Home Assistant.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M6 4v18a6 6 0 0 0 6 6h8a6 6 0 0 0 6-6V4' fill='none' stroke='%23e8772e' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -30,7 +30,8 @@
 
 <header class="cover">
   <h1><img src="banner.svg" alt="Blade Reader"></h1>
-  <p>For the Blue Sea ST Blade 12 circuit fuse panel (5026).</p>
+  <div class="hero art">{{art:hero}}</div>
+  <p>Every circuit's current, in Home Assistant. For the Blue Sea ST Blade 12 circuit fuse panel (5026).</p>
 </header>
 
 <nav>
@@ -46,7 +47,7 @@
 
 <!-- ═══ Before you start ═══════════════════════════════════════════════════════════════ -->
 <section class="chapter" id="start">
-  <header><h2>Before you start</h2></header>
+  <header><div class="kicker">Tools and parts</div><h2>Before you start</h2></header>
 
   <article class="step">
     <h3 class="cap">You need</h3>
@@ -70,7 +71,7 @@
 
 <!-- ═══ On your desk ═══════════════════════════════════════════════════════════════════ -->
 <section class="chapter" id="desk">
-  <header><h2>On your desk</h2></header>
+  <header><div class="kicker">Steps 1–3</div><h2>On your desk</h2></header>
 
   <article class="step">
     <div class="head"><div class="num">1</div><div>
@@ -104,7 +105,7 @@
 
 <!-- ═══ At the fuse panel ══════════════════════════════════════════════════════════════ -->
 <section class="chapter" id="panel">
-  <header><h2>At the fuse panel</h2></header>
+  <header><div class="kicker">Steps 4–13</div><h2>At the fuse panel</h2></header>
 
   <article class="step">
     <div class="head"><div class="num">4</div><div>
@@ -198,7 +199,7 @@
 
 <!-- ═══ In Home Assistant ══════════════════════════════════════════════════════════════ -->
 <section class="chapter" id="ha">
-  <header><h2>In Home Assistant</h2></header>
+  <header><div class="kicker">Steps 14–15</div><h2>In Home Assistant</h2></header>
 
   <article class="step">
     <div class="head"><div class="num">14</div><div>
@@ -217,9 +218,32 @@
   </article>
 </section>
 
+<!-- ═══ Done ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="done" aria-label="Done">
+  <div class="readout" role="img" aria-label="Example readings: each circuit's name beside its current in amps">
+    <ol>
+      <li><span>Nav lights</span><b>0.42 A</b></li>
+      <li><span>Bilge pump</span><b>0.00 A</b></li>
+      <li><span>Fridge</span><b>3.86 A</b></li>
+      <li><span>Water pump</span><b>0.00 A</b></li>
+      <li><span>Cabin lights</span><b>1.12 A</b></li>
+      <li><span>USB sockets</span><b>0.73 A</b></li>
+      <li><span>VHF radio</span><b>0.38 A</b></li>
+      <li><span>Plotter</span><b>1.94 A</b></li>
+      <li><span>Heater</span><b>2.41 A</b></li>
+      <li><span>Fan</span><b>0.00 A</b></li>
+      <li><span>Inverter</span><b>6.90 A</b></li>
+      <li><span>Spare</span><b>—</b></li>
+    </ol>
+  </div>
+  <h2>That's it.</h2>
+  <p>Every circuit's current, power and energy, live in Home Assistant.</p>
+</section>
+
 <!-- ═══ Zeroing a circuit ══════════════════════════════════════════════════════════════ -->
 <section class="chapter" id="zero">
   <header>
+    <div class="kicker">The red light</div>
     <h2>Zeroing a circuit</h2>
     <p>Blade Reader measures each circuit with nothing flowing, called its zero, and takes that off every reading. It takes a zero whenever a circuit's fuse is out. A circuit that has been live ever since start-up has no zero yet, and the red light flashes slowly until it has one.</p>
   </header>
@@ -237,7 +261,7 @@
 
 <!-- ═══ If something's wrong ═══════════════════════════════════════════════════════════ -->
 <section class="chapter" id="wrong">
-  <header><h2>If something's wrong</h2></header>
+  <header><div class="kicker">Recovery</div><h2>If something's wrong</h2></header>
 
   <article class="step">
     <h3 class="cap">It won't install or update</h3>

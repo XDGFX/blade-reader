@@ -113,6 +113,9 @@ const callout = (s: Scene, p: V, dx: number, dy: number, label: string) => {
 
 export const drawings: Record<string, string> = {}
 
+/** The cover: Blade Reader fitted, every cable on its terminal. */
+drawings.hero = view("Blade Reader fitted to a Blue Sea ST Blade fuse panel, every circuit's cable on its own terminal", fitted())
+
 // ── What's what ─────────────────────────────────────────────────────────────────────────
 
 drawings.partsBoard = (() => {
@@ -123,9 +126,10 @@ drawings.partsBoard = (() => {
   callout(scene, [finger[0] - 7, finger[1], t], -30, 22, "finger")
   const nut = OUTPUT_NUTS.reduce((m, p) => (p[0] > 0 && p[1] > m[1] ? p : m), [0, -Infinity] as P2)
   callout(scene, [nut[0], nut[1], t], 24, -12, "terminal")
-  callout(scene, [GND_NUT[0], GND_NUT[1], t], 10, 26, "GND terminal")
+  callout(scene, [GND_NUT[0], GND_NUT[1], t], 26, 8, "GND terminal")
   callout(scene, [USB_C[0], USB_C[1], -1], -14, 22, "USB-C socket")
   const { body, box } = scene.render(30)
+  box[2] += 46 // room for the GND terminal's label, past the board's right-hand edge
   return svg(box, body, "Blade Reader: a finger, a circuit nut, the GND nut and the USB-C socket")
 })()
 

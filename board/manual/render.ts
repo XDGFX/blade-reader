@@ -55,7 +55,10 @@ export type Group = Face[]
 export const all = (n: number, on = true) => Array.from({ length: n }, () => on)
 /** The highlight class marks what moves in a step; its sides take a darker shade of it. */
 export const HL = "hl"
-const sideOf = (cls: string) => (cls === HL ? "hl-side" : cls === "board" ? "board-side" : "side")
+// A highlighted board keeps its black mask and gets an orange outline instead of a fill.
+const HL_BOARD = "board hl-board"
+const sideOf = (cls: string) => (cls === HL ? "hl-side" : cls === "board" ? "board-side" : cls === HL_BOARD ? "board-side hl-board" : "side")
+const lnOf = (cls: string) => (cls.includes("hl-board") ? "ln hl-ln" : "ln")
 const centroid = (pts: V[]): V => {
   const s = pts.reduce((m, p) => [m[0] + p[0], m[1] + p[1], m[2] + p[2]] as V, [0, 0, 0] as V)
   return [s[0] / pts.length, s[1] / pts.length, s[2] / pts.length]
@@ -104,7 +107,7 @@ export class Scene {
         }
         const outline = `M${q.map(xy).join("L")}Z`
         if (face.edges.every(Boolean)) {
-          body += `<path class="${face.cls} ln" d="${outline}"/>`
+          body += `<path class="${face.cls} ${lnOf(face.cls)}" d="${outline}"/>`
           continue
         }
         body += `<path class="${face.cls}" d="${outline}"/>`
@@ -112,7 +115,7 @@ export class Scene {
         face.edges.forEach((on, i) => {
           if (on) lines += `M${xy(q[i])}L${xy(q[(i + 1) % q.length])}`
         })
-        if (lines) body += `<path class="ln" d="${lines}"/>`
+        if (lines) body += `<path class="${lnOf(face.cls)}" d="${lines}"/>`
       }
     }
     return { body: body + this.overlay.join(""), box: [minX - pad, minY - pad, maxX - minX + 2 * pad, maxY - minY + 2 * pad] }
@@ -447,7 +450,7 @@ export function yokePieces(cam: Camera, z: number, opts: { da?: number; extra?: 
       if (poly.length < 3) continue
       // The terminals' nuts hang under the board, so they go first.
       const nuts = terminals.filter((p) => inPoly(poly, p)).map((p) => cylinder(cam, p[0], p[1], NUT.r, z - NUT.height, z, "metal"))
-      const group = [...cluster(cam, nuts), ...slabPiece(cam, poly, z, zt, opts.hl ? HL : "board", seam)]
+      const group = [...cluster(cam, nuts), ...slabPiece(cam, poly, z, zt, opts.hl ? HL_BOARD : "board", seam)]
       group.push(...silkOn(poly, b, right, move, zt + 0.005))
       const on = fixed.filter((x) => inPoly(poly, x.at)).sort((x, y) => cam.depth([...x.at, 0]) - cam.depth([...y.at, 0]))
       for (const x of on) group.push(...x.group(zt))

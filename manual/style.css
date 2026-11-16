@@ -15,6 +15,13 @@
   --lw: 1.25px;
   --face: #fff;
   --mask: #1d2023;
+  --sky-a: #f7bd7a;
+  --sky-b: #cf5a2e;
+  --core: #2b0e07;
+  --cream: #fff0d8;
+  --amber: #ffa22e;
+  --display: "Barlow Condensed", "Avenir Next Condensed", "Arial Narrow", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --mask-side: #0d0e10;
   --silk: #f4f3ee;
   --side: #ecebe8;
@@ -81,17 +88,19 @@ pre code { background: none; padding: 0; }
 /* ── Chapters ────────────────────────────────────────────────────────────────────────── */
 
 .chapter { margin-top: 56px; }
-.chapter > header { border-top: 6px solid var(--rule); padding-top: 12px; }
-.chapter > header .kicker { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--grey); }
-.chapter > header h2 { font-size: 30px; line-height: 1.1; margin: 4px 0 8px; }
-.chapter > header p { margin: 0 0 8px; max-width: 40ch; }
+/* Chapter bands take the banner's sky, its dark brown type and its spaced mono capitals. */
+.chapter > header { background: linear-gradient(100deg, var(--sky-a), var(--sky-b)); color: var(--core); padding: 16px 18px 14px; border-radius: 4px; }
+.kicker { font: 600 12px/1.2 var(--mono); letter-spacing: 0.22em; text-transform: uppercase; }
+.chapter > header .kicker { color: var(--core); opacity: 0.75; }
+.chapter > header h2 { font: 800 38px/1 var(--display); text-transform: uppercase; letter-spacing: 0.01em; margin: 6px 0 2px; }
+.chapter > header p { margin: 8px 0 2px; max-width: 46ch; }
 
 /* ── A step ──────────────────────────────────────────────────────────────────────────── */
 
 .step { padding: 28px 0 8px; }
 .step + .step { border-top: 1px solid color-mix(in srgb, var(--rule) 25%, transparent); }
 .step .head { display: flex; align-items: flex-start; gap: 16px; }
-.step .num { font-size: 88px; line-height: 0.8; font-weight: 700; letter-spacing: -0.04em; flex: none; min-width: 0.6em; }
+.step .num { font: 800 96px/0.8 var(--display); color: var(--sky-b); flex: none; min-width: 0.55em; }
 .step .crumb { font-size: 13px; color: var(--grey); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
 .step .cap { font-size: 21px; line-height: 1.25; font-weight: 700; margin: 6px 0 0; max-width: 30ch; }
 h3.cap { margin: 0 0 12px; }
@@ -101,7 +110,20 @@ h3.cap { margin: 0 0 12px; }
 .step .main.narrow { max-width: 420px; margin-left: auto; margin-right: auto; }
 
 .warn, .notice { display: flex; gap: 10px; align-items: center; margin: 16px 0; padding: 10px 12px; border: 2px solid var(--rule); border-radius: 10px; font-size: 16px; }
-.warn b, .notice b { text-transform: uppercase; letter-spacing: 0.06em; margin-right: 6px; }
+.warn b, .notice b { font: 600 12px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.18em; margin-right: 8px; }
+
+/* ── The cover and the ending ────────────────────────────────────────────────────────── */
+
+.hero { margin: 4px -8px 8px; }
+.done { margin-top: 56px; text-align: center; }
+.done h2 { font: 800 56px/1 var(--display); text-transform: uppercase; margin: 22px 0 6px; }
+.done p { margin: 0 auto; max-width: 32ch; font-size: 19px; }
+.readout { background: var(--core); border-radius: 6px; padding: 18px 20px; text-align: left; box-shadow: inset 0 0 0 1px #4f1e0d; }
+.readout ol { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 28px; counter-reset: way; }
+.readout li { display: flex; gap: 10px; align-items: baseline; padding: 5px 0; break-inside: avoid; counter-increment: way; font: 600 14px/1.2 var(--mono); color: var(--cream); }
+.readout li::before { content: counter(way); color: var(--sky-a); min-width: 1.4em; opacity: 0.8; }
+.readout li b { margin-left: auto; color: var(--amber); text-shadow: 0 0 8px rgba(255, 162, 46, 0.6); white-space: nowrap; }
+@media (max-width: 480px) { .readout ol { columns: 1; } }
 .check { display: flex; gap: 8px; align-items: center; margin: 12px 0 0; font-size: 17px; }
 .check svg { width: 22px; height: 22px; flex: none; color: var(--ok); }
 .aside { color: var(--grey); font-size: 15px; }
@@ -147,6 +169,7 @@ td.swap { color: var(--orange); font-weight: 700; }
 .art svg .fuse { fill: var(--fuse); }
 .art svg .hl { fill: var(--hl); }
 .art svg .hl-side { fill: var(--hl-side); }
+.art svg .hl-ln { stroke: var(--orange); stroke-width: calc(var(--lw) * 2.4); }
 .art svg .cover { fill: var(--cover); }
 .art svg .arrow { fill: var(--orange); }
 .art svg .turn { fill: none; stroke: var(--orange); stroke-width: calc(var(--lw) * 2.2); stroke-linecap: round; vector-effect: non-scaling-stroke; }
