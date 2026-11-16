@@ -207,3 +207,11 @@ td.swap { color: var(--orange); font-weight: 700; }
 .install button:hover { filter: brightness(1.05); }
 .install span { display: block; padding: 10px 12px; border-left: 4px solid var(--orange); background: var(--code); }
 @media print { .install { display: none; } }
+
+/* ── The other way to flash ──────────────────────────────────────────────────────────── */
+
+.alt { margin: 16px 0 0; border: 2px solid var(--rule); border-radius: 10px; padding: 0 14px; }
+.alt summary { cursor: pointer; padding: 12px 0; font-weight: 700; }
+.alt ol { margin: 0 0 14px; padding-left: 1.3em; }
+.alt li { margin: 8px 0; }
+@media print { .alt { display: none; } }

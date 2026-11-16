@@ -35,32 +35,47 @@ over-range and over-temperature are raised as faults. It's specified in
 The component's calculations are a hardware-free core with tests that run on a Mac:
 `make -C firmware test` from the repo root.
 
-## First flash from a Mac
+## First flash with your own keys
 
-A board on the generic image moves to this one over USB-C, as below, not over Wi-Fi: this image's
-updates are encrypted with your key, and the generic image can't take that first one.
+This works on Windows, macOS and Linux. A board on the generic image moves to this one over
+USB-C, as below, not over Wi-Fi: this image's updates are encrypted with your key, and the
+generic image can't take that first one.
 
 ### 1. Install ESPHome
 
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then ESPHome with it:
+
+| System | uv |
+|---|---|
+| Windows | `winget install astral-sh.uv` |
+| macOS | `brew install uv` |
+| Linux | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+
 ```sh
-brew install uv
 uv tool install --python 3.13 esphome
-uv tool update-shell     # then open a new Terminal window
+uv tool update-shell     # then open a new terminal
 esphome version
 ```
 
-Not `brew install esphome`: Homebrew's runs on Python 3.15, which ESPHome doesn't support yet,
-and the first build fails installing ESP-IDF's Python dependencies.
+On a Mac, not `brew install esphome`: Homebrew's runs on Python 3.15, which ESPHome doesn't
+support yet, and the first build fails installing ESP-IDF's Python dependencies.
 
-No USB driver is needed: the ESP32-C3's own USB shows up as `/dev/cu.usbmodem…`.
+No USB driver is needed on any of them: the ESP32-C3's own USB is a standard serial device. On
+Linux, add yourself to the `dialout` group once (`sudo usermod -aG dialout $USER`, then log out
+and back in) so you can use it.
 
 ### 2. Set up the secrets
 
 ```sh
 git clone https://github.com/XDGFX/blade-reader.git
 cd blade-reader/firmware
-cp secrets.example.yaml secrets.yaml
-openssl rand -base64 32     # paste the result in as api_key
+```
+
+Copy `secrets.example.yaml` to `secrets.yaml`, then make an API key and paste it in as
+`api_key`:
+
+```sh
+uv run --python 3.13 python -c "import base64, secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())"
 ```
 
 Fill in the Wi-Fi details in `secrets.yaml`, a web login for the board's page, and a fallback
@@ -74,22 +89,23 @@ Use a 2.4 GHz network: the ESP32-C3 has no 5 GHz radio.
 
 - **Fit the board's ground wire first** if the board is on the panel. Without it, the USB cable
   becomes the board's ground.
-- **Run the Mac on battery,** with its charger unplugged, if your system has shore power or an
-  inverter. That keeps the Mac's charger out of the system's ground.
-- Plug a USB-C data cable into the socket on the chin. On a live panel the board already runs
-  from the panel; off the panel the USB powers it. Neither feeds the other.
+- **Run the computer on battery,** with its charger unplugged, if your system has shore power or
+  an inverter. That keeps the charger out of the system's ground.
+- Plug a USB-C data cable into the socket on the board's end. On a live panel the board already
+  runs from the panel; off the panel the USB powers it. Neither feeds the other.
 
-```sh
-ls /dev/cu.usbmodem*
-```
-
-One device should appear. If none does, try another cable: many USB-C cables carry power only.
+The board appears as a new serial port: `COM3` or similar on Windows (Device Manager, Ports),
+`/dev/ttyACM0` on Linux, `/dev/cu.usbmodem…` on macOS. If none appears, try another cable: many
+USB-C cables carry power only.
 
 ### 4. Flash
 
 ```sh
-esphome run blade-reader.yaml --device /dev/cu.usbmodemXXXX
+esphome run blade-reader.yaml
 ```
+
+ESPHome lists the ports it can see: pick the board's. To skip the question, add
+`--device COM3` (or your port's name).
 
 The first build takes several minutes while it downloads the toolchain. ESPHome then flashes
 the board, which needs no buttons: the ESP32-C3 resets itself into its bootloader over USB. When
@@ -112,9 +128,9 @@ crossed (see `docs/design.md`), so swap those two leads.
    esphome run blade-reader.yaml --device blade-reader-a.local
    ```
 
-   macOS may ask whether Terminal can find devices on your local network: allow it (System
-   Settings, Privacy & Security, Local Network). If `.local` doesn't resolve, use the IP from
-   the logs.
+   macOS may ask whether your terminal can find devices on your local network: allow it (System
+   Settings, Privacy & Security, Local Network). If `.local` doesn't resolve, which can happen on
+   Windows and some Linux setups, use the IP from the logs.
 3. Watch the logs over Wi-Fi:
 
    ```sh

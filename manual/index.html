@@ -84,12 +84,23 @@
     <div class="head"><div class="num">2</div><div>
       <p class="cap">Press Install. Choose USB JTAG/serial debug unit, then your Wi-Fi.</p>
     </div></div>
-    <p class="install"><esp-web-install-button manifest="firmware/manifest.json"><button slot="activate">Install</button><span slot="unsupported">Open this page in Chrome or Edge on a computer.</span><span slot="not-allowed">Open this page from xdgfx.github.io to install.</span></esp-web-install-button></p>
+    <p class="install"><esp-web-install-button manifest="firmware/manifest.json"><button slot="activate">Install</button><span slot="unsupported">This browser can't reach a USB port. Use Chrome or Edge, or the steps below.</span><span slot="not-allowed">Open this page from xdgfx.github.io to install.</span></esp-web-install-button></p>
     <div class="body">
       <p>If it isn't listed, try another cable.</p>
       <p>Use a 2.4 GHz network.</p>
-      <p class="aside">Anyone on your Wi-Fi can reach it. To lock it with a password, <a href="https://github.com/XDGFX/blade-reader/tree/main/firmware#first-flash-from-a-mac">build it yourself</a>.</p>
+      <p class="aside">Anyone on your Wi-Fi can reach it. To lock it with a password, <a href="https://github.com/XDGFX/blade-reader/tree/main/firmware#first-flash-with-your-own-keys">build it yourself</a>.</p>
     </div>
+    <details class="alt">
+      <summary>No Chrome or Edge? Flash it from a terminal instead.</summary>
+      <ol>
+        <li>Download <a href="firmware/blade-reader.factory.bin" download>blade-reader.factory.bin</a>.</li>
+        <li>With <a href="https://www.python.org/downloads/">Python 3</a> installed, open a terminal where you saved it and run:
+<pre><code>python -m pip install esptool
+python -m esptool --chip esp32c3 write_flash 0x0 blade-reader.factory.bin</code></pre>
+          On Windows, type <code>py</code> in place of <code>python</code>. It finds Blade Reader's port itself.</li>
+        <li>On your phone, join the Wi-Fi network named blade-reader and six letters and digits. Pick your own network on the page that opens.</li>
+      </ol>
+    </details>
   </article>
 
   <article class="step">
